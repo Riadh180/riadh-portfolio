@@ -1,7 +1,13 @@
 import { Environment, Lightformer } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useRef, useState } from 'react'
-import type { Mesh, MeshBasicMaterial } from 'three'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  CylinderGeometry,
+  DoubleSide,
+  Float32BufferAttribute,
+  type Mesh,
+  type MeshBasicMaterial,
+} from 'three'
 import { sceneColors, sceneConfig } from '@/styles/scene'
 import type { SceneClock } from '../useSceneClock'
 import { warmPulse } from './motion'
@@ -14,18 +20,40 @@ type Panel = {
 }
 
 /**
- * A dark studio with one dominant key: a large, soft panel above the object puts a single
- * strong hot spot on the top of the frame. Broad, dim panels at the sides and two large
- * rings (behind the camera and behind the object) give every tube a soft rim and enough
- * light through its body to read as grey-silver glass.
+ * A dark studio with one dominant key: a soft panel above the object puts a single strong
+ * hot spot on the top of the frame. A dim fill behind the camera keeps the flat faces dark
+ * and see-through, just enough for smudges to catch it.
  */
 const panels: Panel[] = [
   { form: 'rect', intensity: 80, scale: [5, 1.5, 1], position: [0, 6, 3] },
-  { form: 'rect', intensity: 3, scale: [5, 12, 1], position: [-7, 0, 1] },
-  { form: 'rect', intensity: 2.2, scale: [5, 12, 1], position: [7, -1, 1] },
-  { form: 'rect', intensity: 5, scale: [14, 9, 1], position: [0, 0, 9] },
-  { form: 'ring', intensity: 2, scale: [10, 10, 1], position: [0, 1, -9] },
+  { form: 'rect', intensity: 0.3, scale: [14, 9, 1], position: [0, 0, 9] },
+  { form: 'ring', intensity: 1.5, scale: [10, 10, 1], position: [0, 1, -9] },
 ]
+
+/**
+ * A band of light circling the object on its own plane. A 45° bevel facing the camera
+ * mirrors exactly that horizon, so every bevel, inner and outer, draws a continuous crisp
+ * line, as on cut glass. Its brightness swells and fades round the circle (brighter
+ * towards the top) and softens towards its edges, so the lines catch light unevenly.
+ */
+const HORIZON = { intensity: 6, radius: 8, height: 10 }
+
+function createHorizon() {
+  const { radius, height } = HORIZON
+  const geometry = new CylinderGeometry(radius, radius, height, 96, 8, true)
+  const position = geometry.getAttribute('position')
+  const colors = new Float32Array(position.count * 3)
+  for (let i = 0; i < position.count; i++) {
+    // Rotated to lie round the Z axis: geometry -z becomes world up.
+    const angle = Math.atan2(-position.getZ(i), position.getX(i))
+    const swell = (0.5 + 0.5 * Math.sin(angle * 3 + 1)) ** 2
+    const top = 0.5 + 0.5 * Math.sin(angle)
+    const edge = 1 - (Math.abs(position.getY(i)) / (height / 2)) ** 2
+    colors.fill(edge * (0.25 + 0.75 * swell) * (0.6 + 0.8 * top), i * 3, i * 3 + 3)
+  }
+  geometry.setAttribute('color', new Float32BufferAttribute(colors, 3))
+  return geometry
+}
 
 /**
  * The light drifts to one warm moment per cycle. The cube map only re-renders while that
@@ -36,6 +64,8 @@ export function HeroLighting({ clock }: { clock: SceneClock }) {
   const meshes = useRef<(Mesh | null)[]>([])
   const [live, setLive] = useState(false)
   const liveRef = useRef(false)
+  const horizon = useMemo(() => createHorizon(), [])
+  useEffect(() => () => horizon.dispose(), [horizon])
 
   useFrame(() => {
     const { warmPeriod, warmth } = sceneConfig.light
@@ -45,12 +75,10 @@ export function HeroLighting({ clock }: { clock: SceneClock }) {
       liveRef.current = active
       setLive(active)
     }
-    panels.forEach((panel, i) => {
+    const intensities = [...panels.map((panel) => panel.intensity), HORIZON.intensity]
+    intensities.forEach((intensity, i) => {
       const material = meshes.current[i]?.material as MeshBasicMaterial | undefined
-      material?.color
-        .copy(sceneColors.glass)
-        .lerp(sceneColors.warm, warm)
-        .multiplyScalar(panel.intensity)
+      material?.color.copy(sceneColors.glass).lerp(sceneColors.warm, warm).multiplyScalar(intensity)
     })
   })
 
@@ -69,6 +97,15 @@ export function HeroLighting({ clock }: { clock: SceneClock }) {
           position={panel.position}
         />
       ))}
+      <mesh
+        ref={(mesh) => {
+          meshes.current[panels.length] = mesh
+        }}
+        geometry={horizon}
+        rotation-x={Math.PI / 2}
+      >
+        <meshBasicMaterial side={DoubleSide} toneMapped={false} vertexColors />
+      </mesh>
     </Environment>
   )
 }

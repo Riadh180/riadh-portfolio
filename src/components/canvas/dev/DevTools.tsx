@@ -98,6 +98,7 @@ export default function DevTools() {
   useControls(
     'Emblem',
     sliders(sceneConfig.emblem, {
+      scale: [0.3, 1.2, 0.01],
       tilt: [0, 1.2, 0.01],
       float: [0, 0.3, 0.005],
       halfTurn: [1, 12, 0.05],
@@ -109,7 +110,7 @@ export default function DevTools() {
     sliders(sceneConfig.glass, {
       transmission: [0, 1, 0.01],
       thickness: [0, 3, 0.01],
-      roughness: [0, 0.5, 0.005],
+      roughness: [0, 1, 0.005],
       ior: [1, 2.3, 0.01],
       dispersion: [0, 5, 0.05],
       iridescence: [0, 1, 0.01],

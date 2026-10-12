@@ -36,6 +36,8 @@ export const sceneConfig = {
     drift: 0.015,
   },
   emblem: {
+    /** Overall size: small and delicate, like the reference. */
+    scale: 0.65,
     /** Max tilt toward the cursor, in radians (small and late, as in the reference). */
     tilt: 0.25,
     /** Breathing float amplitude. */
@@ -46,16 +48,15 @@ export const sceneConfig = {
     dwell: 0.85,
   },
   glass: {
-    /** Fraction of light passing through; the rest is lit glass body (soft grey-silver). */
     transmission: 1,
-    thickness: 0.6,
-    /** Frosted a little: the tube body lightens and the highlights stay soft and continuous. */
-    roughness: 0.2,
+    thickness: 0.3,
+    /** Multiplied by the smudge map: clear glass (~0.06) with smudges and scratches up to ~0.36. */
+    roughness: 0.4,
     ior: 1.5,
     /** Kept low: the colour comes from thin-film iridescence, not dispersion. */
     dispersion: 0.3,
-    /** Thin-film rainbow (pink / green / blue) sliding over the surface as it turns. */
-    iridescence: 0.6,
+    /** Thin-film rainbow, masked to a few spots along the bevelled edges. */
+    iridescence: 1,
     iridescenceIOR: 1.3,
     iridescenceMin: 100,
     iridescenceMax: 400,
