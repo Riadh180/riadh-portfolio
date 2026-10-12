@@ -196,8 +196,13 @@ Proposed (not yet approved) ideas for color in the particles themselves:
    timer); at 100 sparse particles condense and the glass emblem resolves out of the
    dark. Max ~1.8s, skipped on repeat visits. Name and role are readable in the HTML UI
    from the first frame.
-2. **Hero:** our own **glass emblem** alone in near-darkness, corner light bleeds,
-   iridescent rim highlights, sparse dust. The cursor slowly tilts it. Small mono UI only.
+2. **Hero:** our own **glass emblem, "The Core"** (approved): a thick glass slab shaped like
+   a rounded app icon / screen, bevelled, iridescent rims; inside it, seen through the
+   refraction, an intricate knotted core slowly turning. Smooth outside, complex inside.
+   Alone in near-darkness, corner light bleeds, sparse dust. The cursor slowly tilts the
+   slab while the core counter-rotates. It floats; it never hangs from a ring or ribbon.
+   Small mono UI only. High-quality refractive glass on strong GPUs; a cheaper fallback
+   glass that still looks premium on weak GPUs (e.g. Intel HD 630).
 3. **Statement:** the tagline *"Complex inside. Effortless on screen."* as large type in
    the 3D scene, refracted and glitched by a passing glass element; a short mono
    paragraph beside it.
@@ -206,6 +211,8 @@ Proposed (not yet approved) ideas for color in the particles themselves:
    float **glass cards per job** with the metrics as titles (`>99%` crash-free, `0`
    rollbacks, `~30%` faster loads, `−40%` coupling…). Hover tilts a card; click flies it
    in, it dissolves into particles, and details appear in small mono type on the left.
+   Filter, in our own words (never "What are you looking for?" / "Ask me anything"):
+   `FILTER WORK → REACT · REACT NATIVE · TESTING · CREATIVE · DATA`.
 5. **Depth (Data Engineering):** its own environment beneath a water surface (caustics
    seen from below): "beneath the interface".
 6. **Contact:** calm; "Let's talk" with the email; the world loops back to the hero
@@ -304,8 +311,8 @@ with a one-line reason before switching.
 - **State:** Zustand (shared state between the DOM and the 3D scene: scroll progress,
   active section, loading, sound on/off)
 - **Styling:** Tailwind CSS; design tokens as CSS variables from the tokens file
-- **Dev tools:** `leva` (palette/scene tweaking), `r3f-perf` (FPS/GPU monitoring),
-  both dev-only and never shipped to production
+- **Dev tools:** `leva` (palette/scene tweaking), drei `StatsGl` (FPS/CPU/GPU monitoring;
+  `r3f-perf` crashes Turbopack), both dev-only and never shipped to production
 - **Code quality:** ESLint + Prettier, strict TypeScript, no `any`
 - **Testing (light):** Playwright smoke tests for key flows and a no-WebGL fallback check
 - **Deploy:** Vercel (auto-deploy from GitHub `main`)
@@ -355,7 +362,7 @@ with a one-line reason before switching.
 5. Preloader (real loading counter) → emblem reveal
 6. Statement: refracted 3D tagline + about (Approach) and the transformation (Form)
 7. Work: glass sculpture, glass job cards, hover tilt, fly-in + particle dissolve detail,
-   "What are you looking for?" filter
+   "FILTER WORK →" filter
 8. Skills (System) + Data Engineering environment (Depth)
 9. Contact + loop back + footer
 10. Mobile, reduced motion, WebGL fallback

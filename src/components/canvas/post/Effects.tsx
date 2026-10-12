@@ -1,11 +1,6 @@
 import { useFrame } from '@react-three/fiber'
-import {
-  Bloom,
-  ChromaticAberration,
-  EffectComposer,
-  ToneMapping,
-} from '@react-three/postprocessing'
-import { type BloomEffect, type ChromaticAberrationEffect, ToneMappingMode } from 'postprocessing'
+import { Bloom, ChromaticAberration, EffectComposer } from '@react-three/postprocessing'
+import type { BloomEffect, ChromaticAberrationEffect } from 'postprocessing'
 import { useEffect, useMemo, useRef } from 'react'
 import { HalfFloatType } from 'three'
 import { sceneConfig } from '@/styles/scene'
@@ -13,7 +8,7 @@ import { GradeEffect } from './GradeEffect'
 
 /**
  * HDR pipeline: bloom on the brightest cores only, radial chromatic aberration
- * (canvas only, clean center), neutral tone mapping, then the film grade.
+ * (canvas only, clean center), then the film grade (which also tone-maps highlights).
  */
 export function Effects({ reducedMotion }: { reducedMotion: boolean }) {
   const bloom = useRef<BloomEffect>(null)
@@ -42,7 +37,6 @@ export function Effects({ reducedMotion }: { reducedMotion: boolean }) {
     <EffectComposer multisampling={0} frameBufferType={HalfFloatType}>
       <Bloom ref={bloom} mipmapBlur />
       <ChromaticAberration ref={chromatic} radialModulation />
-      <ToneMapping mode={ToneMappingMode.NEUTRAL} />
       <primitive object={grade} />
     </EffectComposer>
   )

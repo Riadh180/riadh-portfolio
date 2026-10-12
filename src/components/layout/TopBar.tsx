@@ -1,30 +1,38 @@
 import { profile } from '@/content/site'
+import { SectionIndicator } from './SectionIndicator'
+import { SignalBars } from './SignalBars'
 
-/** Recruiter fast lane: identity left, email + CV always one click away. */
+const link = 'transition-colors duration-(--motion-duration-ui) hover:text-glow'
+
+/**
+ * Name left (phones: it lives in the hero block instead); nav + recruiter fast lane
+ * (contact = email, CV) right, always one click away.
+ */
 export function TopBar() {
   return (
-    <header className="fixed inset-x-0 top-0 z-40 page-grid h-(--topbar-h) items-center">
-      <a href="#signal" className="col-span-6 meta text-text md:col-span-3">
-        Riadh Souissi
+    <header className="fixed inset-x-0 top-0 z-40 page-grid items-start pt-(--margin)">
+      <a href="#signal" className={`col-span-6 ui-lg text-text max-sm:invisible ${link}`}>
+        {profile.name}
       </a>
-      <p className="col-span-4 hidden meta text-muted md:block">
-        {profile.location} <span className="text-line">/</span> {profile.coordinates}
-      </p>
-      <nav aria-label="Contact" className="col-span-6 flex justify-end gap-6 md:col-span-5">
-        <a
-          href={`mailto:${profile.email}`}
-          className="meta text-text transition-colors duration-(--motion-duration-ui) hover:text-glow"
+      <div className="col-span-6 flex flex-col items-end gap-3">
+        <nav
+          aria-label="Primary"
+          className="flex items-center gap-4 rounded-full border border-line bg-bg/80 px-5 py-2.5 ui text-text"
         >
-          <span className="hidden sm:inline">{profile.email}</span>
-          <span className="sm:hidden">Email</span>
-        </a>
-        <a
-          href={profile.cvHref}
-          className="meta text-text transition-colors duration-(--motion-duration-ui) hover:text-glow"
-        >
-          CV
-        </a>
-      </nav>
+          <a href="#work" className={link}>
+            Work
+          </a>
+          <SignalBars />
+          <a href={`mailto:${profile.email}`} className={link}>
+            Contact
+          </a>
+          <span aria-hidden className="h-3 w-px bg-line" />
+          <a href={profile.cvHref} className={link}>
+            CV
+          </a>
+        </nav>
+        <SectionIndicator />
+      </div>
     </header>
   )
 }

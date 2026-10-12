@@ -1,7 +1,10 @@
 import {
+  DataTexture,
+  FloatType,
   HalfFloatType,
   MathUtils,
   Matrix4,
+  NearestFilter,
   type PerspectiveCamera,
   type Texture,
   Vector2,
@@ -34,6 +37,10 @@ export type StepInput = {
   time: number
   pointer: Pointer
   cursorStrength: number
+  /** 0..1: how strongly particles hold their targets. */
+  form: number
+  /** Burst strength for particles being released (dissolve). */
+  scatter: number
 }
 
 export type Simulation = ReturnType<typeof createSimulation>
@@ -85,6 +92,12 @@ export function createSimulation(gl: WebGLRenderer, size: number) {
   const trailVariable = trail.addVariable('textureTrail', trailShader, trail.createTexture())
   trail.setVariableDependencies(trailVariable, [trailVariable])
 
+  // One target per particle (xyz, w = 1 if this particle takes part in the shape).
+  const targets = new DataTexture(new Float32Array(size * size * 4), size, size)
+  targets.type = FloatType
+  targets.minFilter = targets.magFilter = NearestFilter
+  targets.needsUpdate = true
+
   const positionUniforms = {
     uDelta: { value: 0 },
     uCenter: { value: FIELD.center },
@@ -104,7 +117,6 @@ export function createSimulation(gl: WebGLRenderer, size: number) {
     uFlowSpeed: { value: 0 },
     uFlowScale: { value: 0 },
     uDrift: { value: 0 },
-    uStreamPull: { value: 0 },
     uCenter: { value: FIELD.center },
     uBounds: { value: FIELD.bounds },
     uTrail: { value: null as Texture | null },
@@ -112,6 +124,9 @@ export function createSimulation(gl: WebGLRenderer, size: number) {
     uWorldPerUv: { value: new Vector2() },
     uFocusDistance: { value: 10 },
     uCursorStrength: { value: 0 },
+    uTargets: { value: targets },
+    uForm: { value: 0 },
+    uScatter: { value: 0 },
   }
   Object.assign(positionVariable.material.uniforms, positionUniforms)
   Object.assign(velocityVariable.material.uniforms, velocityUniforms)
@@ -158,7 +173,8 @@ export function createSimulation(gl: WebGLRenderer, size: number) {
     velocityUniforms.uFlowSpeed.value = flow.speed
     velocityUniforms.uFlowScale.value = flow.scale
     velocityUniforms.uDrift.value = flow.drift
-    velocityUniforms.uStreamPull.value = flow.streamPull
+    velocityUniforms.uForm.value = input.form
+    velocityUniforms.uScatter.value = input.scatter
     velocityUniforms.uTrail.value = trail.getCurrentRenderTarget(trailVariable).texture
     velocityUniforms.uViewProjection.value.multiplyMatrices(
       camera.projectionMatrix,
@@ -176,11 +192,27 @@ export function createSimulation(gl: WebGLRenderer, size: number) {
     }
   }
 
+  /** Assigns shape points to the first particles; the rest stay free dust. */
+  function setTargets(points: Float32Array | null) {
+    const data = targets.image.data as Float32Array
+    data.fill(0)
+    if (points) {
+      const count = Math.min(points.length / 3, size * size)
+      for (let i = 0; i < count; i++) {
+        data.set(points.subarray(i * 3, i * 3 + 3), i * 4)
+        data[i * 4 + 3] = 1
+      }
+    }
+    targets.needsUpdate = true
+  }
+
   return {
     step,
+    setTargets,
     dispose: () => {
       particles.dispose()
       trail.dispose()
+      targets.dispose()
     },
   }
 }

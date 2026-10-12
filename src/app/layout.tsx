@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import type { CSSProperties } from 'react'
 import { SceneLoader } from '@/components/canvas/SceneLoader'
-import { SectionRail } from '@/components/layout/SectionRail'
 import { TopBar } from '@/components/layout/TopBar'
 import { profile } from '@/content/site'
-import { clash, jetbrains, satoshi } from '@/styles/fonts'
+import { departure } from '@/styles/fonts'
 import { cssVariables, palette } from '@/styles/tokens'
 import './globals.css'
 
@@ -23,18 +22,17 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
     <html
       lang="en"
       style={cssVariables as CSSProperties}
-      className={`${clash.variable} ${satoshi.variable} ${jetbrains.variable} antialiased`}
+      className={`${departure.variable} antialiased`}
     >
       <body>
         <a
           href="#main"
-          className="fixed top-3 left-3 z-50 -translate-y-20 bg-text px-3 py-2 meta text-bg focus:translate-y-0"
+          className="fixed top-3 left-3 z-50 -translate-y-20 bg-text px-3 py-2 ui text-bg focus:translate-y-0"
         >
           Skip to content
         </a>
         <SceneLoader />
         <TopBar />
-        <SectionRail />
         {children}
       </body>
     </html>

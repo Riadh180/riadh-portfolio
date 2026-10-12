@@ -1,36 +1,28 @@
-import { about, profile } from '@/content/site'
+import { profile } from '@/content/site'
 
+/** The 10-second read for recruiters: who, what, where, how to reach me. */
 export function Hero() {
   return (
     <section
       id="signal"
-      aria-label="Introduction"
-      className="page-grid min-h-svh content-end gap-y-10 pt-(--topbar-h) pb-[calc(var(--margin)*1.25)]"
+      aria-labelledby="signal-title"
+      className="page-grid min-h-svh content-end pb-(--margin)"
     >
-      <p className="col-span-12 meta text-muted">
-        <span className="text-text/40">00</span> / Signal
-      </p>
-
-      <h1 className="col-span-12 font-display text-display font-medium uppercase">
-        <span className="block">Riadh</span>
-        <span className="block pl-[16.66%]">Souissi</span>
-      </h1>
-
-      <div className="col-span-12 grid grid-cols-subgrid gap-y-6 border-t border-line pt-5">
-        <div className="col-span-12 flex flex-col gap-2 md:col-span-5">
-          <p className="meta text-text">{profile.role}</p>
-          <p className="meta text-muted">
-            {about.years} yrs <span className="text-line">/</span> Web &amp; Mobile{' '}
-            <span className="text-line">/</span> {profile.availability}
-          </p>
-        </div>
-        <p className="col-span-12 font-display text-lede font-medium md:col-span-5 md:col-start-8">
-          {profile.taglineLines.map((line) => (
-            <span key={line} className="block">
-              {line}
-            </span>
-          ))}
+      <div className="col-span-12 flex flex-col gap-4 sm:col-span-7 lg:col-span-4">
+        <h1 id="signal-title" className="ui-lg text-text">
+          {profile.name}
+          <span className="block text-muted">{profile.role}</span>
+        </h1>
+        <p className="ui-lg text-text">{profile.tagline}</p>
+        <p className="ui text-muted">
+          {profile.location} · {profile.availability}
         </p>
+        <a
+          href={`mailto:${profile.email}`}
+          className="self-start ui text-violet transition-colors duration-(--motion-duration-ui) hover:text-text"
+        >
+          → {profile.email}
+        </a>
       </div>
     </section>
   )

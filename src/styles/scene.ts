@@ -10,8 +10,10 @@ export const sceneColors = {
   bg: new Color(palette.bg),
   blue: new Color(palette.blue),
   teal: new Color(palette.teal),
+  violet: new Color(palette.violet),
   emerald: new Color(palette.emerald),
   glow: new Color(palette.glow),
+  warm: new Color(palette.warm),
 }
 
 export type SceneColor = keyof typeof sceneColors
@@ -19,33 +21,26 @@ export type SceneColor = keyof typeof sceneColors
 export const sceneConfig = {
   particles: {
     /** World-space size of an in-focus particle. */
-    size: 0.03,
+    size: 0.022,
     /** Depth-of-field strength: how fast particles blur away from the focus plane. */
-    aperture: 1.4,
+    aperture: 1.2,
     focusDistance: 10,
-    brightness: 1.4,
+    brightness: 0.9,
   },
   flow: {
-    speed: 0.32,
-    scale: 0.16,
-    /** Horizontal current along the streams. */
-    drift: 0.12,
-    /** How tightly particles are gathered into the three streams. */
-    streamPull: 0.55,
+    speed: 0.12,
+    scale: 0.12,
+    drift: 0.015,
   },
   cursor: {
-    strength: 1.0,
+    strength: 0.6,
     radius: 0.006,
   },
-  light: {
-    /** Intensity of the soft colored light pools behind the field. */
-    pools: 0.06,
-  },
   bloom: {
-    intensity: 1.1,
-    threshold: 0.55,
-    smoothing: 0.3,
-    radius: 0.72,
+    intensity: 0.9,
+    threshold: 0.7,
+    smoothing: 0.25,
+    radius: 0.7,
   },
   chromatic: {
     /** Radial offset at rest: clean center, fringes toward the edges. */
@@ -53,8 +48,8 @@ export const sceneConfig = {
     modulationOffset: 0.22,
   },
   grade: {
-    contrast: 1.08,
+    contrast: 1.0,
     grain: 0.06,
-    vignette: 0.35,
+    vignette: 0.45,
   },
 }

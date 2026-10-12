@@ -11,6 +11,6 @@ export function detectQuality(): Quality {
   const dpr = window.devicePixelRatio
 
   return touch || fewCores
-    ? { simSize: 128, maxDpr: Math.min(dpr, 1.5) }
-    : { simSize: 256, maxDpr: Math.min(dpr, 2) }
+    ? { simSize: 64, maxDpr: Math.min(dpr, 1.5) }
+    : { simSize: 96, maxDpr: Math.min(dpr, 2) }
 }

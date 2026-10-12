@@ -9,40 +9,29 @@
   --color-line: var(--line);
   --color-blue: var(--blue);
   --color-teal: var(--teal);
+  --color-violet: var(--violet);
   --color-emerald: var(--emerald);
   --color-glow: var(--glow);
   --color-warm: var(--warm);
 
-  --font-display: var(--font-clash), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-satoshi), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --font-ui: var(--font-departure), ui-monospace, monospace;
 
   --ease-signal: var(--motion-ease);
 }
 
 @theme {
-  /* Fluid type scale */
-  --text-display: clamp(4.25rem, 18vw, 19rem);
-  --text-display--line-height: 0.86;
-  --text-display--letter-spacing: -0.045em;
-  --text-headline: clamp(2.75rem, 7vw, 7.5rem);
-  --text-headline--line-height: 0.92;
-  --text-headline--letter-spacing: -0.04em;
-  --text-lede: clamp(1.375rem, 2.3vw, 2.25rem);
-  --text-lede--line-height: 1.12;
-  --text-lede--letter-spacing: -0.02em;
-  --text-body: clamp(1rem, 1.05vw, 1.125rem);
-  --text-body--line-height: 1.55;
-  --text-meta: 0.6875rem;
-  --text-meta--line-height: 1.4;
-  --text-meta--letter-spacing: 0.14em;
+  /* Small UI scale: the 3D world carries the scale, the interface stays quiet. */
+  --text-ui: 0.6875rem;
+  --text-ui--line-height: 1.65;
+  --text-ui--letter-spacing: 0.06em;
+  --text-ui-lg: 0.8125rem;
+  --text-ui-lg--line-height: 1.45;
+  --text-ui-lg--letter-spacing: 0.04em;
 }
 
 :root {
-  /* Page grid: 12 columns, fluid outer margin and gutter */
-  --margin: clamp(1rem, 3.2vw, 3rem);
+  --margin: clamp(1rem, 2.6vw, 2.75rem);
   --gutter: clamp(0.75rem, 1.6vw, 1.5rem);
-  --topbar-h: 3.5rem;
   color-scheme: dark;
 }
 
@@ -53,34 +42,50 @@
   padding-inline: var(--margin);
 }
 
-/* Small uppercase mono metadata: labels, indices, coordinates */
-@utility meta {
-  font-family: --theme(--font-mono);
-  font-size: --theme(--text-meta);
-  line-height: --theme(--text-meta--line-height);
-  letter-spacing: --theme(--text-meta--letter-spacing);
+/* Small uppercase mono: every label, link and paragraph in the UI. */
+@utility ui {
+  font-family: --theme(--font-ui);
+  font-size: --theme(--text-ui);
+  line-height: --theme(--text-ui--line-height);
+  letter-spacing: --theme(--text-ui--letter-spacing);
   text-transform: uppercase;
+}
+
+@utility ui-lg {
+  font-family: --theme(--font-ui);
+  font-size: --theme(--text-ui-lg);
+  line-height: --theme(--text-ui-lg--line-height);
+  letter-spacing: --theme(--text-ui-lg--letter-spacing);
+  text-transform: uppercase;
+}
+
+@keyframes signal {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
 }
 
 @layer base {
   html {
     background: var(--bg);
     -webkit-text-size-adjust: 100%;
-    text-rendering: optimizeLegibility;
   }
 
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: --theme(--font-sans);
-    font-size: --theme(--text-body);
-    line-height: --theme(--text-body--line-height);
-    font-feature-settings: 'ss01', 'kern';
+    font-family: --theme(--font-ui);
+    font-size: --theme(--text-ui);
+    line-height: --theme(--text-ui--line-height);
   }
 
   ::selection {
-    background: var(--glow);
-    color: var(--bg);
+    background: var(--violet);
+    color: var(--text);
   }
 
   :focus-visible {

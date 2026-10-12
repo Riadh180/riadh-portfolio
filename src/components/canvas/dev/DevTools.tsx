@@ -9,6 +9,8 @@ import { useEffect } from 'react'
 import type { Color } from 'three'
 import { type SceneColor, sceneColors, sceneConfig } from '@/styles/scene'
 import { palette } from '@/styles/tokens'
+import { sampleRoundedRect } from '../particles/targets'
+import { dissolveParticles, formParticles } from '../particles/transitions'
 
 type Palette = Record<SceneColor, string>
 type Slider = {
@@ -20,35 +22,20 @@ type Slider = {
 }
 type ColorInput = { value: string; onChange: (v: string) => void }
 
+const current: Palette = {
+  bg: palette.bg,
+  blue: palette.blue,
+  teal: palette.teal,
+  violet: palette.violet,
+  emerald: palette.emerald,
+  glow: palette.glow,
+  warm: palette.warm,
+}
+
 const presets: Record<string, Palette> = {
-  Current: {
-    bg: palette.bg,
-    blue: palette.blue,
-    teal: palette.teal,
-    emerald: palette.emerald,
-    glow: palette.glow,
-  },
-  'Deeper ocean': {
-    bg: '#03080E',
-    blue: '#2F63D9',
-    teal: '#0E8F95',
-    emerald: '#0FB38A',
-    glow: '#6FE3D6',
-  },
-  'More emerald': {
-    bg: '#040C0C',
-    blue: '#2E6FE0',
-    teal: '#10B89A',
-    emerald: '#19E3A0',
-    glow: '#9BFFE0',
-  },
-  'Colder blue': {
-    bg: '#050913',
-    blue: '#4A86FF',
-    teal: '#1AA6C9',
-    emerald: '#12C7A8',
-    glow: '#8CEBFF',
-  },
+  Current: current,
+  Colder: { ...current, teal: '#1AA6C9', blue: '#4A86FF', violet: '#7C7CFF', glow: '#8CEBFF' },
+  'More violet': { ...current, blue: '#5468FF', violet: '#A274FF', teal: '#14A3B8' },
 }
 
 const colorKeys = Object.keys(sceneColors) as SceneColor[]
@@ -103,8 +90,7 @@ export default function DevTools() {
     sliders(sceneConfig.flow, {
       speed: [0, 1.5, 0.01],
       scale: [0.02, 0.6, 0.005],
-      drift: [0, 0.6, 0.01],
-      streamPull: [0, 2, 0.01],
+      drift: [0, 0.3, 0.005],
     }),
   )
   useControls(
@@ -114,7 +100,10 @@ export default function DevTools() {
       radius: [0.001, 0.03, 0.0005],
     }),
   )
-  useControls('Light', sliders(sceneConfig.light, { pools: [0, 1, 0.01] }))
+  useControls('Transition', {
+    'form card': button(() => formParticles(sampleRoundedRect(6000))),
+    dissolve: button(dissolveParticles),
+  })
   useControls(
     'Bloom',
     sliders(sceneConfig.bloom, {

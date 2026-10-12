@@ -1,14 +1,10 @@
-const taglineLines = ['Complex inside.', 'Effortless on screen.'] as const
-
 export const profile = {
   name: 'Riadh Souissi',
   role: 'Senior React / React Native Developer',
-  tagline: taglineLines.join(' '),
-  taglineLines,
+  tagline: 'Complex inside. Effortless on screen.',
   summary:
     'I build production web and mobile apps with React, React Native and TypeScript — fast, accessible and calm to use, however complex they are underneath.',
   location: 'Essen, Germany',
-  coordinates: '51.4556° N, 7.0116° E',
   availability: 'Open to remote / hybrid',
   email: 'riadhsouissi@gmx.de',
   github: 'https://github.com/Riadh180',
@@ -16,7 +12,6 @@ export const profile = {
 } as const
 
 export const about = {
-  years: '7.5+',
   body: '7.5+ years building production web and mobile apps across fintech, enterprise SaaS and logistics with React, React Native and TypeScript — and I understand the data behind the interface.',
   languages: ['English', 'German', 'French', 'Arabic'],
 } as const

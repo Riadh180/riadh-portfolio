@@ -1,9 +1,9 @@
-import { Backdrop } from './Backdrop'
+import { sceneColors } from '@/styles/scene'
 import { CameraRig } from './CameraRig'
 import { ParticleField } from './particles/ParticleField'
 import { Effects } from './post/Effects'
-import { useLightRig } from './useLightRig'
 import type { Pointer } from './usePointer'
+import { useSceneClock } from './useSceneClock'
 
 type Props = {
   simSize: number
@@ -14,19 +14,18 @@ type Props = {
 export function Scene({ simSize, pointer, reducedMotion }: Props) {
   // Reduced motion keeps the atmosphere but slows it to a near-still drift.
   const timeScale = reducedMotion ? 0.15 : 1
-  const rig = useLightRig(timeScale)
+  const clock = useSceneClock(timeScale)
 
   return (
     <>
+      <primitive attach="background" object={sceneColors.bg} />
       <CameraRig pointer={pointer} enabled={!reducedMotion} />
-      <Backdrop rig={rig} />
       <ParticleField
         simSize={simSize}
-        rig={rig}
+        clock={clock}
         pointer={pointer}
         timeScale={timeScale}
         cursorStrength={reducedMotion ? 0 : 1}
-        warmUp={reducedMotion}
       />
       <Effects reducedMotion={reducedMotion} />
     </>

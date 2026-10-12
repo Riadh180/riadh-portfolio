@@ -1,19 +1,23 @@
 /**
  * Design tokens — the single source of truth for color and motion.
- * Exported to CSS variables (see `cssVariables`) and, later, to shader uniforms.
+ * Exported to CSS variables (see `cssVariables`) and to the scene (src/styles/scene.ts).
  * Changing the palette = editing this file only.
  */
 
 export const palette = {
-  bg: '#050B12',
-  bgElevated: '#0B1622',
+  /** Near-black charcoal: never tinted all over; color lives in light and materials. */
+  bg: '#07090C',
+  bgElevated: '#0E1217',
   text: '#E8F1F2',
   muted: '#7D8A94',
-  line: '#1A2733',
+  line: '#1C2128',
   blue: '#3A7BFF',
   teal: '#12B5B0',
+  /** Corner light, iridescence and UI links. */
+  violet: '#8B6CFF',
   emerald: '#10D19A',
   glow: '#7FF5E1',
+  /** Rare: gold sparks, one contact moment. */
   warm: '#FFB36B',
 } as const
 
@@ -37,6 +41,7 @@ export const contrastPairs: ReadonlyArray<{
   { fg: 'text', bg: 'bgElevated', min: 4.5 },
   { fg: 'muted', bg: 'bg', min: 4.5 },
   { fg: 'muted', bg: 'bgElevated', min: 4.5 },
+  { fg: 'violet', bg: 'bg', min: 4.5 },
   { fg: 'glow', bg: 'bg', min: 4.5 },
   { fg: 'emerald', bg: 'bg', min: 4.5 },
   { fg: 'warm', bg: 'bg', min: 4.5 },
