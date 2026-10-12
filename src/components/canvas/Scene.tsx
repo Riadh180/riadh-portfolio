@@ -1,5 +1,8 @@
 import { sceneColors } from '@/styles/scene'
+import { Backdrop } from './Backdrop'
 import { CameraRig } from './CameraRig'
+import { Emblem } from './hero/Emblem'
+import { HeroLighting } from './hero/HeroLighting'
 import { ParticleField } from './particles/ParticleField'
 import { Effects } from './post/Effects'
 import type { Pointer } from './usePointer'
@@ -19,7 +22,10 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
   return (
     <>
       <primitive attach="background" object={sceneColors.bg} />
+      <HeroLighting clock={clock} />
       <CameraRig pointer={pointer} enabled={!reducedMotion} />
+      <Backdrop />
+      <Emblem pointer={pointer} clock={clock} reducedMotion={reducedMotion} />
       <ParticleField
         simSize={simSize}
         clock={clock}

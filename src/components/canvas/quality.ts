@@ -4,7 +4,10 @@ export type Quality = {
   maxDpr: number
 }
 
-/** Initial tier from cheap signals; FPS-based degrading then lowers DPR at runtime. */
+/**
+ * Initial tier from cheap signals; measured FPS (PerformanceMonitor in SceneCanvas) then
+ * lowers DPR at runtime. Touch / few cores reduce particles and DPR.
+ */
 export function detectQuality(): Quality {
   const touch = window.matchMedia('(pointer: coarse)').matches
   const fewCores = (navigator.hardwareConcurrency ?? 8) <= 4

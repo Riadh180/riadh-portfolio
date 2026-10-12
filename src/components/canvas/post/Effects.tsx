@@ -1,4 +1,4 @@
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Bloom, ChromaticAberration, EffectComposer } from '@react-three/postprocessing'
 import type { BloomEffect, ChromaticAberrationEffect } from 'postprocessing'
 import { useEffect, useMemo, useRef } from 'react'
@@ -14,6 +14,9 @@ export function Effects({ reducedMotion }: { reducedMotion: boolean }) {
   const bloom = useRef<BloomEffect>(null)
   const chromatic = useRef<ChromaticAberrationEffect>(null)
   const grade = useMemo(() => new GradeEffect(), [])
+  // Thin glass edges alias at 1–1.5 DPR; at ~2 DPR the pixels already supersample.
+  const dpr = useThree((state) => state.viewport.dpr)
+  const multisampling = dpr < 1.75 ? 2 : 0
   useEffect(() => () => grade.dispose(), [grade])
 
   useFrame(() => {
@@ -34,7 +37,7 @@ export function Effects({ reducedMotion }: { reducedMotion: boolean }) {
   })
 
   return (
-    <EffectComposer multisampling={0} frameBufferType={HalfFloatType}>
+    <EffectComposer multisampling={multisampling} frameBufferType={HalfFloatType}>
       <Bloom ref={bloom} mipmapBlur />
       <ChromaticAberration ref={chromatic} radialModulation />
       <primitive object={grade} />

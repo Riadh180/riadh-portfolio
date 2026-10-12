@@ -29,7 +29,11 @@ export default function SceneCanvas() {
         flat
         gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
         camera={{ position: [0, 0, 10], fov: 40, near: 0.1, far: 60 }}
-        onCreated={() => setReady(true)}
+        onCreated={({ gl }) => {
+          // The glass tubes are thin: what they refract doesn't need full resolution.
+          gl.transmissionResolutionScale = 0.5
+          setReady(true)
+        }}
       >
         <PerformanceMonitor
           flipflops={3}

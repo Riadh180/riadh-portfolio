@@ -56,9 +56,12 @@ void main() {
   color *= 0.65 + 0.35 * sin(uTime * (0.4 + seed.z) + seed.x * 6.2831);
   color += uPalette[5] * smoothstep(0.8, 3.5, speed) * 1.2;
 
-  // Atmosphere: far particles sink into the dark, wrap edges fade out.
+  // Atmosphere: far particles sink into the dark, wrap edges fade out, and the space
+  // around the focal object stays clean.
   float fog = smoothstep(28.0, 8.0, depth);
+  vec2 screen = gl_Position.xy / gl_Position.w;
+  float clearing = mix(0.12, 1.0, smoothstep(0.25, 0.75, length(screen * vec2(1.0, 1.3))));
   float edge = smoothstep(uBounds.x, uBounds.x - 2.5, abs(worldPosition.x - uCenter.x));
 
-  vColor = color * uBrightness * energy * fog * edge;
+  vColor = color * uBrightness * energy * fog * edge * clearing;
 }

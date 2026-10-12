@@ -27,9 +27,11 @@ const current: Palette = {
   blue: palette.blue,
   teal: palette.teal,
   violet: palette.violet,
+  pink: palette.pink,
   emerald: palette.emerald,
   glow: palette.glow,
   warm: palette.warm,
+  glass: palette.text,
 }
 
 const presets: Record<string, Palette> = {
@@ -91,6 +93,37 @@ export default function DevTools() {
       speed: [0, 1.5, 0.01],
       scale: [0.02, 0.6, 0.005],
       drift: [0, 0.3, 0.005],
+    }),
+  )
+  useControls(
+    'Emblem',
+    sliders(sceneConfig.emblem, {
+      tilt: [0, 1.2, 0.01],
+      float: [0, 0.3, 0.005],
+      halfTurn: [1, 12, 0.05],
+      dwell: [0, 0.99, 0.01],
+    }),
+  )
+  useControls(
+    'Glass',
+    sliders(sceneConfig.glass, {
+      transmission: [0, 1, 0.01],
+      thickness: [0, 3, 0.01],
+      roughness: [0, 0.5, 0.005],
+      ior: [1, 2.3, 0.01],
+      dispersion: [0, 5, 0.05],
+      iridescence: [0, 1, 0.01],
+      iridescenceIOR: [1, 2.3, 0.01],
+      iridescenceMin: [0, 1000, 10],
+      iridescenceMax: [0, 1000, 10],
+    }),
+  )
+  useControls(
+    'Light',
+    sliders(sceneConfig.light, {
+      corners: [0, 0.4, 0.005],
+      warmPeriod: [3, 20, 0.5],
+      warmth: [0, 1, 0.01],
     }),
   )
   useControls(

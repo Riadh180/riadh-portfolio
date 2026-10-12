@@ -6,15 +6,17 @@
 
 export const palette = {
   /** Near-black charcoal: never tinted all over; color lives in light and materials. */
-  bg: '#07090C',
-  bgElevated: '#0E1217',
+  bg: '#0B0E12',
+  bgElevated: '#12161C',
   text: '#E8F1F2',
   muted: '#7D8A94',
-  line: '#1C2128',
+  line: '#222831',
   blue: '#3A7BFF',
   teal: '#12B5B0',
   /** Corner light, iridescence and UI links. */
   violet: '#8B6CFF',
+  /** Scene only: streaks in the glass environment and rare particle sparks. */
+  pink: '#F27BC4',
   emerald: '#10D19A',
   glow: '#7FF5E1',
   /** Rare: gold sparks, one contact moment. */

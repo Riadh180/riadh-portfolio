@@ -32,6 +32,10 @@ look, feel, technique and quality, with our own objects, emblem, text and conten
 their logo, their text, their projects or their exact scenes/compositions (e.g. no ring
 hanging from an infinity ribbon, no copied UI wording).
 
+**`docs/MOTION.md` + `docs/reference/motion/` (timed strips, 0.5s per tile) are THE motion
+reference.** The original recording (`.mov`, git-ignored, too big for GitHub) can be read
+frame by frame; headless Chrome decodes it if ffmpeg is unavailable.
+
 ---
 
 ## Who this site is for
@@ -93,8 +97,8 @@ another) and **inside materials** (iridescence on glass, particles). Average fra
 brightness is very low (target mean luma ≈ 20–30 / 255).
 
 **Starting palette** (tune these visually, they are not locked):
-- `--bg` near-black charcoal: `#07090C`
-- `--bg-elevated` charcoal: `#0E1217`
+- `--bg` near-black charcoal: `#0B0E12` (lifted to match the reference charcoal)
+- `--bg-elevated` charcoal: `#12161C`
 - `--text` cool off-white: `#E8F1F2`
 - `--muted` slate: `#7D8A94`
 - `--blue` cold blue: `#3A7BFF`
@@ -130,14 +134,14 @@ brightness is very low (target mean luma ≈ 20–30 / 255).
   aberration on glass edges and transitions.
 
 ### Typography & UI
-- **The UI is small.** Mono, uppercase, small sizes, wide tracking (**JetBrains Mono** for
-  now; a more characterful mono/pixel face can be proposed). Short labels and paragraphs.
+- **The UI is small.** Mono, uppercase, small sizes, wide tracking.
+- **Fonts (approved):** **Departure Mono** (pixel mono, OFL) for UI, labels and display
+  moments; **Martian Mono** (light, sentence case, ~46ch) for longer paragraphs (about,
+  project descriptions) so they stay comfortable to read.
 - **Big type is rare and lives in the 3D scene** (refracted, glitched, dissolving), never
   a huge static HTML headline over the scene. The huge 18vw HTML name is gone; name and
   role live in the small UI and, at most, in one 3D moment.
 - Text reveals use **glitch / scramble / displacement**, not simple fades.
-- Display (**Clash Display**) and body (**Satoshi**) remain available for the rare
-  large 3D type and longer reading text (e.g. `/cv`).
 - Self-host fonts, `font-display: swap`; preload only what the first frame needs.
 
 ### Chromatic aberration & iridescence (agreed)
@@ -186,6 +190,22 @@ Proposed (not yet approved) ideas for color in the particles themselves:
   tick peaks immediately then decays over ~0.7s (time constant ~0.35s), with a slower
   secondary settle of 1.5–2s (objects/particles lag the camera); cursor response is heavily
   damped (~0.8–1s lag before objects tilt).
+
+### Motion rules (from `docs/MOTION.md`)
+| Thing | Rule |
+|---|---|
+| Idle focal object | rotates on its own, continuously: one slow turn every ~6–8s, lingering face-on and passing quickly through edge-on (a thin sliver of glass) |
+| Iridescence | the rainbow highlight slides along edges/bevels as the object turns (it comes from the turn against fixed lights, not from animating the material) |
+| Light color | the environment drifts between cool and ONE warm accent: a brief warm moment (~1.2s) every ~6–10s, then back to cool |
+| Cursor | small amplitude, starts after ~0.8–1s lag; never the only source of motion |
+| Scroll tick | settles in ~0.7s, secondary settle 1.5–2s |
+| Scene changes | camera moves *through* particle layers (a slanted sheet of dust acts as the wipe); never fades to black |
+| Big display text | glass passes in front and refracts it; rare line-by-line glitch: one line at a time, ~0.3s, every ~0.5–1s ("error → recovery") |
+| Secondary text | appears ~0.5s after the headline |
+| Card hover | title scrambles (doubled / ghosted letters) and resolves in ~1–1.5s; media starts; card turns toward the viewer and brightens slightly |
+| Card click | flies to center in ~1s, dissolves into particles, details appear in small mono at the left |
+| Accent per place | each scene owns one accent color from the palette (teal hero, violet work, emerald data, one warm moment for contact); the end flows back up to the hero |
+| Overall | slow, continuous, weighty; the brief glitches are the only fast moments |
 - Hover states on everything interactive: magnetic buttons, cursor morph, subtle
   distortion on images.
 - Page/section transitions are cinematic, never instant cuts.
@@ -196,13 +216,16 @@ Proposed (not yet approved) ideas for color in the particles themselves:
    timer); at 100 sparse particles condense and the glass emblem resolves out of the
    dark. Max ~1.8s, skipped on repeat visits. Name and role are readable in the HTML UI
    from the first frame.
-2. **Hero:** our own **glass emblem, "The Core"** (approved): a thick glass slab shaped like
-   a rounded app icon / screen, bevelled, iridescent rims; inside it, seen through the
-   refraction, an intricate knotted core slowly turning. Smooth outside, complex inside.
-   Alone in near-darkness, corner light bleeds, sparse dust. The cursor slowly tilts the
-   slab while the core counter-rotates. It floats; it never hangs from a ring or ribbon.
-   Small mono UI only. High-quality refractive glass on strong GPUs; a cheaper fallback
-   glass that still looks premium on weak GPUs (e.g. Intel HD 630).
+2. **Hero:** our own **glass emblem, "The Core"** (approved): a **thin**, bevelled glass
+   pane shaped like a rounded app icon, bright bevels, vivid rainbow edges, very
+   transparent; inside it, seen through the refraction, an intricate knotted core.
+   Smooth outside, complex inside. Alone in near-darkness, corner light bleeds, sparse
+   dust. It turns slowly on its own (see Motion rules); the cursor adds a small, late tilt
+   that the core leans against. It floats; it never hangs from a ring or ribbon. Small
+   mono UI only.
+   **Glass tiers:** everyone starts on the high-quality refractive glass; only measured
+   FPS (PerformanceMonitor) lowers DPR and then switches to the fallback glass, which
+   must still look premium. No up-front GPU classification.
 3. **Statement:** the tagline *"Complex inside. Effortless on screen."* as large type in
    the 3D scene, refracted and glitched by a passing glass element; a short mono
    paragraph beside it.

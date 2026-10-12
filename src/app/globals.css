@@ -15,6 +15,7 @@
   --color-warm: var(--warm);
 
   --font-ui: var(--font-departure), ui-monospace, monospace;
+  --font-text: var(--font-martian), ui-monospace, monospace;
 
   --ease-signal: var(--motion-ease);
 }
@@ -27,6 +28,9 @@
   --text-ui-lg: 0.8125rem;
   --text-ui-lg--line-height: 1.45;
   --text-ui-lg--letter-spacing: 0.04em;
+  --text-copy: 0.75rem;
+  --text-copy--line-height: 1.75;
+  --text-copy--letter-spacing: 0;
 }
 
 :root {
@@ -57,6 +61,16 @@
   line-height: --theme(--text-ui-lg--line-height);
   letter-spacing: --theme(--text-ui-lg--letter-spacing);
   text-transform: uppercase;
+}
+
+/* Longer reading text: sentence case, calmer mono, generous leading. */
+@utility copy {
+  font-family: --theme(--font-text);
+  font-size: --theme(--text-copy);
+  font-weight: 300;
+  line-height: --theme(--text-copy--line-height);
+  letter-spacing: --theme(--text-copy--letter-spacing);
+  max-width: 46ch;
 }
 
 @keyframes signal {

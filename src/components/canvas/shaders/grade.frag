@@ -13,8 +13,11 @@ vec3 shoulder(vec3 x) {
   return min(x, vec3(knee)) + (1.0 - knee) * (1.0 - exp(-over / (1.0 - knee)));
 }
 
+// Hash without sine (Dave Hoskins, MIT): no line patterns at large pixel coordinates.
 float hash(vec2 p) {
-  return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
 }
 
 void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
@@ -31,7 +34,7 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
 
   // Animated film grain, plus dithering that removes gradient banding.
   vec2 px = uv * resolution;
-  float grain = hash(px + fract(time * 7.13) * 100.0) - 0.5;
+  float grain = hash(px + floor(fract(time * 0.37) * 4096.0)) - 0.5;
   color += grain * uGrain * (0.04 + sqrt(luma));
   color += (hash(px + 0.37) - 0.5) / 255.0;
 

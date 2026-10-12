@@ -8,7 +8,7 @@ export default function Home() {
       <Hero />
 
       <SectionShell id="approach" title={profile.tagline}>
-        <p className="ui text-muted">{about.body}</p>
+        <p className="copy text-muted">{about.body}</p>
         <p className="ui text-muted">Languages: {about.languages.join(' · ')}</p>
       </SectionShell>
 

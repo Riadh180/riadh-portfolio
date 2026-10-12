@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react'
 import { SceneLoader } from '@/components/canvas/SceneLoader'
 import { TopBar } from '@/components/layout/TopBar'
 import { profile } from '@/content/site'
-import { departure } from '@/styles/fonts'
+import { departure, martian } from '@/styles/fonts'
 import { cssVariables, palette } from '@/styles/tokens'
 import './globals.css'
 
@@ -22,7 +22,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
     <html
       lang="en"
       style={cssVariables as CSSProperties}
-      className={`${departure.variable} antialiased`}
+      className={`${departure.variable} ${martian.variable} antialiased`}
     >
       <body>
         <a

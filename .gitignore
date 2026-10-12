@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# reference screen recording (too big for GitHub)
+/docs/reference/video/
+/docs/reference/**/*.mov
+/docs/reference/**/*.mp4
