@@ -4,7 +4,7 @@ import { about, profile } from '@/content/site'
 
 export default function Home() {
   return (
-    <main id="main">
+    <main id="main" className="relative">
       <Hero />
 
       <SectionShell id="approach" title="Approach">

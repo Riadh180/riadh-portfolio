@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import type { CSSProperties } from 'react'
+import { SceneLoader } from '@/components/canvas/SceneLoader'
 import { SectionRail } from '@/components/layout/SectionRail'
 import { TopBar } from '@/components/layout/TopBar'
 import { profile } from '@/content/site'
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         >
           Skip to content
         </a>
+        <SceneLoader />
         <TopBar />
         <SectionRail />
         {children}

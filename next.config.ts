@@ -1,7 +1,6 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
@@ -9,6 +8,11 @@ const nextConfig: NextConfig = {
       '*.css': {
         loaders: ['@tailwindcss/turbopack'],
         as: '*.css',
+      },
+      // Shaders live in their own files and are imported as strings.
+      '*.{glsl,vert,frag}': {
+        loaders: ['raw-loader'],
+        as: '*.js',
       },
     },
   },
