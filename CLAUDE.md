@@ -26,6 +26,12 @@ the minimal UI sits over the 3D). Then apply those techniques at the same level 
 **What stays ours:** the concept, layouts, 3D scenes and content. It must be recognizably
 the same caliber, but never recognizably a copy.
 
+**`docs/REFERENCE.md` + `docs/reference/` (frames from a recording of the site) are THE
+reference for the whole site.** Read them before designing any scene. Target: very close in
+look, feel, technique and quality, with our own objects, emblem, text and content. Never
+their logo, their text, their projects or their exact scenes/compositions (e.g. no ring
+hanging from an infinity ribbon, no copied UI wording).
+
 ---
 
 ## Who this site is for
@@ -54,46 +60,49 @@ agencies. They spend under 60 seconds deciding. The site must make them (1) say 
 
 ## The concept — "SIGNAL"
 
-The whole site is one continuous journey: **complexity becomes a polished product.**
+**One continuous dark world, explored by a scroll-driven camera.** Tagline made physical:
+*complex inside, effortless on screen.*
 
-- The world starts as **chaos**: thousands of GPU particles, noisy streams drifting in a
-  dark space — the messy input every real product starts from.
-- As the visitor scrolls, the chaos is **shaped by craft**. Particles flow, align, then
-  assemble into clean forms: my name, interface layouts, project visuals, and finally
-  real HTML text (particles sample the DOM glyph positions, then crossfade into crisp,
-  selectable text).
-- The end of the journey is **pure, calm, perfect interface**: the contact section.
+- **One world, one camera path.** Scroll moves the camera along a path (mostly descending)
+  through a single 3D world. Each section is a *place* on that path, joined by smooth,
+  weighty camera moves. No stacked sections over a background, no hard cuts.
+- **Each place has ONE sculpted glass subject**, lit dramatically, with the rest falling
+  into near-darkness. The screen is mostly empty.
+- **Glass is the core material.** Smooth, calm, refractive surfaces outside; intricate
+  structure visible inside — the product (effortless) and the engineering (complex).
+- **Particles are atmosphere and transitions**, never the main subject: sparse multi-hue
+  dust, clouds wrapped around objects, and dissolves (cards/media break into particles).
+  They are the "signal": the data moving through the world.
+- **The world loops:** the contact moment flows back to the hero emblem.
 
-This metaphor IS my profile: a senior developer who takes complex input and ships
-products that feel effortless. The data streams hint at my extra edge (I understand the
-data behind the interface), but the story is about the craft of building the product.
+This IS my profile: a senior developer who turns complex input into products that feel
+effortless. Data appears as the signal moving through the world and gets its own place
+(Depth); the story is about the craft of building the product.
 
-**One particle system for the whole site:** a single GPGPU simulation in a fixed canvas
-behind the page; every form is a target, and scroll blends between targets. No separate
-scenes per section, no hard cuts.
-
-Mouse interaction: the cursor is a force in the field. Particles are attracted, repelled
-or bent by it, so visitors feel they are touching the data.
+Interaction: the cursor gently tilts/rotates the focal object and parallaxes the camera
+(heavily damped), and stirs nearby particles.
 
 ---
 
 ## Visual identity
 
 ### Colors — a flexible direction, not a final palette
-**Mood:** in the direction of the Active Theory website: deep, oceanic darkness, with
-color living *inside the 3D scene* as light: blue drifting into emerald, glowing aqua
-highlights, atmospheric depth. Use it as inspiration only; never copy their exact palette.
+**Mood (see `docs/REFERENCE.md`):** near-black charcoal, **not** tinted all over. Color
+lives as **soft corner light bleeds** (teal-blue from one corner, cold blue / violet from
+another) and **inside materials** (iridescence on glass, particles). Average frame
+brightness is very low (target mean luma ≈ 20–30 / 255).
 
 **Starting palette** (tune these visually, they are not locked):
-- `--bg` deep blue-black: `#050B12`
-- `--bg-elevated` dark navy: `#0B1622`
+- `--bg` near-black charcoal: `#07090C`
+- `--bg-elevated` charcoal: `#0E1217`
 - `--text` cool off-white: `#E8F1F2`
 - `--muted` slate: `#7D8A94`
-- `--blue` electric blue: `#3A7BFF`
-- `--teal` deep teal: `#12B5B0`
-- `--emerald` emerald: `#10D19A`
-- `--glow` aqua highlight: `#7FF5E1` (for the brightest particles, bloom, key accents)
-- `--warm` optional counterpoint: `#FFB36B` (used very rarely, e.g. one hover or the contact moment)
+- `--blue` cold blue: `#3A7BFF`
+- `--teal` teal: `#12B5B0`
+- `--violet` violet: `#8B6CFF` (corner light, iridescence, **UI links**)
+- `--emerald` emerald: `#10D19A` (one accent among the particle colors)
+- `--glow` aqua highlight: `#7FF5E1` (brightest highlights, bloom)
+- `--warm` gold counterpoint: `#FFB36B` (rare: gold sparks in particles, one contact moment)
 
 **Rules for keeping colors flexible:**
 - All colors live as tokens in ONE file (e.g. `src/styles/tokens.ts`), exported to both CSS
@@ -103,18 +112,33 @@ highlights, atmospheric depth. Use it as inspiration only; never copy their exac
   the browser, then copy the values into the tokens file.
 - Before locking colors, propose 2–3 palette variants (e.g. "deeper ocean", "more emerald",
   "colder blue") and let me pick by looking at them live.
-- Blue→emerald gradients belong in light, particles, fog and glow, not in flat UI
-  backgrounds or buttons.
+- Teal / blue / violet belong in light bleeds, iridescence, particles and glow, never in
+  flat UI backgrounds or buttons. Violet is the UI link color.
 - UI text stays mostly off-white on dark; color is for meaning and atmosphere.
 - Check text contrast (WCAG AA) whenever the palette changes.
 
-### Typography
-- Display: a characterful grotesk at huge sizes (e.g. **Clash Display** or **General Sans**
-  from Fontshare, free). Headlines 10–18vw, tight tracking (-0.04em), line-height ~0.9.
-- Body: a clean neutral sans (e.g. **Satoshi** or **Inter Tight**).
-- Mono: for data labels, numbers, metadata (e.g. **JetBrains Mono**), small, uppercase,
-  wide tracking. This gives the "data" feel.
-- Self-host fonts, preload the display font, `font-display: swap`.
+### Materials & light (the core of the look)
+- **Glass everywhere:** physically based transmission with refraction, thickness, bevelled
+  edges and **thin-film iridescence** (drei `MeshTransmissionMaterial` or
+  `MeshPhysicalMaterial` with `transmission` / `iridescence` / `clearcoat`).
+- Glass **refracts what's behind it**, including big type (rendered in 3D or to a texture
+  so it can be bent, glitched and dissolved).
+- **Environment lighting** (custom env built from light-formers, no heavy HDRI) gives the
+  glass its reflections, plus a few strong **rim lights**. Low-key: the subject is defined
+  by edges and highlights, not fill.
+- Grade: heavy vignette, bloom only on highlights, subtle film grain, chromatic
+  aberration on glass edges and transitions.
+
+### Typography & UI
+- **The UI is small.** Mono, uppercase, small sizes, wide tracking (**JetBrains Mono** for
+  now; a more characterful mono/pixel face can be proposed). Short labels and paragraphs.
+- **Big type is rare and lives in the 3D scene** (refracted, glitched, dissolving), never
+  a huge static HTML headline over the scene. The huge 18vw HTML name is gone; name and
+  role live in the small UI and, at most, in one 3D moment.
+- Text reveals use **glitch / scramble / displacement**, not simple fades.
+- Display (**Clash Display**) and body (**Satoshi**) remain available for the rare
+  large 3D type and longer reading text (e.g. `/cv`).
+- Self-host fonts, `font-display: swap`; preload only what the first frame needs.
 
 ### Chromatic aberration & iridescence (agreed)
 I want a chromatic aspect in the design. Rules:
@@ -134,14 +158,16 @@ Proposed (not yet approved) ideas for color in the particles themselves:
   when they settle, so the chromatic effect lives in the motion itself.
 
 ### Layout
-- Strict 12-column grid with generous negative space. Asymmetry is good; chaos is not.
-- Large type that breaks the grid on purpose, small mono metadata that respects it.
-- Thin 1px lines, index numbers (01, 02…), coordinates and timestamps as decorative
-  data details.
+- The 3D world fills the screen; the HTML UI is a thin, small layer at the edges (12-column
+  grid, generous negative space): nav top-right, context prompt/list bottom-left, section
+  indicator, recruiter fast lane always reachable.
+- All content still exists as real semantic HTML (visually hidden or in the small UI).
+- Thin 1px lines, index numbers (01, 02…), coordinates as quiet details.
 
 ### Do NOT
-- Generic SaaS blue-to-purple gradients, flat gradient backgrounds, glassmorphism cards,
-  generic glowing blobs
+- Generic SaaS blue-to-purple gradients, flat gradient backgrounds, CSS glassmorphism
+  cards (our glass is real 3D refraction), generic glowing blobs, all-over color washes
+- Huge static HTML headlines over the scene
 - Emojis, stock icons, generic "skill bars" or percentage circles
 - Everything centered, everything fading up the same way
 - Bouncy/cartoon easing, effects that serve no idea
@@ -154,29 +180,37 @@ Proposed (not yet approved) ideas for color in the particles themselves:
 - Motion has **weight**. Default easing: `cubic-bezier(0.76, 0, 0.24, 1)` for transitions,
   `power3.out` / `expo.out` for reveals. Durations 0.8–1.4s for big moves, 0.3–0.5s for UI.
 - Text reveals: split by line or character, masked from below, staggered 0.03–0.06s.
-- Scroll is the timeline: tie the 3D scene to scroll progress (GSAP ScrollTrigger + Lenis).
+- Scroll is the timeline: it drives the **camera path** through the world (Lenis +
+  GSAP ScrollTrigger), with damped follow-through.
+- **Measured on the reference:** never fully still at idle (grain, slow drift); a scroll
+  tick peaks immediately then decays over ~0.7s (time constant ~0.35s), with a slower
+  secondary settle of 1.5–2s (objects/particles lag the camera); cursor response is heavily
+  damped (~0.8–1s lag before objects tilt).
 - Hover states on everything interactive: magnetic buttons, cursor morph, subtle
   distortion on images.
 - Page/section transitions are cinematic, never instant cuts.
 - Everything respects `prefers-reduced-motion` with a calm, static-but-beautiful version.
 
 ### Signature moments (the "wow" list)
-1. **Preloader:** a mono counter 000 → 100 while particles gather; at 100 they burst
-   and assemble into "RIADH SOUISSI". Max ~1.8s. The counter follows real asset loading
-   (no fake timer). Skipped on repeat visits. My name and role are readable as real HTML
-   from the first frame, so the preloader never blocks the content.
-2. **Hero:** my name made of particles that react to the cursor; a small mono line types
-   out my title.
-3. **Experience as pinned stations:** each job is pinned while the particle stream keeps
-   flowing through and forms a simple shape related to that work. The metrics are the
-   hero type (`>99%` crash-free, `0` rollbacks, `~30%` faster loads, `−40%` coupling).
-   No long camera fly-through.
-4. **The transformation:** one section where noisy streams visibly snap into a clean
-   mobile/web UI layout. This is the core metaphor (complexity → polished product), made
-   literal.
-5. **Contact:** everything goes still and calm. Huge "Let's talk" with a magnetic
-   email button. The signal has arrived.
-6. **Sound (optional, off by default):** subtle ambient hum + soft UI ticks, with a
+1. **Preloader:** a small mono counter 000 → 100 that follows real asset loading (no fake
+   timer); at 100 sparse particles condense and the glass emblem resolves out of the
+   dark. Max ~1.8s, skipped on repeat visits. Name and role are readable in the HTML UI
+   from the first frame.
+2. **Hero:** our own **glass emblem** alone in near-darkness, corner light bleeds,
+   iridescent rim highlights, sparse dust. The cursor slowly tilts it. Small mono UI only.
+3. **Statement:** the tagline *"Complex inside. Effortless on screen."* as large type in
+   the 3D scene, refracted and glitched by a passing glass element; a short mono
+   paragraph beside it.
+4. **Work:** the camera descends past a central glass sculpture (built from
+   interface-like shapes: rounded rects, layers) wrapped in particle clouds. Around it
+   float **glass cards per job** with the metrics as titles (`>99%` crash-free, `0`
+   rollbacks, `~30%` faster loads, `−40%` coupling…). Hover tilts a card; click flies it
+   in, it dissolves into particles, and details appear in small mono type on the left.
+5. **Depth (Data Engineering):** its own environment beneath a water surface (caustics
+   seen from below): "beneath the interface".
+6. **Contact:** calm; "Let's talk" with the email; the world loops back to the hero
+   emblem.
+7. **Sound (optional, off by default):** subtle ambient hum + soft UI ticks, with a
    visible toggle.
 
 ---
@@ -185,10 +219,11 @@ Proposed (not yet approved) ideas for color in the particles themselves:
 
 ### Site structure (approved)
 HUD/nav format: `01 / FORM`. Section names are simple words, no jargon.
-- `00 Signal` — Hero: name from particles, title, tagline
-- `01 Approach` — About: who I am, how I work
-- `02 Form` — Transformation: chaos snaps into a polished UI
-- `03 Work` — Experience: pinned stations with metrics
+These are now **places along the camera path** in one world:
+- `00 Signal` — Hero: the glass emblem; name, role, tagline in the small UI
+- `01 Approach` — Statement: refracted tagline + about text in mono
+- `02 Form` — Transformation: particle signal snaps into a clean glass interface layout
+- `03 Work` — Experience: glass sculpture + glass job cards with metrics
 - `04 System` — Skills graph
 - `05 Depth` — Data Engineering, my extra edge ("beneath the interface")
 - `06 Contact` — Let's talk
@@ -311,13 +346,17 @@ with a one-line reason before switching.
 6. Keep code clean: small components, shaders in their own files, no dead code.
 
 ### Build order
-1. Project setup, fonts, colors, design tokens, base layout & typography
-2. 3D particle field background + cursor interaction
-3. Preloader → hero assembly ("RIADH SOUISSI" from particles)
-4. Smooth scroll + scroll-driven camera
-5. About + transformation section
-6. Experience stations (pinned, metrics-led)
-7. Skills graph + Data Engineering ("extra edge") section
-8. Contact + footer
-9. Mobile, reduced motion, WebGL fallback
-10. Performance pass, SEO, 404, final polish
+1. ✅ Project setup, fonts, colors, design tokens, base layout & typography
+2. ✅ GPU particle engine + cursor trail (now reused as atmosphere & transitions)
+3. **Hero rebuild:** glass emblem in near-darkness, environment light, corner light
+   bleeds, small mono UI, particles retuned to sparse dust, violet palette
+4. One world + scroll-driven camera path (Lenis + ScrollTrigger), places along the path,
+   loop back to the hero
+5. Preloader (real loading counter) → emblem reveal
+6. Statement: refracted 3D tagline + about (Approach) and the transformation (Form)
+7. Work: glass sculpture, glass job cards, hover tilt, fly-in + particle dissolve detail,
+   "What are you looking for?" filter
+8. Skills (System) + Data Engineering environment (Depth)
+9. Contact + loop back + footer
+10. Mobile, reduced motion, WebGL fallback
+11. Performance pass, SEO, 404, final polish
