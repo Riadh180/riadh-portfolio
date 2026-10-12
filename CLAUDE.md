@@ -15,6 +15,17 @@ or "AI-generated", it is not done.
 
 Be opinionated. Propose better ideas than I ask for, but explain them briefly first.
 
+### Reference benchmark: https://activetheory.net/
+This is more than inspiration: it is the **QUALITY BAR**. Our site must feel like it
+belongs in the same league: the same level of atmosphere, polish, cinematic lighting,
+depth, glow, motion quality, transitions and technical skill. Study it deeply: open it in
+Chrome, take screenshots at different moments, and analyze HOW they achieve the feel
+(lighting, fog, post-processing, color grading, motion timing, easing, transitions, how
+the minimal UI sits over the 3D). Then apply those techniques at the same level in our site.
+
+**What stays ours:** the concept, layouts, 3D scenes and content. It must be recognizably
+the same caliber, but never recognizably a copy.
+
 ---
 
 ## Who this site is for
