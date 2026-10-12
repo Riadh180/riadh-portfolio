@@ -10,16 +10,11 @@ import type { Color } from 'three'
 import { type SceneColor, sceneColors, sceneConfig } from '@/styles/scene'
 import { palette } from '@/styles/tokens'
 import { sampleRoundedRect } from '../particles/targets'
+import { lookRanges } from '../hero/glassLook'
 import { dissolveParticles, formParticles } from '../particles/transitions'
+import { sliders } from './sliders'
 
 type Palette = Record<SceneColor, string>
-type Slider = {
-  value: number
-  min: number
-  max: number
-  step: number
-  onChange: (v: number) => void
-}
 type ColorInput = { value: string; onChange: (v: string) => void }
 
 const current: Palette = {
@@ -46,20 +41,6 @@ const hex = (color: Color) => `#${color.getHexString().toUpperCase()}`
 function applyColor(key: SceneColor, value: string) {
   sceneColors[key].set(value)
   if (key === 'bg') document.documentElement.style.setProperty('--bg', value)
-}
-
-/** Binds a numeric config group to leva sliders that write straight back into it. */
-function sliders<T extends Record<string, number>>(
-  group: T,
-  ranges: Record<keyof T, [min: number, max: number, step: number]>,
-): Record<string, Slider> {
-  return Object.fromEntries(
-    Object.entries(group).map(([key, value]) => {
-      const [min, max, step] = ranges[key as keyof T]
-      const onChange = (next: number) => Object.assign(group, { [key]: next })
-      return [key, { value, min, max, step, onChange }]
-    }),
-  )
 }
 
 export default function DevTools() {
@@ -105,20 +86,7 @@ export default function DevTools() {
       dwell: [0, 0.99, 0.01],
     }),
   )
-  useControls(
-    'Glass',
-    sliders(sceneConfig.glass, {
-      transmission: [0, 1, 0.01],
-      thickness: [0, 3, 0.01],
-      roughness: [0, 1, 0.005],
-      ior: [1, 2.3, 0.01],
-      dispersion: [0, 5, 0.05],
-      iridescence: [0, 1, 0.01],
-      iridescenceIOR: [1, 2.3, 0.01],
-      iridescenceMin: [0, 1000, 10],
-      iridescenceMax: [0, 1000, 10],
-    }),
-  )
+  useControls('Glass', sliders(sceneConfig.glass, lookRanges))
   useControls(
     'Light',
     sliders(sceneConfig.light, {

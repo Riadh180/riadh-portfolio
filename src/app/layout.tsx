@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from 'next'
 import type { CSSProperties } from 'react'
-import { SceneLoader } from '@/components/canvas/SceneLoader'
-import { TopBar } from '@/components/layout/TopBar'
 import { profile } from '@/content/site'
 import { departure, martian } from '@/styles/fonts'
 import { cssVariables, palette } from '@/styles/tokens'
@@ -31,8 +29,6 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         >
           Skip to content
         </a>
-        <SceneLoader />
-        <TopBar />
         {children}
       </body>
     </html>

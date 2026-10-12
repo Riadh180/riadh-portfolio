@@ -1,14 +1,16 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import { type Group, type Mesh, MeshPhysicalMaterial } from 'three'
-import { sceneColors, sceneConfig } from '@/styles/scene'
+import type { Group, Mesh } from 'three'
+import { sceneConfig } from '@/styles/scene'
 import type { Pointer } from '../usePointer'
 import type { SceneClock } from '../useSceneClock'
-import { TorusKnotCurve, createBandGeometry, roundedSquareCurve } from './bandGeometry'
-import { createFilmTexture, createSmudgeTexture } from './glassTextures'
+import { createBandGeometry, roundedSquareCurve } from './bandGeometry'
+import type { GlassLook } from './glassLook'
+import { applyGlassLook, createGlassMaterial, disposeGlassMaterial } from './glassMaterial'
 import { idleSpin } from './motion'
 
 type Props = {
+  look: GlassLook
   pointer: Pointer
   clock: SceneClock
   reducedMotion: boolean
@@ -16,19 +18,6 @@ type Props = {
 
 /** Resting angle: slightly off face-on so the bands catch the light while it dwells. */
 const REST = { x: 0.14, y: -0.25 }
-
-/** Copies the live glass settings onto the shared material. */
-function applyGlass(material: MeshPhysicalMaterial) {
-  const glass = sceneConfig.glass
-  material.transmission = glass.transmission
-  material.roughness = glass.roughness
-  material.ior = glass.ior
-  material.thickness = glass.thickness
-  material.dispersion = glass.dispersion
-  material.iridescence = glass.iridescence
-  material.iridescenceIOR = glass.iridescenceIOR
-  material.iridescenceThicknessRange = [glass.iridescenceMin, glass.iridescenceMax]
-}
 
 /** The calm outside: a flat, bevelled band in the app-icon outline. */
 function createFrame() {
@@ -41,58 +30,46 @@ function createFrame() {
   })
 }
 
-/** The complex inside: a trefoil drawn as a flat band, about half the frame's inner width. */
-function createKnot() {
-  return createBandGeometry(new TorusKnotCurve(0.25, 2, 3), {
-    width: 0.08,
-    depth: 0.05,
-    chamfer: 0.025,
-    segments: 800,
+/**
+ * The inside: a smaller rounded square of the same glass, turned 45° and set back in depth,
+ * about half the frame's inner width. Seen through and past the frame, a second layer.
+ */
+function createInner() {
+  return createBandGeometry(roundedSquareCurve(0.64, 0.2), {
+    width: 0.12,
+    depth: 0.07,
+    chamfer: 0.035,
+    innerChamfer: 0.014,
+    segments: 400,
   })
 }
 
 /**
- * "The Core": a hollow glass frame in the app-icon outline (effortless outside) around an
- * open center holding a knotted glass core (complex inside). Both are flat bands of cut
- * glass: a clear, lightly scratched face between crisp bevelled edges. It turns slowly on its own; the cursor adds a small,
- * late tilt that the core leans against.
+ * "The Core": a hollow glass frame in the app-icon outline (effortless outside) around a
+ * second, turned layer inside it (complex inside). Both are flat bands of cut glass: a
+ * clear, lightly marked face between crisp bevelled edges. It turns slowly on its own; the
+ * cursor adds a small, late tilt that the inner layer leans against.
  */
-export function Emblem({ pointer, clock, reducedMotion }: Props) {
+export function Emblem({ look, pointer, clock, reducedMotion }: Props) {
   const group = useRef<Group>(null)
-  const core = useRef<Mesh>(null)
-  const frameMesh = useRef<Mesh>(null)
+  const inner = useRef<Mesh>(null)
   const tilt = useRef({ x: 0, y: 0 })
   const frame = useMemo(() => createFrame(), [])
-  const knot = useMemo(() => createKnot(), [])
-  const glass = useMemo(() => {
-    const film = createFilmTexture()
-    const smudge = createSmudgeTexture()
-    const material = new MeshPhysicalMaterial({
-      color: sceneColors.glass,
-      metalness: 0,
-      specularIntensity: 1,
-      envMapIntensity: 1.2,
-      iridescenceMap: film,
-      iridescenceThicknessMap: film,
-      roughnessMap: smudge,
-      specularIntensityMap: smudge,
-    })
-    applyGlass(material)
-    return material
-  }, [])
+  const innerShape = useMemo(() => createInner(), [])
+  // Created once; the look is applied every frame below so it can be tuned live.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const glass = useMemo(() => createGlassMaterial(look), [])
   useEffect(
     () => () => {
       frame.dispose()
-      knot.dispose()
-      glass.iridescenceMap?.dispose()
-      glass.roughnessMap?.dispose()
-      glass.dispose()
+      innerShape.dispose()
+      disposeGlassMaterial(glass)
     },
-    [frame, knot, glass],
+    [frame, innerShape, glass],
   )
 
-  useFrame(({ size }, delta) => {
-    if (!group.current || !core.current) return
+  useFrame(({ size, scene }, delta) => {
+    if (!group.current || !inner.current) return
     const { emblem } = sceneConfig
     const t = clock.time
     // Heavily damped (~0.8s) so the object feels heavy, as in the reference.
@@ -112,23 +89,34 @@ export function Emblem({ pointer, clock, reducedMotion }: Props) {
     // Portrait screens see a narrower slice of the world: keep the emblem's share of width.
     g.scale.setScalar(emblem.scale * Math.min(1, Math.max(0.55, (size.width / size.height) * 0.9)))
 
-    // The knot spins in plane and leans against the cursor tilt; its own wobble stays small
-    // so its bevels keep catching the horizon light.
-    core.current.rotation.set(
-      Math.sin(t * 0.2) * 0.15 - tilt.current.x * 1.6,
-      Math.sin(t * 0.15) * 0.2 - tilt.current.y * 1.6,
-      t * 0.15,
+    // The light rig turns part of the way with the emblem near face-on, so the bevels keep
+    // mirroring the edge light, and eases back to fixed towards edge-on, where following
+    // would put the camera in the edge light's plane and flare the faces. Measured from the
+    // nearest face-on angle (the rig looks the same turned half round), so nothing builds up
+    // over the endless spin and nothing jumps as it passes edge-on.
+    const turn = g.rotation.y
+    const facing = Math.round(turn / Math.PI) * Math.PI
+    scene.environmentRotation.set(
+      g.rotation.x * look.follow,
+      facing + (look.follow * Math.sin(2 * (turn - facing))) / 2,
+      0,
     )
 
-    // Frame and knot share one material: live-tune it through the frame.
-    const material = frameMesh.current?.material as MeshPhysicalMaterial | undefined
-    if (material) applyGlass(material)
+    // The inner layer sways a little and leans against the cursor tilt; its wobble stays
+    // small so its bevels keep catching the edge light.
+    inner.current.rotation.set(
+      Math.sin(t * 0.2) * 0.1 - tilt.current.x * 1.2,
+      Math.sin(t * 0.15) * 0.12 - tilt.current.y * 1.2,
+      Math.PI / 4 + Math.sin(t * 0.1) * 0.08,
+    )
+
+    applyGlassLook(glass, look, Math.abs(Math.cos(turn - facing)))
   })
 
   return (
     <group ref={group}>
-      <mesh ref={frameMesh} geometry={frame} material={glass} />
-      <mesh ref={core} geometry={knot} material={glass} />
+      <mesh geometry={frame} material={glass} />
+      <mesh ref={inner} geometry={innerShape} material={glass} position-z={-0.16} />
     </group>
   )
 }

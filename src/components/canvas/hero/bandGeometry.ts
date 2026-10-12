@@ -39,7 +39,8 @@ type Band = {
  *
  * UVs: u runs along the path (about one unit per world unit of length, rounded to an even
  * number so tiling textures close seamlessly), v runs round the profile, one eighth per
- * edge (front face first), so textures can tell the face from the chamfers.
+ * edge (front face first), so textures can tell the face from the chamfers. uv1 maps the
+ * shape's own plane (see below).
  */
 export function createBandGeometry(curve: Curve<Vector3>, band: Band) {
   const a = band.width / 2
@@ -111,8 +112,23 @@ export function createBandGeometry(curve: Curve<Vector3>, band: Band) {
     }
   }
 
+  // uv1: the shape's own plane, squared to its extent (0..1, centre 0.5), so a texture
+  // can place colour across the whole emblem (a hot spot at the top, mottling over it).
+  let extent = 0
+  for (let i = 0; i < positions.length; i += 3) {
+    extent = Math.max(extent, Math.abs(positions[i] ?? 0), Math.abs(positions[i + 1] ?? 0))
+  }
+  const planar: number[] = []
+  for (let i = 0; i < positions.length; i += 3) {
+    planar.push(
+      ((positions[i] ?? 0) / extent) * 0.5 + 0.5,
+      ((positions[i + 1] ?? 0) / extent) * 0.5 + 0.5,
+    )
+  }
+
   const geometry = new BufferGeometry()
   geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
+  geometry.setAttribute('uv1', new Float32BufferAttribute(planar, 2))
   geometry.setAttribute('normal', new Float32BufferAttribute(normals, 3))
   geometry.setAttribute('uv', new Float32BufferAttribute(uvs, 2))
   geometry.setIndex(indices)
@@ -138,25 +154,4 @@ export function roundedSquareCurve(size = 2, radius = 0.62) {
     .slice(0, -1)
     .map((p) => new Vector3(p.x, p.y, 0))
   return new CatmullRomCurve3(points, true, 'centripetal')
-}
-
-/** A (p, q) torus knot path, the same formula as three's TorusKnotGeometry. */
-export class TorusKnotCurve extends Curve<Vector3> {
-  private radius: number
-  private p: number
-  private q: number
-
-  constructor(radius: number, p: number, q: number) {
-    super()
-    this.radius = radius
-    this.p = p
-    this.q = q
-  }
-
-  getPoint(t: number, target = new Vector3()) {
-    const u = t * this.p * Math.PI * 2
-    const quOverP = (this.q / this.p) * u
-    const r = this.radius * (2 + Math.cos(quOverP)) * 0.5
-    return target.set(r * Math.cos(u), r * Math.sin(u), this.radius * Math.sin(quOverP) * 0.5)
-  }
 }

@@ -1,4 +1,5 @@
 import { Color } from 'three'
+import type { GlassLook } from '@/components/canvas/hero/glassLook'
 import { palette } from './tokens'
 
 /**
@@ -47,20 +48,24 @@ export const sceneConfig = {
     /** 0..1: how long it lingers face-on before passing edge-on. */
     dwell: 0.85,
   },
+  /** The hero's glass look (variant B "bright cut" from /lab): light rig and material. */
   glass: {
+    key: 170,
+    edge: 11,
+    edgeEven: 0.9,
+    edgeSpread: 16,
+    follow: 0.9,
+    rim: 0.5,
+    face: 2,
+    envIntensity: 1.6,
     transmission: 1,
-    thickness: 0.3,
-    /** Multiplied by the smudge map: clear glass (~0.06) with smudges and scratches up to ~0.36. */
-    roughness: 0.4,
-    ior: 1.5,
-    /** Kept low: the colour comes from thin-film iridescence, not dispersion. */
-    dispersion: 0.3,
-    /** Thin-film rainbow, masked to a few spots along the bevelled edges. */
+    roughness: 0.1,
+    thickness: 0.4,
     iridescence: 1,
-    iridescenceIOR: 1.3,
-    iridescenceMin: 100,
-    iridescenceMax: 400,
-  },
+    spots: 0.7,
+    faceFilm: 0.9,
+    mottling: 0.08,
+  } satisfies GlassLook,
   light: {
     /** Strength of the corner light bleeds. */
     corners: 0.12,
