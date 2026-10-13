@@ -1,7 +1,8 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import type { Group, Mesh } from 'three'
+import { type Group, type Mesh, Vector3 } from 'three'
 import { sceneConfig } from '@/styles/scene'
+import { type JourneyState, PLACES } from '../journey/path'
 import type { Pointer } from '../usePointer'
 import type { SceneClock } from '../useSceneClock'
 import { createBandGeometry, roundedSquareCurve } from './bandGeometry'
@@ -14,6 +15,17 @@ type Props = {
   pointer: Pointer
   clock: SceneClock
   reducedMotion: boolean
+  /** Where the visitor is on the camera path; omitted, the emblem stays at the hero. */
+  journey?: JourneyState
+}
+
+/**
+ * Where The Core floats at each place. At the statement it has come closer and stands in
+ * front of the tagline's right end, so its glass bends the type behind it.
+ */
+const POSES = {
+  hero: new Vector3(0, 0.15, 0),
+  statement: new Vector3(0.6, PLACES.statement - 0.65, 3),
 }
 
 /** Resting angle: slightly off face-on so the bands catch the light while it dwells. */
@@ -50,7 +62,7 @@ function createInner() {
  * clear, lightly marked face between crisp bevelled edges. It turns slowly on its own; the
  * cursor adds a small, late tilt that the inner layer leans against.
  */
-export function Emblem({ look, pointer, clock, reducedMotion }: Props) {
+export function Emblem({ look, pointer, clock, reducedMotion, journey }: Props) {
   const group = useRef<Group>(null)
   const inner = useRef<Mesh>(null)
   const tilt = useRef({ x: 0, y: 0 })
@@ -85,7 +97,12 @@ export function Emblem({ look, pointer, clock, reducedMotion }: Props) {
     const g = group.current
     g.rotation.x = REST.x + tilt.current.x + Math.sin(t * 0.3) * 0.05
     g.rotation.y = REST.y + tilt.current.y + spin
-    g.position.y = 0.15 + Math.sin(t * 0.5) * emblem.float
+    // Travels with the objects' slower settle, so it trails the camera down the path.
+    const travel = journey ? journey.objects * journey.objects * (3 - 2 * journey.objects) : 0
+    g.position.lerpVectors(POSES.hero, POSES.statement, travel)
+    // Narrow screens: stay over the (narrower) tagline.
+    g.position.x *= Math.min(1, size.width / size.height / 1.6)
+    g.position.y += Math.sin(t * 0.5) * emblem.float
     // Portrait screens see a narrower slice of the world: keep the emblem's share of width.
     g.scale.setScalar(emblem.scale * Math.min(1, Math.max(0.55, (size.width / size.height) * 0.9)))
 
@@ -96,10 +113,13 @@ export function Emblem({ look, pointer, clock, reducedMotion }: Props) {
     // over the endless spin and nothing jumps as it passes edge-on.
     const turn = g.rotation.y
     const facing = Math.round(turn / Math.PI) * Math.PI
+    // Order 'YXZ': three applies the negated angles in this order, which makes it the exact
+    // inverse of the emblem's own XYZ rotation (with 'XYZ' the tilt flips sign once turned).
     scene.environmentRotation.set(
       g.rotation.x * look.follow,
       facing + (look.follow * Math.sin(2 * (turn - facing))) / 2,
       0,
+      'YXZ',
     )
 
     // The inner layer sways a little and leans against the cursor tilt; its wobble stays
@@ -110,7 +130,11 @@ export function Emblem({ look, pointer, clock, reducedMotion }: Props) {
       Math.PI / 4 + Math.sin(t * 0.1) * 0.08,
     )
 
-    applyGlassLook(glass, look, Math.abs(Math.cos(turn - facing)))
+    // Deeper refraction at the statement, so the glass visibly bends the tagline behind it.
+    applyGlassLook(glass, look, {
+      facing: Math.abs(Math.cos(turn - facing)),
+      depth: 1 + 2 * travel,
+    })
   })
 
   return (

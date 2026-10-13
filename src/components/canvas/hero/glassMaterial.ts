@@ -37,11 +37,16 @@ export function createGlassMaterial(look: GlassLook) {
  * Copies a look onto the material; rebuilds the surface maps only when their numbers change.
  * `facing` (1 face-on .. 0 edge-on) dims the reflections as the emblem passes edge-on, where
  * the flat faces would otherwise mirror the edge light at full strength and flare.
+ * `depth` scales the refraction depth (deeper where the glass passes in front of type).
  */
-export function applyGlassLook(material: MeshPhysicalMaterial, look: GlassLook, facing = 1) {
+export function applyGlassLook(
+  material: MeshPhysicalMaterial,
+  look: GlassLook,
+  { facing = 1, depth = 1 } = {},
+) {
   material.transmission = look.transmission
-  material.thickness = look.thickness
-  material.envMapIntensity = look.envIntensity * (0.25 + 0.75 * facing)
+  material.thickness = look.thickness * depth
+  material.envMapIntensity = look.envIntensity * (0.05 + 0.95 * facing)
   material.iridescence = look.iridescence
   material.emissiveIntensity = look.rim
 

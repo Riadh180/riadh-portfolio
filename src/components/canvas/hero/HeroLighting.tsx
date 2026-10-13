@@ -48,14 +48,22 @@ function paintHorizon({ geometry, swell, fade }: ReturnType<typeof createHorizon
   color.needsUpdate = true
 }
 
+/**
+ * The key: small and very bright, up and to the right. It sits off the vertical on
+ * purpose: a straight top edge would mirror it along its whole length (a streak), but at
+ * this angle only one point on the rounded corner faces it, so it reads as one sparkle.
+ */
+const KEY_POSITION: [number, number, number] = [3.3, 5.4, 1.4]
+
 /** How long the environment keeps re-rendering after a light change, in seconds. */
 const SETTLE = 0.3
 
 /**
- * A dark studio, set by the look: one soft key above the emblem (the single hot spot), the
- * band of edge light round it, and equal soft fills in front and behind for the faces. The
- * rig looks the same turned half round the vertical axis, so the emblem's light can follow
- * its turn without a jump as it passes edge-on (see Emblem).
+ * A dark studio, set by the look: one small key up to the right (the single sparkle), the
+ * band of edge light round it, and equal soft fills in front and behind for the faces.
+ * Apart from the key, the rig looks the same turned half round the vertical axis, so the
+ * emblem's light can follow its turn without a jump as it passes edge-on (see Emblem); the
+ * key swaps sides right at edge-on, where the reflections are dimmed and the face hidden.
  *
  * The light drifts to one warm moment per cycle. The cube map only re-renders while that
  * moment is live (~1.5s of every ~9s) or just after the look's light changes; otherwise it
@@ -107,8 +115,8 @@ export function HeroLighting({ look, clock }: { look: GlassLook; clock: SceneClo
           meshes.current[0] = mesh
         }}
         form="rect"
-        scale={[5, 1.5, 1]}
-        position={[0, 6, 0]}
+        scale={[0.9, 0.9, 1]}
+        position={KEY_POSITION}
       />
       <Lightformer
         ref={(mesh) => {

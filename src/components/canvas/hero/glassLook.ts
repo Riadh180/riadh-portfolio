@@ -38,7 +38,7 @@ export type GlassLook = {
 
 /** Slider ranges [min, max, step] for the dev panels. */
 export const lookRanges: Record<keyof GlassLook, [number, number, number]> = {
-  key: [0, 200, 1],
+  key: [0, 1500, 5],
   edge: [0, 30, 0.1],
   edgeEven: [0, 1, 0.01],
   edgeSpread: [5, 75, 1],

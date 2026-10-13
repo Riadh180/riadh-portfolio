@@ -31,7 +31,7 @@ export const variants: Variant[] = [
     name: 'bright cut',
     note: 'crisp brilliant edges all round, teal / violet body, pink-white hot spot',
     look: {
-      key: 170,
+      key: 900,
       edge: 11,
       edgeEven: 0.9,
       edgeSpread: 16,

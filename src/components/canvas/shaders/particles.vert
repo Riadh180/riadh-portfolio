@@ -61,7 +61,8 @@ void main() {
   float fog = smoothstep(28.0, 8.0, depth);
   vec2 screen = gl_Position.xy / gl_Position.w;
   float clearing = mix(0.12, 1.0, smoothstep(0.25, 0.75, length(screen * vec2(1.0, 1.3))));
-  float edge = smoothstep(uBounds.x, uBounds.x - 2.5, abs(worldPosition.x - uCenter.x));
+  float edge = smoothstep(uBounds.x, uBounds.x - 2.5, abs(worldPosition.x - uCenter.x))
+    * smoothstep(uBounds.y, uBounds.y - 1.5, abs(worldPosition.y - uCenter.y));
 
   vColor = color * uBrightness * energy * fog * edge * clearing;
 }

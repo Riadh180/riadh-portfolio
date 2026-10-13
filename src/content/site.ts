@@ -11,6 +11,9 @@ export const profile = {
   cvHref: '/cv',
 } as const
 
+/** The tagline as it is set in the 3D statement scene, one entry per line. */
+export const statementLines = ['Complex inside.', 'Effortless', 'on screen.'] as const
+
 export const about = {
   body: '7.5+ years building production web and mobile apps across fintech, enterprise SaaS and logistics with React, React Native and TypeScript — and I understand the data behind the interface.',
   languages: ['English', 'German', 'French', 'Arabic'],

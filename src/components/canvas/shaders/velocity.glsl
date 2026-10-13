@@ -29,12 +29,13 @@ void main() {
   vec4 target = texture2D(uTargets, uv);
   float bound = target.w * uForm;
 
-  // Ambient dust: slow curl-noise drift, softly contained in y and z.
+  // Ambient dust: slow curl-noise drift in world space, softly contained in z (x and y
+  // wrap round the field, which follows the camera down the path).
   vec3 local = position - uCenter;
-  vec3 flow = curlNoise(local * uFlowScale + vec3(0.0, uTime * 0.02, uTime * 0.015)) * uFlowSpeed;
+  vec3 flow = curlNoise(position * uFlowScale + vec3(0.0, uTime * 0.02, uTime * 0.015)) * uFlowSpeed;
   flow.x += uDrift;
   vec3 overflow = max(abs(local) - uBounds, 0.0) * sign(local);
-  flow.yz -= overflow.yz * 0.8;
+  flow.z -= overflow.z * 0.8;
   velocity = mix(velocity, flow, (1.0 - exp(-uDelta * 1.2)) * (1.0 - bound));
 
   // Assemble: seek the target and arrive softly.

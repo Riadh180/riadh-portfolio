@@ -1,16 +1,14 @@
+import { Approach } from '@/components/sections/Approach'
 import { Hero } from '@/components/sections/Hero'
 import { SectionShell } from '@/components/sections/SectionShell'
-import { about, profile } from '@/content/site'
+import { profile } from '@/content/site'
 
 export default function Home() {
   return (
     <main id="main" className="relative">
       <Hero />
 
-      <SectionShell id="approach" title={profile.tagline}>
-        <p className="copy text-muted">{about.body}</p>
-        <p className="ui text-muted">Languages: {about.languages.join(' · ')}</p>
-      </SectionShell>
+      <Approach />
 
       <SectionShell id="form" title="Form" />
       <SectionShell id="work" title="Work" />

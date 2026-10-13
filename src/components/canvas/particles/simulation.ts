@@ -22,7 +22,8 @@ import type { Pointer } from '../usePointer'
 /** The volume the field lives in. x wraps; y and z are softly contained. */
 export const FIELD = {
   center: new Vector3(0, 0, -1.5),
-  bounds: new Vector3(11, 5.2, 6.5),
+  /** Half-extents; x and y wrap. The y centre follows the camera down the path. */
+  bounds: new Vector3(11, 6, 6.5),
 }
 
 const TRAIL_SIZE = 128

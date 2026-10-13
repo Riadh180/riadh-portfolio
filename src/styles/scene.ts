@@ -48,9 +48,12 @@ export const sceneConfig = {
     /** 0..1: how long it lingers face-on before passing edge-on. */
     dwell: 0.85,
   },
-  /** The hero's glass look (variant B "bright cut" from /lab): light rig and material. */
+  /**
+   * The hero's glass look, locked: variant B "bright cut" from /lab with a teal / violet
+   * body and a small pink-white sparkle. Light rig and material (see GlassLook).
+   */
   glass: {
-    key: 170,
+    key: 900,
     edge: 11,
     edgeEven: 0.9,
     edgeSpread: 16,

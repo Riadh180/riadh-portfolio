@@ -1,10 +1,14 @@
-import { sections } from '@/content/site'
+'use client'
 
-/** Current place in the world. Static for now; wired to the camera path in build step 4. */
+import { sections } from '@/content/site'
+import { useJourney } from '@/stores/journey'
+
+/** Current place in the world, following the camera path. */
 export function SectionIndicator() {
-  const [current] = sections
+  const statement = useJourney((state) => state.statement)
+  const current = sections[statement ? 1 : 0]
   return (
-    <p className="ui text-muted">
+    <p className="ui text-muted" aria-live="polite">
       <span className="text-text">{current.index}</span> / {current.label}
     </p>
   )

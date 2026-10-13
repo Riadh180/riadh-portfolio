@@ -1,15 +1,27 @@
 import { useFrame } from '@react-three/fiber'
+import { useRef } from 'react'
+import type { JourneyState } from './journey/path'
+import { FIELD } from './particles/simulation'
 import type { Pointer } from './usePointer'
 
-/** Slow, heavy parallax toward the pointer. Disabled for reduced motion. */
-export function CameraRig({ pointer, enabled }: { pointer: Pointer; enabled: boolean }) {
+type Props = { pointer: Pointer; journey: JourneyState; enabled: boolean }
+
+/**
+ * The camera rides the scroll path down through the world; a slow, heavy parallax toward
+ * the pointer rides on top (disabled for reduced motion). The dust field's centre follows,
+ * so the dust wraps round the camera instead of running out.
+ */
+export function CameraRig({ pointer, journey, enabled }: Props) {
+  const parallax = useRef({ x: 0, y: 0 })
+
   useFrame(({ camera }, delta) => {
     const ease = 1 - Math.exp(-Math.min(delta, 1 / 30) * 1.4)
-    const targetX = enabled ? (pointer.uv.x - 0.5) * 0.9 : 0
-    const targetY = enabled ? (pointer.uv.y - 0.5) * 0.5 : 0
-    camera.position.x += (targetX - camera.position.x) * ease
-    camera.position.y += (targetY - camera.position.y) * ease
-    camera.lookAt(0, 0, 0)
+    const p = parallax.current
+    p.x += ((enabled ? (pointer.uv.x - 0.5) * 0.9 : 0) - p.x) * ease
+    p.y += ((enabled ? (pointer.uv.y - 0.5) * 0.5 : 0) - p.y) * ease
+    camera.position.set(p.x, journey.y + p.y, camera.position.z)
+    camera.lookAt(0, journey.y, 0)
+    FIELD.center.y = journey.y
   }, -3)
 
   return null

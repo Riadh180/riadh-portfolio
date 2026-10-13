@@ -11,9 +11,10 @@ void main() {
 
   vec3 position = particle.xyz + velocity * uDelta;
 
-  // Streams wrap horizontally so the field never empties out.
-  float x = position.x - uCenter.x;
-  position.x = mod(x + uBounds.x, 2.0 * uBounds.x) - uBounds.x + uCenter.x;
+  // Streams wrap round the field so it never empties out: horizontally, and vertically as
+  // the field's centre follows the camera down the path (the dust itself stays in place).
+  vec2 xy = position.xy - uCenter.xy;
+  position.xy = mod(xy + uBounds.xy, 2.0 * uBounds.xy) - uBounds.xy + uCenter.xy;
 
   gl_FragColor = vec4(position, particle.w);
 }
