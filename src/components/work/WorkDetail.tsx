@@ -49,14 +49,14 @@ export function WorkDetail() {
       aria-labelledby="work-detail-title"
       tabIndex={-1}
       key={job.slug}
-      className="detail-in flex w-full max-w-[34ch] flex-col gap-4 outline-none"
+      className="detail-in flex w-full max-w-[46ch] flex-col gap-4 outline-none"
     >
       <JobDetail job={job} headingId="work-detail-title" />
-      <nav aria-label="More work" className="flex gap-4 ui">
+      <nav aria-label="More work" className="flex gap-4 ui text-xs">
         {previous && (
           <button
             type="button"
-            className="text-muted hover:text-text"
+            className="text-text/70 hover:text-text"
             onClick={() => open(previous.slug)}
           >
             ← {previous.company}
@@ -65,14 +65,18 @@ export function WorkDetail() {
         {next && (
           <button
             type="button"
-            className="text-muted hover:text-text"
+            className="text-text/70 hover:text-text"
             onClick={() => open(next.slug)}
           >
             {next.company} →
           </button>
         )}
       </nav>
-      <button type="button" onClick={close} className="self-start ui text-violet hover:text-text">
+      <button
+        type="button"
+        onClick={close}
+        className="self-start ui text-xs text-violet hover:text-text"
+      >
         × Close <span className="text-muted">(Esc)</span>
       </button>
     </div>

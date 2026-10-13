@@ -154,7 +154,7 @@ function createScreenMaterial(face: CardFace, seed: number) {
 }
 
 /** Particles a card breaks into: random spots over its face, shared by all cards. */
-const DUST_COUNT = 6000
+const DUST_COUNT = 14000
 
 function createDustGeometry() {
   const spots = new Float32Array(DUST_COUNT * 2)
@@ -350,12 +350,16 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
     if (flown > 0) {
       camera.getWorldDirection(s.forward)
       s.right.crossVectors(s.forward, s.up).normalize()
-      const fov = ((camera as PerspectiveCamera).fov * Math.PI) / 180
-      const distance = CARD.height / 0.5 / (2 * Math.tan(fov / 2))
+      // Big and sharp: ~57% of the screen width, centred right of the middle, leaving the
+      // left for the details (MOTION.md / at_08).
+      const perspective = camera as PerspectiveCamera
+      const tan = Math.tan((perspective.fov * Math.PI) / 360)
+      const distance = CARD.width / (0.57 * 2 * tan * perspective.aspect)
+      const halfWidth = distance * tan * perspective.aspect
       s.open
         .copy(camera.position)
         .addScaledVector(s.forward, distance)
-        .addScaledVector(s.right, CARD.width * 0.05)
+        .addScaledVector(s.right, halfWidth * 0.2)
       g.position.lerp(s.open, flown)
     }
 
@@ -374,6 +378,8 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
       Math.sin(t * 0.23 + index * 2.1) * TILT.drift + s.pointer.x * TILT.cursor - 0.08,
       Math.sin(t * 0.17 + index * 0.7) * 0.015,
     )
+    s.euler.x *= 1 - flown * 0.6
+    s.euler.y *= 1 - flown * 0.6
     g.quaternion.multiply(s.tilt.setFromEuler(s.euler))
     g.scale.setScalar((layout === 'column' ? COLUMN_SCALE : 1) * (1 + s.focus * 0.06 * (1 - flown)))
 
@@ -384,7 +390,8 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
     u.uBlur!.value = Math.max(side * (1 - s.focus), s.others * 0.8)
     u.uBrightness!.value = (0.8 - side * 0.2 + 0.25 * s.focus) * (1 - s.others * 0.65)
     u.uDissolve!.value = Math.min(1, s.dissolve)
-    glass.opacity = 1 - Math.min(1, s.dissolve * 1.4)
+    // The thick glass block breaks away with the frost.
+    glass.opacity = 1 - Math.min(1, s.dissolve * 1.2)
     glass.visible = glass.opacity > 0.01
     dustShader.uniforms.uDissolve!.value = s.dissolve
     dustShader.uniforms.uPointScale!.value = size.height * viewport.dpr * 0.012

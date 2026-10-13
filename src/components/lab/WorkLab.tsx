@@ -238,7 +238,7 @@ export default function WorkLab() {
       ) : (
         <>
           {canvas}
-          <div className="absolute bottom-16 left-(--margin) w-80">
+          <div className="absolute bottom-16 left-(--margin) w-[min(30rem,34vw)]">
             {opened ? <WorkDetail /> : <WorkList />}
           </div>
         </>
