@@ -16,14 +16,32 @@ import { PLACE_MAX_DPR } from '@/components/canvas/quality'
 import { useSceneClock } from '@/components/canvas/useSceneClock'
 import { Pebbles } from '@/components/canvas/work/Pebbles'
 import { Spine } from '@/components/canvas/work/Spine'
+import { COLUMN_SPACING, WorkCards } from '@/components/canvas/work/WorkCards'
+import { WorkList } from '@/components/work/WorkList'
+import { WorkSwipe } from '@/components/work/WorkSwipe'
+import { useWork } from '@/stores/work'
 import { sceneColors, sceneConfig } from '@/styles/scene'
 
-/** Where the lab camera sits: orbit angle round the spine, height, distance. */
-// Close: the column overfills the screen height, as in the reference.
-const view = { angle: 0.35, height: 0, distance: 5.2 }
+type View = 'desktop' | 'phone'
 
-function LabCamera() {
+/**
+ * Where the lab camera sits on desktop: orbit angle round the spine, height, distance.
+ * Close: the column overfills the screen height, as in the reference; far enough that
+ * the cards orbiting it fit in view.
+ */
+const view = { angle: 0.35, height: 0, distance: 7.5 }
+
+function LabCamera({ mode }: { mode: View }) {
   useFrame(({ camera }) => {
+    if (mode === 'phone') {
+      // Rides down the column of cards with the swipe, the spine just behind them.
+      const y = -useWork.getState().swipe * COLUMN_SPACING
+      // Back far enough that a card fits the narrow screen with margin, the next one
+      // peeking in below it.
+      camera.position.set(0, y - 0.35, 7.2)
+      camera.lookAt(0, y - 0.35, 0)
+      return
+    }
     camera.position.set(
       Math.sin(view.angle) * view.distance,
       view.height,
@@ -37,16 +55,21 @@ function LabCamera() {
 /** The hero's glass look with Work's darker light rig on top (tuned live below). */
 const workLook = { ...sceneConfig.glass, ...sceneConfig.workLight }
 
-function WorkScene({ version }: { version: number }) {
+function WorkScene({ version, mode }: { version: number; mode: View }) {
   const clock = useSceneClock(1)
   return (
     <>
       <primitive attach="background" object={sceneColors.bg} />
       <HeroLighting look={workLook} clock={clock} />
-      <LabCamera />
+      <LabCamera mode={mode} />
       <Backdrop />
       <Spine key={`spine-${version}`} clock={clock} />
-      <Pebbles key={`pebbles-${version}`} clock={clock} focusDistance={view.distance} />
+      <Pebbles
+        key={`pebbles-${version}`}
+        clock={clock}
+        focusDistance={mode === 'phone' ? 6 : view.distance}
+      />
+      <WorkCards layout={mode === 'phone' ? 'column' : 'orbit'} clock={clock} />
       <Effects reducedMotion={false} antialias={false} />
     </>
   )
@@ -65,6 +88,14 @@ const STRUCTURAL = new Set([
 
 export default function WorkLab() {
   const [version, setVersion] = useState(0)
+  const { mode } = useControls('View', {
+    // ?view=phone opens straight into the phone view.
+    mode: {
+      options: { desktop: 'desktop', phone: 'phone' },
+      value:
+        new URLSearchParams(window.location.search).get('view') === 'phone' ? 'phone' : 'desktop',
+    },
+  }) as { mode: View }
   const rebuild = (
     group: Record<string, number>,
     ranges: Record<string, [number, number, number]>,
@@ -152,23 +183,40 @@ export default function WorkLab() {
     }),
   })
 
+  const canvas = (
+    <Canvas
+      dpr={[1, PLACE_MAX_DPR.work]}
+      flat
+      gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
+      camera={{ position: [0, 0, 7.5], fov: 40, near: 0.1, far: 60 }}
+      onCreated={({ gl }) => {
+        gl.transmissionResolutionScale = 0.5
+      }}
+    >
+      <WorkScene version={version} mode={mode} />
+      <StatsGl className="top-auto! bottom-3! left-3!" />
+    </Canvas>
+  )
+
   return (
-    <main id="main" className="h-dvh bg-bg">
+    <main id="main" className="relative h-dvh bg-bg">
       <h1 className="sr-only">Work lab</h1>
-      <Canvas
-        dpr={[1, PLACE_MAX_DPR.work]}
-        flat
-        gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
-        camera={{ position: [0, 0, 12], fov: 40, near: 0.1, far: 60 }}
-        onCreated={({ gl }) => {
-          gl.transmissionResolutionScale = 0.5
-        }}
-      >
-        <WorkScene version={version} />
-        <StatsGl className="top-auto! bottom-3! left-3!" />
-      </Canvas>
+      {mode === 'phone' ? (
+        // A phone-sized frame: the swipe overlays the canvas.
+        <div className="absolute top-1/2 left-1/2 h-[844px] w-[390px] -translate-1/2 overflow-hidden border border-line">
+          {canvas}
+          <WorkSwipe />
+        </div>
+      ) : (
+        <>
+          {canvas}
+          <div className="absolute bottom-16 left-(--margin) w-80">
+            <WorkList />
+          </div>
+        </>
+      )}
       <p className="pointer-events-none absolute top-3 left-3 ui text-muted">
-        <span className="text-text">Work lab</span> · spine + pebbles
+        <span className="text-text">Work lab</span> · spine, chips, cards ({mode})
       </p>
     </main>
   )

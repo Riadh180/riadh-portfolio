@@ -126,7 +126,7 @@ count: decimate to the budget and re-bake the normal map from the original.
 ## 8. Dropping it into the project
 
 1. Put the file at **`public/models/spine.glb`**.
-2. Reload. The site detects it (`/models.json`), loads it in place of the procedural
+2. Reload. The site detects it (`/assets.json`), loads it in place of the procedural
    stand-in, merges its meshes, centres it, scales it to the column height, keeps the
    normal map and applies the spine's own oil material. No code changes.
 3. Check it in the lab: **http://localhost:3000/lab/work** (dev server). Sliders tune

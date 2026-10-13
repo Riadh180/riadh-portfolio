@@ -12,6 +12,7 @@ import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { sceneConfig } from '@/styles/scene'
+import { loadAssets } from '../assets'
 
 /**
  * Where the sculpted spine goes (docs/SPINE_MODEL_SPEC.md). Drop the file in and reload:
@@ -22,16 +23,13 @@ export const SPINE_MODEL_URL = '/models/spine.glb'
 export type SpineModel = { geometry: BufferGeometry; normalMap: Texture | null }
 
 /**
- * Loads the sculpted spine if the file exists (/models.json lists it), otherwise resolves
+ * Loads the sculpted spine if the file exists (/assets.json lists it), otherwise resolves
  * null (the procedural stand-in stays). Every mesh in the file is merged into one geometry (one draw call),
  * centred on the axis and scaled to the column's height. Only the baked normal map is
  * kept from the file's material: the spine always wears its own oil material.
  */
 export async function loadSpineModel(gl: WebGLRenderer): Promise<SpineModel | null> {
-  const available = await fetch('/models.json')
-    .then((response) => response.json() as Promise<{ spine?: boolean }>)
-    .catch(() => null)
-  if (!available?.spine) return null
+  if (!(await loadAssets()).spine) return null
 
   const draco = new DRACOLoader().setDecoderPath('/decoders/draco/')
   const ktx2 = new KTX2Loader().setTranscoderPath('/decoders/basis/').detectSupport(gl)
