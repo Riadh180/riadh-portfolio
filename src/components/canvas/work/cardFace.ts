@@ -106,34 +106,52 @@ export class CardFace {
   private drawPlaceholder() {
     const c = this.background.getContext('2d')
     if (!c) return
-    const tones = [palette.violet, palette.teal, palette.blue, palette.pink, palette.emerald]
-    const tone = tones[this.index % tones.length] ?? palette.violet
+    const tones = [
+      palette.violet,
+      palette.teal,
+      palette.pink,
+      palette.blue,
+      palette.emerald,
+      palette.warm,
+    ]
+    const from = tones[this.index % tones.length] ?? palette.violet
+    const to = tones[(this.index + 2) % tones.length] ?? palette.teal
     const gradient = c.createLinearGradient(0, 0, WIDTH, HEIGHT)
-    gradient.addColorStop(0, palette.bgElevated)
-    gradient.addColorStop(1, tone)
+    gradient.addColorStop(0, from)
+    gradient.addColorStop(1, to)
     c.fillStyle = gradient
     c.fillRect(0, 0, WIDTH, HEIGHT)
-    c.globalAlpha = 0.12
-    c.fillStyle = palette.text
-    for (let i = 0; i < 9; i++) {
+    // Soft light blobs, like an out-of-focus screen.
+    for (let i = 0; i < 6; i++) {
+      const x = hash(i, this.index, 5) * WIDTH
+      const y = hash(i, this.index, 6) * HEIGHT
+      const r = 120 + hash(i, this.index, 7) * 260
+      const blob = c.createRadialGradient(x, y, 0, x, y, r)
+      blob.addColorStop(0, rgba(i % 2 ? palette.glow : palette.text, 0.35))
+      blob.addColorStop(1, rgba(palette.text, 0))
+      c.fillStyle = blob
+      c.fillRect(0, 0, WIDTH, HEIGHT)
+    }
+    // A few UI-like blocks, so it reads as a screen, not a gradient.
+    c.fillStyle = rgba(palette.text, 0.16)
+    for (let i = 0; i < 7; i++) {
       const x = hash(i, this.index, 1) * WIDTH * 0.8
-      const y = hash(i, this.index, 2) * HEIGHT * 0.8
+      const y = hash(i, this.index, 2) * HEIGHT * 0.6
       const w = 80 + hash(i, this.index, 3) * 260
       const h = 18 + hash(i, this.index, 4) * 90
       c.beginPath()
       c.roundRect(x, y, w, h, 12)
       c.fill()
     }
-    c.globalAlpha = 1
     this.shade(c)
     this.draw(Infinity)
   }
 
-  /** Darkens towards the bottom-left, where the title sits. */
+  /** Darkens the lower part, where the title sits. */
   private shade(c: CanvasRenderingContext2D) {
-    const gradient = c.createLinearGradient(0, 0, 0, HEIGHT)
-    gradient.addColorStop(0, rgba(palette.bg, 0.35))
-    gradient.addColorStop(1, rgba(palette.bg, 0.88))
+    const gradient = c.createLinearGradient(0, HEIGHT * 0.45, 0, HEIGHT)
+    gradient.addColorStop(0, rgba(palette.bg, 0))
+    gradient.addColorStop(1, rgba(palette.bg, 0.8))
     c.fillStyle = gradient
     c.fillRect(0, 0, WIDTH, HEIGHT)
   }

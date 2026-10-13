@@ -8,6 +8,7 @@ import { StatsGl } from '@react-three/drei'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { button, useControls } from 'leva'
 import { useState } from 'react'
+import type { PerspectiveCamera } from 'three'
 import { Backdrop } from '@/components/canvas/Backdrop'
 import { sliders } from '@/components/canvas/dev/sliders'
 import { HeroLighting } from '@/components/canvas/hero/HeroLighting'
@@ -29,10 +30,21 @@ type View = 'desktop' | 'phone'
  * Close: the column overfills the screen height, as in the reference; far enough that
  * the cards orbiting it fit in view.
  */
-const view = { angle: 0.35, height: 0, distance: 7.5 }
+const view = { angle: 0, height: -2.45, distance: 7.8 }
+
+/** Desktop: the composition sits right of centre, leaving the left column to the HTML list. */
+const SHIFT = 0.07
 
 function LabCamera({ mode }: { mode: View }) {
-  useFrame(({ camera }) => {
+  useFrame(({ camera, size }) => {
+    const perspective = camera as PerspectiveCamera
+    if (mode === 'phone') perspective.clearViewOffset()
+    else {
+      const { width, height } = size
+      if (perspective.view?.offsetX !== -width * SHIFT || perspective.view?.fullWidth !== width) {
+        perspective.setViewOffset(width, height, -width * SHIFT, 0, width, height)
+      }
+    }
     if (mode === 'phone') {
       // Rides down the column of cards with the swipe, the spine just behind them.
       const y = -useWork.getState().swipe * COLUMN_SPACING

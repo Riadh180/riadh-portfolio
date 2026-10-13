@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import {
+  type BufferGeometry,
   Color,
   ExtrudeGeometry,
   type Group,
@@ -14,13 +15,17 @@ import {
 import { type Job, jobs } from '@/content/site'
 import { SCRAMBLE_DURATION } from '@/lib/scramble'
 import { useWork } from '@/stores/work'
-import { sceneColors } from '@/styles/scene'
+import { sceneColors, sceneConfig } from '@/styles/scene'
 import { loadAssets } from '../assets'
-import { roundedRectShape } from '../hero/bandGeometry'
+import { createBandGeometry, roundedRectCurve, roundedRectShape } from '../hero/bandGeometry'
+import { createGlassMaterial, disposeGlassMaterial } from '../hero/glassMaterial'
 import type { SceneClock } from '../useSceneClock'
 import { CardFace } from './cardFace'
 
-const CARD = { width: 1.6, height: 1, depth: 0.05 }
+/** Big, like the reference: the nearest card fills ~45% of the screen width. */
+const CARD = { width: 2.4, height: 1.5, depth: 0.05, radius: 0.18 }
+/** The cut-glass frame round each card: a thick bevelled band in The Core's glass. */
+const FRAME = { width: 0.1, depth: 0.14, chamfer: 0.04, innerChamfer: 0.016 }
 
 /**
  * Where the cards sit. `orbit` (desktop): a descending helix round the spine, facing out.
@@ -29,7 +34,11 @@ const CARD = { width: 1.6, height: 1, depth: 0.05 }
  */
 export type CardLayout = 'orbit' | 'column'
 
-export const COLUMN_SPACING = 1.55
+export const COLUMN_SPACING = 1.4
+/** Phones: smaller cards, so one fits the narrow screen with margin. */
+const COLUMN_SCALE = 0.62
+/** Vertical distance between cards in the orbit. */
+export const ORBIT_SPACING = 2.1
 
 function home(i: number, layout: CardLayout, target: { position: Vector3; turn: number }) {
   if (layout === 'column') {
@@ -37,20 +46,30 @@ function home(i: number, layout: CardLayout, target: { position: Vector3; turn: 
     target.turn = 0
     return
   }
-  const angle = i * ((Math.PI * 2) / jobs.length) * 1.15 + 0.4
-  const radius = 2.75
-  target.position.set(
-    Math.sin(angle) * radius,
-    (jobs.length / 2 - i - 0.5) * 1.15,
-    Math.cos(angle) * radius,
-  )
+  // Down the column: every other card hangs centred in front of the spine, big (~45% of
+  // the screen width), overlapping it; the ones between swing out to the right, turned
+  // away and partly off-screen. Nothing ever crosses the UI column on the left.
+  const angle = i % 2 === 0 ? 0.04 : 0.95
+  const radius = 3
+  target.position.set(Math.sin(angle) * radius, 1.6 - i * ORBIT_SPACING, Math.cos(angle) * radius)
   target.turn = angle
 }
 
-/** A thin glass slab: rounded rectangle, bevelled edges catching the light. */
+/** The thick cut-glass frame: The Core's bevelled band, swept round the card's outline. */
+function createFrame() {
+  return createBandGeometry(
+    roundedRectCurve(
+      CARD.width + FRAME.width * 0.4,
+      CARD.height + FRAME.width * 0.4,
+      CARD.radius + 0.04,
+    ),
+    { ...FRAME, segments: 360 },
+  )
+}
+
+/** A thin glass pane over the screen: rounded rectangle, bevelled edges catching the light. */
 function createSlab() {
-  const r = 0.09
-  const geometry = new ExtrudeGeometry(roundedRectShape(CARD.width, CARD.height, r), {
+  const geometry = new ExtrudeGeometry(roundedRectShape(CARD.width, CARD.height, CARD.radius), {
     depth: CARD.depth - 0.03,
     bevelEnabled: true,
     bevelThickness: 0.015,
@@ -73,7 +92,7 @@ function createGlass() {
     iridescence: 0.5,
     iridescenceIOR: 1.3,
     transparent: true,
-    opacity: 0.32,
+    opacity: 0.22,
     depthWrite: false,
     envMapIntensity: 1.4,
   })
@@ -91,6 +110,16 @@ export function WorkCards({ layout, clock }: Props) {
   const slab = useMemo(() => createSlab(), [])
   const plane = useMemo(() => new PlaneGeometry(CARD.width * 0.96, CARD.height * 0.94), [])
   const glass = useMemo(() => createGlass(), [])
+  const frame = useMemo(() => createFrame(), [])
+  // The Core's glass: bevel lines, sparkle and rainbow film; a faint rim glow keeps the
+  // edges lit under Work's darker light. Without transmission: the frames are thin, so
+  // reflections carry the look, and a refractive pass for six cards would halve the FPS.
+  const frameGlass = useMemo(() => {
+    const material = createGlassMaterial({ ...sceneConfig.glass, rim: 0.22, transmission: 0 })
+    // Black body: without transmission a white one would scatter light like plastic.
+    material.color.setScalar(0)
+    return material
+  }, [])
   const faces = useMemo(() => jobs.map((job, i) => new CardFace(job, i)), [])
   useEffect(() => {
     void loadAssets().then(({ work }) => {
@@ -105,9 +134,11 @@ export function WorkCards({ layout, clock }: Props) {
       slab.dispose()
       plane.dispose()
       glass.dispose()
+      frame.dispose()
+      disposeGlassMaterial(frameGlass)
       faces.forEach((face) => face.dispose())
     },
-    [slab, plane, glass, faces],
+    [slab, plane, glass, frame, frameGlass, faces],
   )
 
   return (
@@ -122,6 +153,8 @@ export function WorkCards({ layout, clock }: Props) {
           slab={slab}
           plane={plane}
           glass={glass}
+          frame={frame}
+          frameGlass={frameGlass}
           face={faces[i]}
         />
       ))}
@@ -137,10 +170,23 @@ type CardProps = {
   slab: ExtrudeGeometry
   plane: PlaneGeometry
   glass: MeshPhysicalMaterial
+  frame: BufferGeometry
+  frameGlass: MeshPhysicalMaterial
   face: CardFace | undefined
 }
 
-function Card({ job, index, layout, clock, slab, plane, glass, face }: CardProps) {
+function Card({
+  job,
+  index,
+  layout,
+  clock,
+  slab,
+  plane,
+  glass,
+  frame,
+  frameGlass,
+  face,
+}: CardProps) {
   const group = useRef<Group>(null)
   const screen = useRef<Mesh>(null)
   // Per-frame state and scratch objects (refs may be mutated in the frame loop).
@@ -177,10 +223,10 @@ function Card({ job, index, layout, clock, slab, plane, glass, face }: CardProps
     // round the far side of the spine); focused, it turns fully to face them.
     const facing = layout === 'column' ? 1 : 0.65 + 0.35 * s.focus
     g.quaternion.copy(s.rest).slerp(s.look, facing)
-    g.scale.setScalar(1 + s.focus * 0.06)
+    g.scale.setScalar((layout === 'column' ? COLUMN_SCALE : 1) * (1 + s.focus * 0.06))
 
     const material = screen.current?.material as MeshBasicMaterial | undefined
-    material?.color.setScalar(0.55 + 0.45 * s.focus)
+    material?.color.setScalar(0.75 + 0.25 * s.focus)
 
     // Scramble the title for its duration after the card gains focus.
     const elapsed = (performance.now() - since) / 1000
@@ -212,6 +258,7 @@ function Card({ job, index, layout, clock, slab, plane, glass, face }: CardProps
         <meshBasicMaterial map={face?.texture} toneMapped={false} />
       </mesh>
       <mesh geometry={slab} material={glass} renderOrder={1} />
+      <mesh geometry={frame} material={frameGlass} />
     </group>
   )
 }

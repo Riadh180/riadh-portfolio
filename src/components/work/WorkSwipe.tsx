@@ -37,20 +37,23 @@ export function WorkSwipe() {
         <section
           key={job.slug}
           aria-label={job.company}
-          className="flex h-full snap-center flex-col justify-end gap-1 px-4 pb-10"
+          className="flex h-full snap-center flex-col justify-end"
         >
-          <p className="ui text-muted">
-            <span className="text-text">{String(i + 1).padStart(2, '0')}</span> / {jobs.length} ·{' '}
-            {job.years}
-          </p>
-          <button
-            type="button"
-            className="text-left ui-lg text-text"
-            onFocus={() => focus(job.slug)}
-          >
-            {job.company} · {job.metric}
-          </button>
-          <p className="ui text-muted">{job.role}</p>
+          {/* A dark fade under the title, so it never sits on the next card's face. */}
+          <div className="flex flex-col gap-1 bg-linear-to-t from-bg via-bg/90 to-transparent px-4 pt-20 pb-10">
+            <p className="ui text-muted">
+              <span className="text-text">{String(i + 1).padStart(2, '0')}</span> / {jobs.length} ·{' '}
+              {job.years}
+            </p>
+            <button
+              type="button"
+              className="text-left ui-lg text-text"
+              onFocus={() => focus(job.slug)}
+            >
+              {job.company} · {job.metric}
+            </button>
+            <p className="ui text-muted">{job.role}</p>
+          </div>
         </section>
       ))}
     </div>
