@@ -10,10 +10,11 @@ const labs =
         glass: dynamic(() => import('./GlassLab'), { ssr: false }),
         work: dynamic(() => import('./WorkLab'), { ssr: false }),
         system: dynamic(() => import('./SystemLab'), { ssr: false }),
+        depth: dynamic(() => import('./DepthLab'), { ssr: false }),
       }
     : null
 
-export function LabLoader({ lab }: { lab: 'glass' | 'work' | 'system' }) {
+export function LabLoader({ lab }: { lab: 'glass' | 'work' | 'system' | 'depth' }) {
   const Lab = labs?.[lab]
   return Lab ? <Lab /> : null
 }

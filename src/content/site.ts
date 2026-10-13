@@ -198,3 +198,21 @@ export const skillGraph: { core: Skill; branches: SkillBranch[] } = {
     },
   ],
 }
+
+/** Depth: the data engineering place, "beneath the interface". Data vocabulary lives here only. */
+export const depth = {
+  title: 'Beneath the interface',
+  lead: 'I understand the data behind the interface: I design better APIs with it, talk to data teams in their language, and build data-heavy UIs with confidence.',
+  programme: 'Data Engineering Programme · neue fische / SPICED · 720 hours · 2026',
+  stack: [
+    'Python',
+    'SQL',
+    'Spark',
+    'Kafka',
+    'Airflow',
+    'dbt',
+    'Docker',
+    'AWS (S3, Glue, Redshift, Lambda)',
+  ],
+  capstone: 'Capstone project',
+} as const
