@@ -1,0 +1,80 @@
+'use client'
+
+import { useEffect, useRef } from 'react'
+import { jobs } from '@/content/site'
+import { useWork } from '@/stores/work'
+import { JobDetail } from './JobDetail'
+
+/** The details appear once the card has flown in and begun to dissolve (ms). */
+const APPEAR_DELAY = 1100
+
+/**
+ * The opened card's details, in small mono at the left over the scene. Focus moves in when
+ * it opens and back to the card's button when it closes; Esc closes; previous / next walk
+ * through the jobs without closing.
+ */
+export function WorkDetail() {
+  const opened = useWork((state) => state.opened)
+  const open = useWork((state) => state.open)
+  const close = useWork((state) => state.close)
+  const panel = useRef<HTMLDivElement>(null)
+  const job = jobs.find((item) => item.slug === opened)
+  const index = job ? jobs.indexOf(job) : -1
+
+  useEffect(() => {
+    if (!opened) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') close()
+    }
+    window.addEventListener('keydown', onKey)
+    // Move focus in once the details have appeared.
+    const timer = window.setTimeout(() => panel.current?.focus(), APPEAR_DELAY)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.clearTimeout(timer)
+      // Back to the card's own button in the list.
+      document.querySelector<HTMLButtonElement>(`[data-work="${opened}"]`)?.focus()
+    }
+  }, [opened, close])
+
+  if (!job) return null
+  const previous = jobs[(index - 1 + jobs.length) % jobs.length]
+  const next = jobs[(index + 1) % jobs.length]
+
+  return (
+    <div
+      ref={panel}
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby="work-detail-title"
+      tabIndex={-1}
+      key={job.slug}
+      className="detail-in flex w-full max-w-[34ch] flex-col gap-4 outline-none"
+    >
+      <JobDetail job={job} headingId="work-detail-title" />
+      <nav aria-label="More work" className="flex gap-4 ui">
+        {previous && (
+          <button
+            type="button"
+            className="text-muted hover:text-text"
+            onClick={() => open(previous.slug)}
+          >
+            ← {previous.company}
+          </button>
+        )}
+        {next && (
+          <button
+            type="button"
+            className="text-muted hover:text-text"
+            onClick={() => open(next.slug)}
+          >
+            {next.company} →
+          </button>
+        )}
+      </nav>
+      <button type="button" onClick={close} className="self-start ui text-violet hover:text-text">
+        × Close <span className="text-muted">(Esc)</span>
+      </button>
+    </div>
+  )
+}

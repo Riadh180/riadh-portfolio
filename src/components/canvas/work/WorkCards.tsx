@@ -1,7 +1,11 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import {
+  BufferGeometry,
   Color,
+  Float32BufferAttribute,
+  type PerspectiveCamera,
+  type Points,
   Euler,
   ExtrudeGeometry,
   type Group,
@@ -20,6 +24,9 @@ import { loadAssets } from '../assets'
 import { roundedRectShape } from '../hero/bandGeometry'
 import frostFragment from '../shaders/frost.frag'
 import frostVertex from '../shaders/frost.vert'
+import cardDustFragment from '../shaders/cardDust.frag'
+import cardDustVertex from '../shaders/cardDust.vert'
+import dissolve from '../shaders/dissolve.glsl'
 import noise from '../shaders/noise.glsl'
 import type { SceneClock } from '../useSceneClock'
 import { CardFace } from './cardFace'
@@ -89,6 +96,8 @@ function createBlockGlass() {
     iridescenceThicknessRange: [180, 420],
     // Work's light is dim: the black glass needs strong reflections to light its edges.
     envMapIntensity: 6,
+    // Fades out as the card dissolves (each card has its own instance).
+    transparent: true,
   })
   // Edge lines: where the surface turns away from the viewer (the bevel all round), a thin
   // bright line whose hue slides round the card (teal → violet → pink), like light caught
@@ -129,7 +138,7 @@ function createScreenGeometry() {
 function createScreenMaterial(face: CardFace, seed: number) {
   return new ShaderMaterial({
     vertexShader: frostVertex,
-    fragmentShader: `${noise}\n${frostFragment}`,
+    fragmentShader: `${noise}\n${dissolve}\n${frostFragment}`,
     uniforms: {
       uImage: { value: face.image },
       uTitle: { value: face.texture },
@@ -137,10 +146,52 @@ function createScreenMaterial(face: CardFace, seed: number) {
       uBlur: { value: 0 },
       uSeed: { value: seed },
       uHaze: { value: new Color().copy(sceneColors.glass).multiplyScalar(0.55) },
+      uDissolve: { value: 0 },
+      uEdgeGlow: { value: sceneColors.glow },
     },
     toneMapped: false,
   })
 }
+
+/** Particles a card breaks into: random spots over its face, shared by all cards. */
+const DUST_COUNT = 6000
+
+function createDustGeometry() {
+  const spots = new Float32Array(DUST_COUNT * 2)
+  const seeds = new Float32Array(DUST_COUNT * 4)
+  for (let i = 0; i < DUST_COUNT; i++) {
+    spots.set([Math.random(), Math.random()], i * 2)
+    seeds.set([Math.random(), Math.random(), Math.random(), Math.random()], i * 4)
+  }
+  const geometry = new BufferGeometry()
+  geometry.setAttribute('position', new Float32BufferAttribute(new Float32Array(DUST_COUNT * 3), 3))
+  geometry.setAttribute('spot', new Float32BufferAttribute(spots, 2))
+  geometry.setAttribute('seed', new Float32BufferAttribute(seeds, 4))
+  return geometry
+}
+
+function createDustMaterial(face: CardFace, seed: number) {
+  return new ShaderMaterial({
+    vertexShader: `${noise}\n${dissolve}\n${cardDustVertex}`,
+    fragmentShader: cardDustFragment,
+    uniforms: {
+      uImage: { value: face.image },
+      uDissolve: { value: 0 },
+      uSeed: { value: seed },
+      uSize: { value: [CARD.width, CARD.height] },
+      uFront: { value: BLOCK.depth / 2 + BLOCK.bevel },
+      uPointScale: { value: 10 },
+    },
+    transparent: true,
+    depthWrite: false,
+  })
+}
+
+/** Easing for the fly-in: heavy in, heavy out (the site's default curve, roughly). */
+const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2)
+
+/** How long the fly-in and the dissolve take, in seconds (MOTION.md: fly-in ~1s). */
+const OPEN = { fly: 1, dissolve: 0.9 }
 
 /** Chips gathered at a card's edges, in its own space: [x, y, z, spread]. */
 const EDGE_CHIPS: [number, number, number, number][] = [
@@ -160,7 +211,7 @@ type Props = { layout: CardLayout; clock: SceneClock }
 export function WorkCards({ layout, clock }: Props) {
   const block = useMemo(() => createBlock(), [])
   const plane = useMemo(() => createScreenGeometry(), [])
-  const blockGlass = useMemo(() => createBlockGlass(), [])
+  const dust = useMemo(() => createDustGeometry(), [])
   const faces = useMemo(() => jobs.map((job, i) => new CardFace(job, i)), [])
   const screens = useMemo(
     () => faces.map((face, i) => createScreenMaterial(face, i * 1.37)),
@@ -178,11 +229,11 @@ export function WorkCards({ layout, clock }: Props) {
     () => () => {
       block.dispose()
       plane.dispose()
-      blockGlass.dispose()
+      dust.dispose()
       screens.forEach((screen) => screen.dispose())
       faces.forEach((face) => face.dispose())
     },
-    [block, plane, blockGlass, screens, faces],
+    [block, plane, dust, screens, faces],
   )
 
   return (
@@ -196,7 +247,7 @@ export function WorkCards({ layout, clock }: Props) {
           clock={clock}
           block={block}
           plane={plane}
-          blockGlass={blockGlass}
+          dust={dust}
           screen={screens[i]}
           face={faces[i]}
         />
@@ -212,7 +263,7 @@ type CardProps = {
   clock: SceneClock
   block: ExtrudeGeometry
   plane: ShapeGeometry
-  blockGlass: MeshPhysicalMaterial
+  dust: BufferGeometry
   screen: ShaderMaterial | undefined
   face: CardFace | undefined
 }
@@ -220,15 +271,37 @@ type CardProps = {
 /** How far a card's own tilt goes (radians): a few degrees, never flat. */
 const TILT = { drift: 0.06, cursor: 0.07 }
 
-function Card({ job, index, layout, clock, block, plane, blockGlass, screen, face }: CardProps) {
+function Card({ job, index, layout, clock, block, plane, dust, screen, face }: CardProps) {
   const group = useRef<Group>(null)
   const screenMesh = useRef<Mesh>(null)
+  const blockMesh = useRef<Mesh>(null)
+  const dustPoints = useRef<Points>(null)
+  const blockGlass = useMemo(() => createBlockGlass(), [])
+  const dustMaterial = useMemo(
+    () => (face ? createDustMaterial(face, index * 1.37) : null),
+    [face, index],
+  )
+  useEffect(
+    () => () => {
+      blockGlass.dispose()
+      dustMaterial?.dispose()
+    },
+    [blockGlass, dustMaterial],
+  )
   // Per-frame state and scratch objects (refs may be mutated in the frame loop).
   const state = useRef({
     focus: 0,
+    others: 0,
+    /** 0 at home → 1 flown in front of the camera. */
+    fly: 0,
+    /** 0 whole → 1 dissolved → 2 dust drifted away. */
+    dissolve: 0,
     scrambling: false,
     pointer: { x: 0, y: 0 },
     target: { position: new Vector3(), turn: 0 },
+    open: new Vector3(),
+    forward: new Vector3(),
+    right: new Vector3(),
     look: new Quaternion(),
     rest: new Quaternion(),
     tilt: new Quaternion(),
@@ -236,34 +309,62 @@ function Card({ job, index, layout, clock, block, plane, blockGlass, screen, fac
     up: new Vector3(0, 1, 0),
   })
 
-  useFrame(({ camera, pointer }, delta) => {
+  useFrame(({ camera, pointer, size, viewport }, delta) => {
     const g = group.current
     const screenMaterial = screenMesh.current?.material as ShaderMaterial | undefined
-    if (!g || !face || !screenMaterial) return
-    const { focused, since } = useWork.getState()
+    const glass = blockMesh.current?.material as MeshPhysicalMaterial | undefined
+    const dustShader = dustPoints.current?.material as ShaderMaterial | undefined
+    if (!g || !face || !screenMaterial || !glass || !dustShader) return
+    const { focused, since, opened } = useWork.getState()
     const isFocused = focused === job.slug
+    const isOpen = opened === job.slug
     const s = state.current
     const { target } = s
     const dt = Math.min(delta, 1 / 30)
     const ease = 1 - Math.exp(-dt * 5)
-    s.focus += ((isFocused ? 1 : 0) - s.focus) * ease
+    s.focus += ((isFocused || isOpen ? 1 : 0) - s.focus) * ease
+    s.others += ((opened && !isOpen ? 1 : 0) - s.others) * ease
     // The cursor's pull is heavily damped (~0.8s), as everywhere else.
     s.pointer.x += (pointer.x - s.pointer.x) * (1 - Math.exp(-dt * 1.3))
     s.pointer.y += (pointer.y - s.pointer.y) * (1 - Math.exp(-dt * 1.3))
+
+    // Open: fly in, then dissolve. Close: re-form first, then fly home.
+    if (isOpen) {
+      s.fly = Math.min(1, s.fly + dt / OPEN.fly)
+      if (s.fly > 0.85) s.dissolve = Math.min(2, s.dissolve + dt / OPEN.dissolve)
+    } else {
+      s.dissolve = Math.max(0, s.dissolve - (dt / OPEN.dissolve) * 1.6)
+      if (s.dissolve < 0.15) s.fly = Math.max(0, s.fly - dt / OPEN.fly)
+    }
+    const flown = easeInOut(s.fly)
 
     home(index, layout, target)
     // A slow float, each card on its own phase.
     target.position.y += Math.sin(clock.time * 0.4 + index * 1.7) * 0.05
     g.position.copy(target.position)
     // Focused: comes forward, towards the camera.
-    g.position.lerp(camera.position, s.focus * 0.12)
+    g.position.lerp(camera.position, s.focus * 0.12 * (1 - flown))
+
+    // Flown in: centred in front of the camera, a little right of centre (the details
+    // appear at the left), big enough to fill most of the view.
+    if (flown > 0) {
+      camera.getWorldDirection(s.forward)
+      s.right.crossVectors(s.forward, s.up).normalize()
+      const fov = ((camera as PerspectiveCamera).fov * Math.PI) / 180
+      const distance = CARD.height / 0.5 / (2 * Math.tan(fov / 2))
+      s.open
+        .copy(camera.position)
+        .addScaledVector(s.forward, distance)
+        .addScaledVector(s.right, CARD.width * 0.05)
+      g.position.lerp(s.open, flown)
+    }
 
     s.rest.setFromAxisAngle(s.up, target.turn)
     g.lookAt(camera.position)
     s.look.copy(g.quaternion)
     // At rest a card leans most of the way towards the viewer (its face always reads, even
-    // round the far side of the spine); focused, it turns fully to face them.
-    const facing = layout === 'column' ? 1 : 0.65 + 0.35 * s.focus
+    // round the far side of the spine); focused or open, it turns fully to face them.
+    const facing = layout === 'column' ? 1 : 0.65 + 0.35 * Math.max(s.focus, flown)
     g.quaternion.copy(s.rest).slerp(s.look, facing)
     // Never perfectly flat: a few degrees of slow drift, and a little pull towards the
     // cursor, so the glass thickness and its lit edges always show.
@@ -274,12 +375,20 @@ function Card({ job, index, layout, clock, block, plane, blockGlass, screen, fac
       Math.sin(t * 0.17 + index * 0.7) * 0.015,
     )
     g.quaternion.multiply(s.tilt.setFromEuler(s.euler))
-    g.scale.setScalar((layout === 'column' ? COLUMN_SCALE : 1) * (1 + s.focus * 0.06))
+    g.scale.setScalar((layout === 'column' ? COLUMN_SCALE : 1) * (1 + s.focus * 0.06 * (1 - flown)))
 
-    // Depth: the cards swung out to the side sit out of focus, until focused.
+    // Depth: the cards swung out to the side sit out of focus, until focused; while
+    // another card is open, the rest recede into the dark.
     const side = layout === 'orbit' && index % 2 === 1 ? 1 : 0
-    screenMaterial.uniforms.uBlur!.value = side * (1 - s.focus)
-    screenMaterial.uniforms.uBrightness!.value = 0.8 - side * 0.2 + 0.25 * s.focus
+    const u = screenMaterial.uniforms
+    u.uBlur!.value = Math.max(side * (1 - s.focus), s.others * 0.8)
+    u.uBrightness!.value = (0.8 - side * 0.2 + 0.25 * s.focus) * (1 - s.others * 0.65)
+    u.uDissolve!.value = Math.min(1, s.dissolve)
+    glass.opacity = 1 - Math.min(1, s.dissolve * 1.4)
+    glass.visible = glass.opacity > 0.01
+    dustShader.uniforms.uDissolve!.value = s.dissolve
+    dustShader.uniforms.uPointScale!.value = size.height * viewport.dpr * 0.012
+    dustPoints.current!.visible = s.dissolve > 0
 
     // Scramble the title for its duration after the card gains focus.
     const elapsed = (performance.now() - since) / 1000
@@ -293,6 +402,7 @@ function Card({ job, index, layout, clock, block, plane, blockGlass, screen, fac
   })
 
   const focus = useWork((state) => state.focus)
+  const open = useWork((state) => state.open)
   const front = BLOCK.depth / 2 + BLOCK.bevel + 0.002
 
   return (
@@ -300,16 +410,24 @@ function Card({ job, index, layout, clock, block, plane, blockGlass, screen, fac
       ref={group}
       onPointerOver={(event) => {
         event.stopPropagation()
+        if (useWork.getState().opened) return
         focus(job.slug)
         document.body.style.cursor = 'pointer'
       }}
       onPointerOut={() => {
-        if (useWork.getState().focused === job.slug) focus(null)
+        if (useWork.getState().focused === job.slug && !useWork.getState().opened) focus(null)
         document.body.style.cursor = ''
       }}
+      onClick={(event) => {
+        event.stopPropagation()
+        if (!useWork.getState().opened) open(job.slug)
+      }}
     >
-      <mesh geometry={block} material={blockGlass} />
+      <mesh ref={blockMesh} geometry={block} material={blockGlass} />
       {screen && <mesh ref={screenMesh} geometry={plane} material={screen} position-z={front} />}
+      {dustMaterial && (
+        <points ref={dustPoints} geometry={dust} material={dustMaterial} frustumCulled={false} />
+      )}
       {layout === 'orbit' && (
         <ChipCluster clusters={EDGE_CHIPS} count={560} size={2} clock={clock} focusDistance={4.8} />
       )}

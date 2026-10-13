@@ -1,15 +1,19 @@
 import { create } from 'zustand'
 
 /**
- * Which job card is in focus (hovered or keyboard-focused), shared by the 3D cards and
- * their HTML list, so either one lights up the other. `since` is when it changed (ms),
- * which starts the title scramble.
+ * The Work place's shared state, used by the 3D cards, their HTML list and the detail
+ * panel, so each lights up or opens the others.
+ * - `focused`: the card hovered or keyboard-focused; `since` (ms) starts its title scramble.
+ * - `opened`: the card flown in and dissolved, its details showing.
+ * - `swipe`: phones, how far the card swipe has gone, in cards (0 = first card).
  */
 type WorkState = {
   focused: string | null
   since: number
   focus: (slug: string | null) => void
-  /** Phones: how far the card swipe has gone, in cards (0 = first card). */
+  opened: string | null
+  open: (slug: string) => void
+  close: () => void
   swipe: number
   setSwipe: (swipe: number) => void
 }
@@ -20,6 +24,9 @@ export const useWork = create<WorkState>()((set, get) => ({
   focus: (slug) => {
     if (get().focused !== slug) set({ focused: slug, since: performance.now() })
   },
+  opened: null,
+  open: (slug) => set({ opened: slug, focused: slug }),
+  close: () => set({ opened: null }),
   swipe: 0,
   setSwipe: (swipe) => set({ swipe }),
 }))

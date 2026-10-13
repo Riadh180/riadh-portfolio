@@ -18,12 +18,21 @@ import { useSceneClock } from '@/components/canvas/useSceneClock'
 import { Pebbles } from '@/components/canvas/work/Pebbles'
 import { Spine } from '@/components/canvas/work/Spine'
 import { COLUMN_SPACING, WorkCards } from '@/components/canvas/work/WorkCards'
+import { WorkDetail } from '@/components/work/WorkDetail'
 import { WorkList } from '@/components/work/WorkList'
+import { useWorkUrl } from '@/components/work/useWorkUrl'
 import { WorkSwipe } from '@/components/work/WorkSwipe'
 import { useWork } from '@/stores/work'
 import { sceneColors, sceneConfig } from '@/styles/scene'
 
 type View = 'desktop' | 'phone'
+
+/** In the lab a card's URL is ?open=<slug> (the site uses /work/<slug>). */
+const labRoutes = {
+  toUrl: (slug: string) => `/lab/work?open=${slug}`,
+  base: '/lab/work',
+  fromLocation: (location: Location) => new URLSearchParams(location.search).get('open'),
+}
 
 /**
  * Where the lab camera sits on desktop: orbit angle round the spine, height, distance.
@@ -100,6 +109,8 @@ const STRUCTURAL = new Set([
 
 export default function WorkLab() {
   const [version, setVersion] = useState(0)
+  useWorkUrl(labRoutes)
+  const opened = useWork((state) => state.opened)
   const { mode } = useControls('View', {
     // ?view=phone opens straight into the phone view.
     mode: {
@@ -218,12 +229,17 @@ export default function WorkLab() {
         <div className="absolute top-1/2 left-1/2 h-[844px] w-[390px] -translate-1/2 overflow-hidden border border-line">
           {canvas}
           <WorkSwipe />
+          {opened && (
+            <div className="absolute inset-x-0 bottom-0 flex bg-linear-to-t from-bg via-bg/95 to-transparent px-4 pt-24 pb-8">
+              <WorkDetail />
+            </div>
+          )}
         </div>
       ) : (
         <>
           {canvas}
           <div className="absolute bottom-16 left-(--margin) w-80">
-            <WorkList />
+            {opened ? <WorkDetail /> : <WorkList />}
           </div>
         </>
       )}

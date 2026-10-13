@@ -1,7 +1,8 @@
 // A card's screen seen through thick, frosted glass (noise.glsl is prepended in TS): the
 // image is blurred and bent by mottled frosting, with a milky haze that brightens where the
 // frost is thick and towards grazing angles; the title stays crisp on top. uBlur adds depth
-// of field for cards away from the focus.
+// of field for cards away from the focus. uDissolve eats it away into particles
+// (dissolve.glsl and noise.glsl are prepended in TS).
 
 uniform sampler2D uImage;
 uniform sampler2D uTitle;
@@ -9,12 +10,20 @@ uniform float uBrightness;
 uniform float uBlur;
 uniform float uSeed;
 uniform vec3 uHaze;
+/** 0 whole .. 1 fully dissolved into particles. */
+uniform float uDissolve;
+uniform vec3 uEdgeGlow;
 
 varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vView;
 
 void main() {
+  // Dissolve: gone where the front has passed, a thin glowing seam just behind it.
+  float threshold = dissolveThreshold(vUv, uSeed);
+  if (uDissolve > threshold) discard;
+  float seam = uDissolve > 0.0 ? 1.0 - smoothstep(0.0, 0.025, threshold - uDissolve) : 0.0;
+
   // Mottled frost: how thick the frosting is here.
   vec2 p = vUv * vec2(3.2, 2.0) + uSeed * 7.0;
   float frost = snoise(vec3(p, uSeed)) * 0.6 + snoise(vec3(p * 3.1, uSeed + 4.0)) * 0.4;
@@ -40,6 +49,8 @@ void main() {
 
   vec4 title = texture2D(uTitle, vUv);
   color = mix(color, title.rgb, title.a * (1.0 - uBlur * 0.6));
-  gl_FragColor = vec4(color * uBrightness, 1.0);
+  // The seam takes the image's own colour, lifted: the card burns away into its dust.
+  color = color * uBrightness * (1.0 + seam * 1.6) + uEdgeGlow * seam * 0.25;
+  gl_FragColor = vec4(color, 1.0);
   #include <colorspace_fragment>
 }

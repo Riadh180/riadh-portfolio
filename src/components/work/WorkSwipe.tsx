@@ -13,6 +13,7 @@ export function WorkSwipe() {
   const scroller = useRef<HTMLDivElement>(null)
   const focus = useWork((state) => state.focus)
   const setSwipe = useWork((state) => state.setSwipe)
+  const open = useWork((state) => state.open)
 
   useEffect(() => {
     const element = scroller.current
@@ -49,6 +50,8 @@ export function WorkSwipe() {
               type="button"
               className="text-left ui-lg text-text"
               onFocus={() => focus(job.slug)}
+              onClick={() => open(job.slug)}
+              data-work={job.slug}
             >
               {job.company} · {job.metric}
             </button>

@@ -107,3 +107,31 @@
     outline-offset: 4px;
   }
 }
+
+/* Work detail: the opened card's details rise in, masked from below. */
+@keyframes detail {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* After the card has flown in (~1s) and begun to dissolve. */
+@layer components {
+  .detail-in {
+    animation: detail 0.9s var(--motion-ease) 1.1s both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .detail-in {
+      animation-duration: 0.01s;
+      animation-delay: 0s;
+    }
+  }
+}

@@ -35,6 +35,7 @@ export function WorkList() {
 function WorkButton({ job, index }: { job: Job; index: number }) {
   const focused = useWork((state) => state.focused === job.slug)
   const focus = useWork((state) => state.focus)
+  const open = useWork((state) => state.open)
   const metric = useScramble(job.metric, focused)
   const leave = () => {
     if (useWork.getState().focused === job.slug) focus(null)
@@ -47,6 +48,8 @@ function WorkButton({ job, index }: { job: Job; index: number }) {
       onPointerLeave={leave}
       onFocus={() => focus(job.slug)}
       onBlur={leave}
+      onClick={() => open(job.slug)}
+      data-work={job.slug}
       aria-label={`${job.company}, ${job.metric}. ${job.role}, ${job.years}`}
       className={`text-left ui transition-colors duration-(--motion-duration-ui) ${focused ? 'text-text' : 'text-muted'}`}
     >
