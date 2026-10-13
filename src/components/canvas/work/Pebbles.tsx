@@ -60,6 +60,40 @@ function createPebbles() {
   return geometry
 }
 
+function createUniforms(focusDistance: number) {
+  return {
+    uTime: { value: 0 },
+    uSize: { value: 0 },
+    uBrightness: { value: 1 },
+    uRadius: { value: 1 },
+    uRise: { value: 0 },
+    uHalfHeight: { value: sceneConfig.spine.height / 2 },
+    uAperture: { value: 4 },
+    uFocusDistance: { value: focusDistance },
+    uViewportHeight: { value: 1 },
+    uPalette: {
+      value: [sceneColors.pink, sceneColors.violet, sceneColors.teal, sceneColors.emerald],
+    },
+  }
+}
+
+function updateUniforms(
+  material: ShaderMaterial | null,
+  clock: SceneClock,
+  viewportHeight: number,
+  scale = 1,
+) {
+  if (!material) return
+  const { size, brightness, radius, rise } = sceneConfig.pebbles
+  const u = material.uniforms
+  u.uTime!.value = clock.time
+  u.uSize!.value = size * scale
+  u.uBrightness!.value = brightness
+  u.uRadius!.value = radius
+  u.uRise!.value = rise
+  u.uViewportHeight!.value = viewportHeight
+}
+
 type Props = { clock: SceneClock; focusDistance: number }
 
 /**
@@ -71,36 +105,12 @@ type Props = { clock: SceneClock; focusDistance: number }
 export function Pebbles({ clock, focusDistance }: Props) {
   const material = useRef<ShaderMaterial>(null)
   const geometry = useMemo(() => createPebbles(), [])
-  const uniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uSize: { value: 0 },
-      uBrightness: { value: 1 },
-      uRadius: { value: 1 },
-      uRise: { value: 0 },
-      uHalfHeight: { value: sceneConfig.spine.height / 2 },
-      uAperture: { value: 4 },
-      uFocusDistance: { value: focusDistance },
-      uViewportHeight: { value: 1 },
-      uPalette: {
-        value: [sceneColors.pink, sceneColors.violet, sceneColors.teal, sceneColors.emerald],
-      },
-    }),
-    [focusDistance],
-  )
+  const uniforms = useMemo(() => createUniforms(focusDistance), [focusDistance])
   useEffect(() => () => geometry.dispose(), [geometry])
 
-  useFrame(({ size, viewport }) => {
-    if (!material.current) return
-    const { size: pebbleSize, brightness, radius, rise } = sceneConfig.pebbles
-    const u = material.current.uniforms
-    u.uTime!.value = clock.time
-    u.uSize!.value = pebbleSize
-    u.uBrightness!.value = brightness
-    u.uRadius!.value = radius
-    u.uRise!.value = rise
-    u.uViewportHeight!.value = size.height * viewport.dpr
-  })
+  useFrame(({ size, viewport }) =>
+    updateUniforms(material.current, clock, size.height * viewport.dpr),
+  )
 
   return (
     <points geometry={geometry} frustumCulled={false}>
@@ -114,4 +124,69 @@ export function Pebbles({ clock, focusDistance }: Props) {
       />
     </points>
   )
+}
+
+/**
+ * A few chips clustered round a job card's edges, in the card's own space (so they move
+ * with it): small clouds at the given points, [x, y, z, spread]. Same chips as round the
+ * spine, same shader.
+ */
+export function ChipCluster({
+  clusters,
+  count,
+  size = 1,
+  clock,
+  focusDistance,
+}: {
+  clusters: [number, number, number, number][]
+  count: number
+  /** Chip size relative to the spine's chips. */
+  size?: number
+  clock: SceneClock
+  focusDistance: number
+}) {
+  const material = useRef<ShaderMaterial>(null)
+  const geometry = useMemo(() => createCluster(clusters, count), [clusters, count])
+  const uniforms = useMemo(() => createUniforms(focusDistance), [focusDistance])
+  useEffect(() => () => geometry.dispose(), [geometry])
+  useFrame((state) =>
+    updateUniforms(material.current, clock, state.size.height * state.viewport.dpr, size),
+  )
+  return (
+    <points geometry={geometry} frustumCulled={false}>
+      <shaderMaterial
+        ref={material}
+        vertexShader={vertexShader}
+        fragmentShader={fragmentShader}
+        uniforms={uniforms}
+        transparent
+        depthWrite={false}
+      />
+    </points>
+  )
+}
+
+function createCluster(clusters: [number, number, number, number][], count: number) {
+  const orbit = new Float32Array(count * 4)
+  const cloud = new Float32Array(count * 4)
+  const seed = new Float32Array(count * 4)
+  for (let i = 0; i < count; i++) {
+    orbit.set(
+      [
+        Math.random() * Math.PI * 2,
+        0.15 + Math.random(),
+        Math.random() * 6,
+        0.4 + Math.random() * 0.5,
+      ],
+      i * 4,
+    )
+    cloud.set(clusters[i % clusters.length] ?? [0, 0, 0, 0.1], i * 4)
+    seed.set([Math.random() * 0.7, Math.random(), Math.random(), Math.random()], i * 4)
+  }
+  const geometry = new BufferGeometry()
+  geometry.setAttribute('position', new Float32BufferAttribute(new Float32Array(count * 3), 3))
+  geometry.setAttribute('orbit', new Float32BufferAttribute(orbit, 4))
+  geometry.setAttribute('cloud', new Float32BufferAttribute(cloud, 4))
+  geometry.setAttribute('seed', new Float32BufferAttribute(seed, 4))
+  return geometry
 }

@@ -1,31 +1,34 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import {
-  type BufferGeometry,
   Color,
+  Euler,
   ExtrudeGeometry,
   type Group,
   type Mesh,
-  type MeshBasicMaterial,
   MeshPhysicalMaterial,
-  PlaneGeometry,
+  ShapeGeometry,
   Quaternion,
+  ShaderMaterial,
   Vector3,
 } from 'three'
 import { type Job, jobs } from '@/content/site'
 import { SCRAMBLE_DURATION } from '@/lib/scramble'
 import { useWork } from '@/stores/work'
-import { sceneColors, sceneConfig } from '@/styles/scene'
+import { sceneColors } from '@/styles/scene'
 import { loadAssets } from '../assets'
-import { createBandGeometry, roundedRectCurve, roundedRectShape } from '../hero/bandGeometry'
-import { createGlassMaterial, disposeGlassMaterial } from '../hero/glassMaterial'
+import { roundedRectShape } from '../hero/bandGeometry'
+import frostFragment from '../shaders/frost.frag'
+import frostVertex from '../shaders/frost.vert'
+import noise from '../shaders/noise.glsl'
 import type { SceneClock } from '../useSceneClock'
 import { CardFace } from './cardFace'
+import { ChipCluster } from './Pebbles'
 
 /** Big, like the reference: the nearest card fills ~45% of the screen width. */
-const CARD = { width: 2.4, height: 1.5, depth: 0.05, radius: 0.18 }
-/** The cut-glass frame round each card: a thick bevelled band in The Core's glass. */
-const FRAME = { width: 0.1, depth: 0.14, chamfer: 0.04, innerChamfer: 0.016 }
+const CARD = { width: 2.4, height: 1.5, radius: 0.2 }
+/** One heavy glass block: thick, with a wide bevel that catches the light along its edges. */
+const BLOCK = { depth: 0.1, bevel: 0.06 }
 
 /**
  * Where the cards sit. `orbit` (desktop): a descending helix round the spine, facing out.
@@ -55,48 +58,96 @@ function home(i: number, layout: CardLayout, target: { position: Vector3; turn: 
   target.turn = angle
 }
 
-/** The thick cut-glass frame: The Core's bevelled band, swept round the card's outline. */
-function createFrame() {
-  return createBandGeometry(
-    roundedRectCurve(
-      CARD.width + FRAME.width * 0.4,
-      CARD.height + FRAME.width * 0.4,
-      CARD.radius + 0.04,
-    ),
-    { ...FRAME, segments: 360 },
-  )
-}
-
-/** A thin glass pane over the screen: rounded rectangle, bevelled edges catching the light. */
-function createSlab() {
+/** The card body: one thick rounded glass block with a wide, smooth bevel all round. */
+function createBlock() {
   const geometry = new ExtrudeGeometry(roundedRectShape(CARD.width, CARD.height, CARD.radius), {
-    depth: CARD.depth - 0.03,
+    depth: BLOCK.depth,
     bevelEnabled: true,
-    bevelThickness: 0.015,
-    bevelSize: 0.015,
-    bevelSegments: 3,
-    curveSegments: 12,
+    bevelThickness: BLOCK.bevel,
+    bevelSize: BLOCK.bevel,
+    bevelSegments: 8,
+    curveSegments: 24,
   })
   geometry.center()
   return geometry
 }
 
-function createGlass() {
-  // Dark, clear-coated glass over the screen: reflections and edges, the face shows through.
-  return new MeshPhysicalMaterial({
-    color: new Color().copy(sceneColors.bg),
-    metalness: 0,
-    roughness: 0.12,
+/**
+ * The block's glass: a dark body that reflects only where the light catches it, so it is
+ * lit along its bevelled edges, with The Core's thin-film rainbow and a sparkle where the
+ * key light hits a corner. No transmission (six refractive cards would halve the FPS).
+ */
+function createBlockGlass() {
+  const material = new MeshPhysicalMaterial({
+    color: new Color(0, 0, 0),
+    metalness: 0.6,
+    roughness: 0.06,
     clearcoat: 1,
-    clearcoatRoughness: 0.05,
-    iridescence: 0.5,
+    clearcoatRoughness: 0.03,
+    iridescence: 1,
     iridescenceIOR: 1.3,
-    transparent: true,
-    opacity: 0.22,
-    depthWrite: false,
-    envMapIntensity: 1.4,
+    iridescenceThicknessRange: [180, 420],
+    // Work's light is dim: the black glass needs strong reflections to light its edges.
+    envMapIntensity: 6,
+  })
+  // Edge lines: where the surface turns away from the viewer (the bevel all round), a thin
+  // bright line whose hue slides round the card (teal → violet → pink), like light caught
+  // in thick cut glass. The flat faces stay dark.
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uRimColors = { value: [sceneColors.glow, sceneColors.violet, sceneColors.pink] }
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec3 uRimColors[3];')
+      .replace(
+        '#include <opaque_fragment>',
+        `{
+          float grazing = 1.0 - abs(dot(normal, normalize(vViewPosition)));
+          float line = smoothstep(0.45, 0.95, grazing);
+          float hue = fract(atan(normal.y, normal.x) / 6.28318 + 0.5);
+          vec3 rim = hue < 0.33 ? mix(uRimColors[0], uRimColors[1], hue * 3.0)
+            : hue < 0.66 ? mix(uRimColors[1], uRimColors[2], hue * 3.0 - 1.0)
+            : mix(uRimColors[2], uRimColors[0], hue * 3.0 - 2.0);
+          outgoingLight += mix(vec3(1.0), rim, 0.55) * line * 0.9;
+        }
+        #include <opaque_fragment>`,
+      )
+  }
+  return material
+}
+
+/** The screen's outline: the block's front face, rounded like it, with 0..1 UVs. */
+function createScreenGeometry() {
+  const geometry = new ShapeGeometry(roundedRectShape(CARD.width, CARD.height, CARD.radius), 16)
+  const position = geometry.getAttribute('position')
+  const uv = geometry.getAttribute('uv')
+  for (let i = 0; i < position.count; i++) {
+    uv.setXY(i, position.getX(i) / CARD.width + 0.5, position.getY(i) / CARD.height + 0.5)
+  }
+  return geometry
+}
+
+/** The frosted screen: sits on the block's flat front face (inside the bevel). */
+function createScreenMaterial(face: CardFace, seed: number) {
+  return new ShaderMaterial({
+    vertexShader: frostVertex,
+    fragmentShader: `${noise}\n${frostFragment}`,
+    uniforms: {
+      uImage: { value: face.image },
+      uTitle: { value: face.texture },
+      uBrightness: { value: 1 },
+      uBlur: { value: 0 },
+      uSeed: { value: seed },
+      uHaze: { value: new Color().copy(sceneColors.glass).multiplyScalar(0.55) },
+    },
+    toneMapped: false,
   })
 }
+
+/** Chips gathered at a card's edges, in its own space: [x, y, z, spread]. */
+const EDGE_CHIPS: [number, number, number, number][] = [
+  [-CARD.width / 2 - 0.02, -CARD.height / 2 + 0.2, 0.3, 0.32],
+  [CARD.width / 2 + 0.02, CARD.height / 2 - 0.12, 0.28, 0.26],
+  [CARD.width * 0.22, -CARD.height / 2 - 0.04, 0.32, 0.22],
+]
 
 type Props = { layout: CardLayout; clock: SceneClock }
 
@@ -107,20 +158,14 @@ type Props = { layout: CardLayout; clock: SceneClock }
  * brightens it and scrambles its title until it resolves.
  */
 export function WorkCards({ layout, clock }: Props) {
-  const slab = useMemo(() => createSlab(), [])
-  const plane = useMemo(() => new PlaneGeometry(CARD.width * 0.96, CARD.height * 0.94), [])
-  const glass = useMemo(() => createGlass(), [])
-  const frame = useMemo(() => createFrame(), [])
-  // The Core's glass: bevel lines, sparkle and rainbow film; a faint rim glow keeps the
-  // edges lit under Work's darker light. Without transmission: the frames are thin, so
-  // reflections carry the look, and a refractive pass for six cards would halve the FPS.
-  const frameGlass = useMemo(() => {
-    const material = createGlassMaterial({ ...sceneConfig.glass, rim: 0.22, transmission: 0 })
-    // Black body: without transmission a white one would scatter light like plastic.
-    material.color.setScalar(0)
-    return material
-  }, [])
+  const block = useMemo(() => createBlock(), [])
+  const plane = useMemo(() => createScreenGeometry(), [])
+  const blockGlass = useMemo(() => createBlockGlass(), [])
   const faces = useMemo(() => jobs.map((job, i) => new CardFace(job, i)), [])
+  const screens = useMemo(
+    () => faces.map((face, i) => createScreenMaterial(face, i * 1.37)),
+    [faces],
+  )
   useEffect(() => {
     void loadAssets().then(({ work }) => {
       jobs.forEach((job, i) => {
@@ -131,14 +176,13 @@ export function WorkCards({ layout, clock }: Props) {
   }, [faces])
   useEffect(
     () => () => {
-      slab.dispose()
+      block.dispose()
       plane.dispose()
-      glass.dispose()
-      frame.dispose()
-      disposeGlassMaterial(frameGlass)
+      blockGlass.dispose()
+      screens.forEach((screen) => screen.dispose())
       faces.forEach((face) => face.dispose())
     },
-    [slab, plane, glass, frame, frameGlass, faces],
+    [block, plane, blockGlass, screens, faces],
   )
 
   return (
@@ -150,11 +194,10 @@ export function WorkCards({ layout, clock }: Props) {
           index={i}
           layout={layout}
           clock={clock}
-          slab={slab}
+          block={block}
           plane={plane}
-          glass={glass}
-          frame={frame}
-          frameGlass={frameGlass}
+          blockGlass={blockGlass}
+          screen={screens[i]}
           face={faces[i]}
         />
       ))}
@@ -167,47 +210,46 @@ type CardProps = {
   index: number
   layout: CardLayout
   clock: SceneClock
-  slab: ExtrudeGeometry
-  plane: PlaneGeometry
-  glass: MeshPhysicalMaterial
-  frame: BufferGeometry
-  frameGlass: MeshPhysicalMaterial
+  block: ExtrudeGeometry
+  plane: ShapeGeometry
+  blockGlass: MeshPhysicalMaterial
+  screen: ShaderMaterial | undefined
   face: CardFace | undefined
 }
 
-function Card({
-  job,
-  index,
-  layout,
-  clock,
-  slab,
-  plane,
-  glass,
-  frame,
-  frameGlass,
-  face,
-}: CardProps) {
+/** How far a card's own tilt goes (radians): a few degrees, never flat. */
+const TILT = { drift: 0.06, cursor: 0.07 }
+
+function Card({ job, index, layout, clock, block, plane, blockGlass, screen, face }: CardProps) {
   const group = useRef<Group>(null)
-  const screen = useRef<Mesh>(null)
+  const screenMesh = useRef<Mesh>(null)
   // Per-frame state and scratch objects (refs may be mutated in the frame loop).
   const state = useRef({
     focus: 0,
     scrambling: false,
+    pointer: { x: 0, y: 0 },
     target: { position: new Vector3(), turn: 0 },
     look: new Quaternion(),
     rest: new Quaternion(),
+    tilt: new Quaternion(),
+    euler: new Euler(),
     up: new Vector3(0, 1, 0),
   })
 
-  useFrame(({ camera }, delta) => {
+  useFrame(({ camera, pointer }, delta) => {
     const g = group.current
-    if (!g || !face) return
+    const screenMaterial = screenMesh.current?.material as ShaderMaterial | undefined
+    if (!g || !face || !screenMaterial) return
     const { focused, since } = useWork.getState()
     const isFocused = focused === job.slug
     const s = state.current
     const { target } = s
-    const ease = 1 - Math.exp(-Math.min(delta, 1 / 30) * 5)
+    const dt = Math.min(delta, 1 / 30)
+    const ease = 1 - Math.exp(-dt * 5)
     s.focus += ((isFocused ? 1 : 0) - s.focus) * ease
+    // The cursor's pull is heavily damped (~0.8s), as everywhere else.
+    s.pointer.x += (pointer.x - s.pointer.x) * (1 - Math.exp(-dt * 1.3))
+    s.pointer.y += (pointer.y - s.pointer.y) * (1 - Math.exp(-dt * 1.3))
 
     home(index, layout, target)
     // A slow float, each card on its own phase.
@@ -223,10 +265,21 @@ function Card({
     // round the far side of the spine); focused, it turns fully to face them.
     const facing = layout === 'column' ? 1 : 0.65 + 0.35 * s.focus
     g.quaternion.copy(s.rest).slerp(s.look, facing)
+    // Never perfectly flat: a few degrees of slow drift, and a little pull towards the
+    // cursor, so the glass thickness and its lit edges always show.
+    const t = clock.time
+    s.euler.set(
+      Math.sin(t * 0.31 + index) * TILT.drift - s.pointer.y * TILT.cursor + 0.05,
+      Math.sin(t * 0.23 + index * 2.1) * TILT.drift + s.pointer.x * TILT.cursor - 0.08,
+      Math.sin(t * 0.17 + index * 0.7) * 0.015,
+    )
+    g.quaternion.multiply(s.tilt.setFromEuler(s.euler))
     g.scale.setScalar((layout === 'column' ? COLUMN_SCALE : 1) * (1 + s.focus * 0.06))
 
-    const material = screen.current?.material as MeshBasicMaterial | undefined
-    material?.color.setScalar(0.75 + 0.25 * s.focus)
+    // Depth: the cards swung out to the side sit out of focus, until focused.
+    const side = layout === 'orbit' && index % 2 === 1 ? 1 : 0
+    screenMaterial.uniforms.uBlur!.value = side * (1 - s.focus)
+    screenMaterial.uniforms.uBrightness!.value = 0.8 - side * 0.2 + 0.25 * s.focus
 
     // Scramble the title for its duration after the card gains focus.
     const elapsed = (performance.now() - since) / 1000
@@ -240,6 +293,7 @@ function Card({
   })
 
   const focus = useWork((state) => state.focus)
+  const front = BLOCK.depth / 2 + BLOCK.bevel + 0.002
 
   return (
     <group
@@ -254,11 +308,11 @@ function Card({
         document.body.style.cursor = ''
       }}
     >
-      <mesh ref={screen} geometry={plane} position-z={0}>
-        <meshBasicMaterial map={face?.texture} toneMapped={false} />
-      </mesh>
-      <mesh geometry={slab} material={glass} renderOrder={1} />
-      <mesh geometry={frame} material={frameGlass} />
+      <mesh geometry={block} material={blockGlass} />
+      {screen && <mesh ref={screenMesh} geometry={plane} material={screen} position-z={front} />}
+      {layout === 'orbit' && (
+        <ChipCluster clusters={EDGE_CHIPS} count={560} size={2} clock={clock} focusDistance={4.8} />
+      )}
     </group>
   )
 }
