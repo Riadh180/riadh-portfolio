@@ -1,15 +1,16 @@
-// A node: a dark glass bead with a thin bright ring and a soft glowing core.
+// A node's glow: a soft core (in focus) or a flat bokeh disc (out of focus).
 
 varying vec3 vColor;
 varying float vLit;
+varying float vBlur;
 
 void main() {
   vec2 c = gl_PointCoord * 2.0 - 1.0;
   float r = length(c);
   if (r > 1.0) discard;
-  float ring = smoothstep(0.72, 0.84, r) * (1.0 - smoothstep(0.9, 1.0, r));
-  float core = exp(-r * r * 9.0);
-  float body = (1.0 - smoothstep(0.82, 0.9, r)) * 0.18;
-  vec3 color = vColor * (ring * (0.8 + vLit) + core * (0.5 + vLit * 1.6)) + vColor * body;
-  gl_FragColor = vec4(color, 1.0);
+  float core = exp(-r * r * 7.0);
+  float bokeh = (1.0 - smoothstep(0.85, 1.0, r)) * 0.35;
+  float shape = mix(core, bokeh, vBlur);
+  // Focus brightens the sharp glow, not the bokeh (a lit, blurred node would bloom out).
+  gl_FragColor = vec4(vColor * shape * (0.9 + vLit * 1.6 * (1.0 - vBlur)), 1.0);
 }

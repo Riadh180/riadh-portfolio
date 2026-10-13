@@ -38,15 +38,18 @@ export function createGlassMaterial(look: GlassLook) {
  * `facing` (1 face-on .. 0 edge-on) dims the reflections as the emblem passes edge-on, where
  * the flat faces would otherwise mirror the edge light at full strength and flare.
  * `depth` scales the refraction depth (deeper where the glass passes in front of type).
+ * `reflectOnly` drops the refraction pass (small, distant uses).
  * `rainbow` (0..1) splits the refraction into colour at the edges and eases the white
  * bevel glow back, so the edges read as rainbow rather than thin white lines.
  */
 export function applyGlassLook(
   material: MeshPhysicalMaterial,
   look: GlassLook,
-  { facing = 1, depth = 1, rainbow = 0 } = {},
+  { facing = 1, depth = 1, rainbow = 0, reflectOnly = false } = {},
 ) {
-  material.transmission = look.transmission
+  material.transmission = reflectOnly ? 0 : look.transmission
+  // Without transmission a light body scatters like plastic: keep it dark glass.
+  material.color.copy(sceneColors.glass).multiplyScalar(reflectOnly ? 0.04 : 1)
   material.thickness = look.thickness * depth
   material.dispersion = 0.3 + rainbow * 4.5
   material.envMapIntensity = look.envIntensity * (0.05 + 0.95 * facing)

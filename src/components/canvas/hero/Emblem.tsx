@@ -17,6 +17,11 @@ type Props = {
   reducedMotion: boolean
   /** Where the visitor is on the camera path; omitted, the emblem stays at the hero. */
   journey?: JourneyState
+  /**
+   * A second Core elsewhere (the centre of the skills graph): it stays at the group's
+   * origin at this size and leaves the scene's light alone.
+   */
+  anchored?: { scale: number }
 }
 
 /**
@@ -86,7 +91,7 @@ function createInner() {
  * clear, lightly marked face between crisp bevelled edges. It turns slowly on its own; the
  * cursor adds a small, late tilt that the inner layer leans against.
  */
-export function Emblem({ look, pointer, clock, reducedMotion, journey }: Props) {
+export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored }: Props) {
   const group = useRef<Group>(null)
   const inner = useRef<Mesh>(null)
   const tilt = useRef({ x: 0, y: 0 })
@@ -135,7 +140,7 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey }: Props) 
 
     const g = group.current
     // Out of sight down at Work (and no transmission pass for it there).
-    g.visible = !journey || journey.toWork < 0.85
+    g.visible = anchored ? true : !journey || journey.toWork < 0.85
     const heroTiltX = REST.x + tilt.current.x + Math.sin(t * 0.3) * 0.05
     g.rotation.x = heroTiltX + (tilt.current.x * 0.4 - heroTiltX) * travel
     g.rotation.y = heroTurn + (heldTurn - heroTurn) * travel
@@ -146,6 +151,10 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey }: Props) 
     // Portrait screens see a narrower slice of the world: keep the emblem's share of width.
     const portrait = Math.min(1, Math.max(0.55, (size.width / size.height) * 0.9))
     g.scale.setScalar(emblem.scale * portrait * (1 + (STATEMENT.scale - 1) * travel))
+    if (anchored) {
+      g.position.set(0, Math.sin(t * 0.5) * emblem.float, 0)
+      g.scale.setScalar(anchored.scale)
+    }
 
     // The light rig turns part of the way with the emblem near face-on, so the bevels keep
     // mirroring the edge light, and eases back to fixed towards edge-on, where following
@@ -158,12 +167,13 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey }: Props) 
     // inverse of the emblem's own XYZ rotation (with 'XYZ' the tilt flips sign once turned).
     // Down at Work the light stays put (its look was tuned unrotated).
     const away = journey ? 1 - (1 - Math.cos(Math.PI * journey.toWork)) / 2 : 1
-    scene.environmentRotation.set(
-      g.rotation.x * look.follow * away,
-      (facing + (look.follow * Math.sin(2 * (turn - facing))) / 2) * away,
-      0,
-      'YXZ',
-    )
+    if (!anchored)
+      scene.environmentRotation.set(
+        g.rotation.x * look.follow * away,
+        (facing + (look.follow * Math.sin(2 * (turn - facing))) / 2) * away,
+        0,
+        'YXZ',
+      )
 
     // The inner layer sways a little and leans against the cursor tilt; its wobble stays
     // small so its bevels keep catching the edge light.
@@ -180,6 +190,9 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey }: Props) 
       facing: faceOn + (0.7 - faceOn) * travel,
       depth: 1 + 2 * travel,
       rainbow: travel,
+      // A small anchored Core reflects only: no refraction pass (it would re-render the
+      // scene for an emblem a few hundred pixels wide).
+      reflectOnly: !!anchored,
     })
   })
 

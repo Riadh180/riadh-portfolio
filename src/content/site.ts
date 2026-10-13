@@ -8,6 +8,7 @@ export const profile = {
   availability: 'Open to remote / hybrid',
   email: 'riadhsouissi@gmx.de',
   github: 'https://github.com/Riadh180',
+  linkedin: 'https://www.linkedin.com/in/riadh-souissi/',
   cvHref: '/cv',
 } as const
 
@@ -121,6 +122,8 @@ export type Skill = {
   name: string
   /** Jobs (slugs) where the CV shows this skill in use; empty if the CV doesn't say. */
   usedAt: string[]
+  /** Where it was learned or used, when that isn't a job. */
+  note?: string
 }
 
 export type SkillBranch = {
@@ -171,11 +174,7 @@ export const skillGraph: { core: Skill; branches: SkillBranch[] } = {
     {
       id: 'performance',
       label: 'Performance',
-      skills: [
-        { name: 'Profiling', usedAt: ['bliggit', 'adesso'] },
-        { name: 'Load time', usedAt: ['bliggit'] },
-        { name: 'Crash-free', usedAt: ['bliggit'] },
-      ],
+      skills: [{ name: 'Profiling', usedAt: ['bliggit', 'adesso'] }],
     },
     {
       id: 'creative',
@@ -194,6 +193,7 @@ export const skillGraph: { core: Skill; branches: SkillBranch[] } = {
       skills: ['Python', 'SQL', 'Spark', 'Kafka', 'Airflow', 'dbt', 'AWS'].map((name) => ({
         name,
         usedAt: [],
+        note: 'Data Engineering Programme (neue fische / SPICED, 2026)',
       })),
     },
   ],

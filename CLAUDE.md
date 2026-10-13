@@ -334,7 +334,7 @@ A graph with **React / TypeScript at the center**. Branches around it:
 Hovering a node lights its connections and the jobs where I used it.
 
 ### Contact
-riadhsouissi@gmx.de · LinkedIn [add URL] · GitHub https://github.com/Riadh180 · CV download (PDF)
+riadhsouissi@gmx.de · LinkedIn https://www.linkedin.com/in/riadh-souissi/ · GitHub https://github.com/Riadh180 · CV download (PDF)
 
 ### Recruiter fast lane
 Email and CV download are always visible in the top bar (one click from anywhere), plus

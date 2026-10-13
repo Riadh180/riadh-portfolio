@@ -38,8 +38,12 @@ export function layoutGraph() {
     const angle = ((-25 + (k / Math.max(1, main.length - 1)) * 230) * Math.PI) / 180
     const direction = branch.secondary
       ? new Vector3(0, -1, 0)
-      : new Vector3(Math.cos(angle), Math.sin(angle) * 0.8, Math.sin(k * 1.9) * 0.25).normalize()
-    const reach = branch.secondary ? 2.4 : 2.4
+      : new Vector3(
+          Math.cos(angle),
+          Math.sin(angle) * 0.8,
+          Math.sin(k * 2.3 + 0.6) * 0.75,
+        ).normalize()
+    const reach = 2.6
     const branchIndex = nodes.length
     nodes.push({
       id: branch.id,
@@ -56,7 +60,7 @@ export function layoutGraph() {
       let position: Vector3
       if (branch.secondary) {
         // A quiet row below the data branch.
-        position = new Vector3(spread * 6, -reach - 0.9 - (i % 2) * 0.35, Math.sin(i * 1.7) * 0.2)
+        position = new Vector3(spread * 6, -reach - 0.9 - (i % 2) * 0.35, Math.sin(i * 1.7) * 1.1)
       } else {
         // Fanned on an arc beyond the branch, wide enough that labels don't collide.
         // Near the top the labels sit side by side: fan wider and stagger the distance.
@@ -66,7 +70,7 @@ export function layoutGraph() {
         position = new Vector3(
           Math.cos(fanAngle) * out,
           Math.sin(fanAngle) * out * 0.82,
-          direction.z * out + Math.sin(i * 2.1) * 0.2,
+          direction.z * out + Math.sin(i * 2.1 + k) * 0.9,
         )
       }
       nodes.push({

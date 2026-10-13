@@ -8,31 +8,56 @@ import { Backdrop } from '@/components/canvas/Backdrop'
 import { HeroLighting } from '@/components/canvas/hero/HeroLighting'
 import { Effects } from '@/components/canvas/post/Effects'
 import { SkillGraph } from '@/components/canvas/system/SkillGraph'
+import { type Pointer, usePointer } from '@/components/canvas/usePointer'
 import { useSceneClock } from '@/components/canvas/useSceneClock'
+import { useRef } from 'react'
+import type { PerspectiveCamera } from 'three'
 import { SystemList } from '@/components/system/SystemList'
 import { sceneColors, sceneConfig } from '@/styles/scene'
 
-const look = { ...sceneConfig.glass, ...sceneConfig.workLight }
+/** The Core needs the hero's glass light; the gems read well under it too. */
+const look = sceneConfig.glass
 
-/** Circles the graph slowly; the graph sits right of centre (the list takes the left). */
-function LabCamera() {
-  useFrame(({ camera, clock }) => {
-    const t = clock.elapsedTime * 0.05
-    camera.position.set(Math.sin(t) * 1.2 - 1.6, 0.5, 11)
-    camera.lookAt(-1.6, -0.2, 0)
+/**
+ * A slow orbit round the graph (swinging ±35°), with a heavy cursor parallax on top; the
+ * graph sits right of centre (the list takes the left).
+ */
+function LabCamera({ pointer }: { pointer: Pointer }) {
+  const parallax = useRef({ x: 0, y: 0 })
+  useFrame(({ camera, clock, size }, delta) => {
+    const p = parallax.current
+    const ease = 1 - Math.exp(-Math.min(delta, 1 / 30) * 1.4)
+    p.x += ((pointer.uv.x - 0.5) * 1.2 - p.x) * ease
+    p.y += ((pointer.uv.y - 0.5) * 0.8 - p.y) * ease
+    const angle = Math.sin(clock.elapsedTime * 0.07) * 0.6
+    const distance = 14
+    camera.position.set(Math.sin(angle) * distance + p.x, 0.4 + p.y, Math.cos(angle) * distance)
+    camera.lookAt(0, -0.3, 0)
+    const perspective = camera as PerspectiveCamera
+    if (perspective.view?.offsetX !== -size.width * 0.12) {
+      perspective.setViewOffset(
+        size.width,
+        size.height,
+        -size.width * 0.12,
+        0,
+        size.width,
+        size.height,
+      )
+    }
   })
   return null
 }
 
 function SystemScene() {
   const clock = useSceneClock(1)
+  const pointer = usePointer()
   return (
     <>
       <primitive attach="background" object={sceneColors.bg} />
       <HeroLighting look={look} clock={clock} />
-      <LabCamera />
+      <LabCamera pointer={pointer} />
       <Backdrop />
-      <SkillGraph clock={clock} />
+      <SkillGraph clock={clock} look={look} pointer={pointer} reducedMotion={false} />
       <Effects reducedMotion={false} />
     </>
   )
