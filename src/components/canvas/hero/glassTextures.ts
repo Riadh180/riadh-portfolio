@@ -6,35 +6,13 @@ import {
   RepeatWrapping,
   RGBAFormat,
 } from 'three'
+import { hash, valueNoise as noise } from '../noise'
 import type { GlassLook } from './glassLook'
 import { BAND_EDGES, CHAMFER_EDGES, FACE_EDGES } from './bandGeometry'
 
 // Surface textures for the glass bands: the film lies across the emblem's plane (uv1), the
 // smudges on the band UVs (u along the path in world units, v round the profile, one
 // eighth per edge), tiling seamlessly in u.
-
-/** Deterministic hash → 0..1. */
-function hash(x: number, y: number, seed: number) {
-  const h = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453
-  return h - Math.floor(h)
-}
-
-/** Smooth value noise, periodic in x over `period` cells. */
-function noise(x: number, y: number, period: number, seed: number) {
-  const xi = Math.floor(x)
-  const yi = Math.floor(y)
-  const fx = x - xi
-  const fy = y - yi
-  const sx = fx * fx * (3 - 2 * fx)
-  const sy = fy * fy * (3 - 2 * fy)
-  const x0 = ((xi % period) + period) % period
-  const x1 = (x0 + 1) % period
-  const a = hash(x0, yi, seed)
-  const b = hash(x1, yi, seed)
-  const c = hash(x0, yi + 1, seed)
-  const d = hash(x1, yi + 1, seed)
-  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy
-}
 
 function texture(width: number, height: number, repeat: number) {
   const map = new DataTexture(new Uint8Array(width * height * 4), width, height, RGBAFormat)

@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 /** Development only: compare glass looks for the emblem side by side. 404 in production. */
 export default function LabPage() {
   if (process.env.NODE_ENV !== 'development') notFound()
-  return <LabLoader />
+  return <LabLoader lab="glass" />
 }

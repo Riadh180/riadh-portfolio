@@ -228,7 +228,8 @@ Proposed (not yet approved) ideas for color in the particles themselves:
    must still look premium. No up-front GPU classification.
 3. **Statement:** the tagline *"Complex inside. Effortless on screen."* as large type in
    the 3D scene, refracted and glitched by a passing glass element; a short mono
-   paragraph beside it.
+   paragraph beside it. (Approved. Polish stage: give the glass slit a very slow sideways
+   drift, so it bends different letters over time and the whole tagline stays readable.)
 4. **Work:** the camera descends past a central glass sculpture (built from
    interface-like shapes: rounded rects, layers) wrapped in particle clouds. Around it
    float **glass cards per job** with the metrics as titles (`>99%` crash-free, `0`
@@ -247,6 +248,21 @@ Proposed (not yet approved) ideas for color in the particles themselves:
      transmission so it stays cheap), streaming up the column as the signal. They
      thicken into the clouds that wrap the spine, and a clicked card dissolves into them.
    - Accent: violet. Our own forms only: never their column, ribbon or projects.
+   **Work: approved additions**
+   - **Cards** show the company with its metric, e.g. `Bliggit · >99% crash-free`, never
+     the metric alone.
+   - **Own URL per opened card** (`/work/bliggit`, …): shareable, indexable, with its own
+     metadata. Back / close returns to the scene at the Work place.
+   - **Mobile:** no orbit. A simpler vertical swipe of cards along the spine; prototyped in
+     `/lab/work` alongside the desktop version.
+   - **Keyboard & screen reader:** Tab reaches each card, Enter opens, Esc closes; all card
+     content is real HTML (the 3D card mirrors it).
+   - **Media:** placeholder visuals for now, loaded by convention from
+     `public/work/<slug>/` (e.g. `public/work/bliggit/`), so real images drop in later
+     without code changes.
+   - **Freelance card** features this site itself as the creative-dev proof.
+   - **Build order:** (1) spine + glass shards in `/lab/work`, (2) cards + hover in the lab,
+     (3) click / dissolve / detail + routes, (4) wire into the camera path.
 5. **Depth (Data Engineering):** its own environment beneath a water surface (caustics
    seen from below): "beneath the interface".
 6. **Contact:** calm; "Let's talk" with the email; the world loops back to the hero

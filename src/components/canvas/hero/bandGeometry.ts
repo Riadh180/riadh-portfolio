@@ -135,23 +135,33 @@ export function createBandGeometry(curve: Curve<Vector3>, band: Band) {
   return geometry
 }
 
-/** The app-icon outline: a rounded square, as a smooth closed path. */
-export function roundedSquareCurve(size = 2, radius = 0.62) {
-  const h = size / 2
-  const outline = new Shape()
-    .moveTo(-h + radius, -h)
-    .lineTo(h - radius, -h)
-    .quadraticCurveTo(h, -h, h, -h + radius)
-    .lineTo(h, h - radius)
-    .quadraticCurveTo(h, h, h - radius, h)
-    .lineTo(-h + radius, h)
-    .quadraticCurveTo(-h, h, -h, h - radius)
-    .lineTo(-h, -h + radius)
-    .quadraticCurveTo(-h, -h, -h + radius, -h)
+/** A rounded rectangle (an interface panel) as a 2D shape, centred on the origin. */
+export function roundedRectShape(width: number, height: number, radius: number) {
+  const w = width / 2
+  const h = height / 2
+  return new Shape()
+    .moveTo(-w + radius, -h)
+    .lineTo(w - radius, -h)
+    .quadraticCurveTo(w, -h, w, -h + radius)
+    .lineTo(w, h - radius)
+    .quadraticCurveTo(w, h, w - radius, h)
+    .lineTo(-w + radius, h)
+    .quadraticCurveTo(-w, h, -w, h - radius)
+    .lineTo(-w, -h + radius)
+    .quadraticCurveTo(-w, -h, -w + radius, -h)
+}
+
+/** A rounded rectangle as a smooth closed path. */
+export function roundedRectCurve(width: number, height: number, radius: number) {
   // Evenly spaced points (the closing point duplicates the first).
-  const points = outline
+  const points = roundedRectShape(width, height, radius)
     .getSpacedPoints(160)
     .slice(0, -1)
     .map((p) => new Vector3(p.x, p.y, 0))
   return new CatmullRomCurve3(points, true, 'centripetal')
+}
+
+/** The app-icon outline: a rounded square. */
+export function roundedSquareCurve(size = 2, radius = 0.62) {
+  return roundedRectCurve(size, size, radius)
 }

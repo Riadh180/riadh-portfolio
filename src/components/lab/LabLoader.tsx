@@ -1,15 +1,18 @@
 'use client'
 
-import { lazy, Suspense } from 'react'
+import dynamic from 'next/dynamic'
 
-// Compiled out of production builds entirely (the page also 404s there).
-const GlassLab = process.env.NODE_ENV === 'development' ? lazy(() => import('./GlassLab')) : null
+// Client-only (no server render: WebGL and leva live in the browser), and compiled out of
+// production builds entirely (the pages also 404 there).
+const labs =
+  process.env.NODE_ENV === 'development'
+    ? {
+        glass: dynamic(() => import('./GlassLab'), { ssr: false }),
+        work: dynamic(() => import('./WorkLab'), { ssr: false }),
+      }
+    : null
 
-export function LabLoader() {
-  if (!GlassLab) return null
-  return (
-    <Suspense fallback={null}>
-      <GlassLab />
-    </Suspense>
-  )
+export function LabLoader({ lab }: { lab: 'glass' | 'work' }) {
+  const Lab = labs?.[lab]
+  return Lab ? <Lab /> : null
 }

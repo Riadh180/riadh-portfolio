@@ -79,6 +79,54 @@ export const sceneConfig = {
     /** How far the key light shifts toward the warm accent at the peak. */
     warmth: 0.85,
   },
+  /**
+   * Work: the spine, one heavy sculpted column of fused, chunky glass-dark pieces in The
+   * Core's language (tune at /lab/work).
+   */
+  spine: {
+    /** Pieces stacked up the column (slabs, key blocks, fins). */
+    pieces: 72,
+    /** Height of the column. */
+    height: 13,
+    /** Turn between one piece and the next, in radians. */
+    twist: 0.7,
+    /** Sideways wander off the axis and tilt of each piece. */
+    offset: 0.16,
+    tilt: 0.38,
+    /** Share of pieces that are thin fins sticking out. */
+    fins: 0.18,
+    /** Sculpting: how much the surface bulges. */
+    bulge: 0.06,
+    /** Slow turn of the whole column, radians per second. */
+    turn: 0.05,
+    /** Oily sheen strength and how glossy the dark body is. */
+    sheen: 0.85,
+    gloss: 0.72,
+  },
+  /**
+   * Work's own, much darker light rig (the hero's is built for thin glass and would turn a
+   * glossy mass white): a dim edge band and fill, so the oily sheen shows only where light
+   * catches the bulges. Overrides the hero look's light values at the Work place.
+   */
+  workLight: {
+    key: 160,
+    edge: 1.6,
+    face: 0.2,
+  },
+  /** Work: round coloured pebbles clumped round the spine and in a few small clouds. */
+  pebbles: {
+    count: 7000,
+    size: 0.022,
+    brightness: 1,
+    /** Distance from the axis where they gather. */
+    radius: 0.95,
+    /** How tightly they hug the column (higher = tighter). */
+    hug: 0.7,
+    /** Share that sit in the small clouds away from the column. */
+    clouds: 0.12,
+    /** Rise speed up the column, units per second. */
+    rise: 0.18,
+  },
   cursor: {
     strength: 0.6,
     radius: 0.006,
