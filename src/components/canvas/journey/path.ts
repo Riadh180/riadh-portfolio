@@ -12,7 +12,12 @@ export const PLACES = {
   statement: -12,
   /** Where the Work place's own origin sits (the spine's centre). */
   work: -32,
+  /** The skills graph's centre (The Core). */
+  system: -54,
 }
+
+/** The System place: the graph right of centre, seen from further back (it's wide). */
+export const SYSTEM = { x: 2.2, distance: 14, phoneDistance: 24, swing: 0.45 }
 
 /**
  * The Work place's layout, in its own space: the spine on the axis, the cards stacked
@@ -40,10 +45,10 @@ function descend(toWork: number) {
 
 /**
  * The journey as the scene sees it, updated once per frame before anything else.
- * `camera` (hero → statement), `toWork` (statement → Work) and `inWork` (down the cards)
- * follow the smoothed scroll directly (Lenis settles a tick in ~0.7s); `objects` (The
- * Core's move to the statement) plays on its own clock once triggered. With reduced motion there is no flight: it cuts between places and
- * between cards.
+ * `camera` (hero → statement), `toWork` (statement → Work), `inWork` (down the cards) and
+ * `toSystem` (on to the skills graph) follow the smoothed scroll directly (Lenis settles a
+ * tick in ~0.7s); `objects` (The Core's move to the statement) plays on its own clock once
+ * triggered. With reduced motion there is no flight: it cuts between places and cards.
  */
 export class JourneyState {
   /** 0 (hero) → 1 (statement). */
@@ -55,6 +60,9 @@ export class JourneyState {
   toWork = 0
   /** 0 (first card) → 1 (last card). */
   inWork = 0
+  /** 0 (last card) → 1 (arrived at System). */
+  toSystem = 0
+  private time = 0
   /** Phones: the cards hang in a column; the camera rides straight down it. */
   column = false
   /** World y of the camera's focus on the path. */
@@ -72,7 +80,10 @@ export class JourneyState {
     let camera = Math.min(1, progress)
     let toWork = Math.min(1, Math.max(0, progress - 1))
     let inWork = Math.min(1, Math.max(0, progress - 2))
+    let toSystem = Math.min(1, Math.max(0, progress - 3))
+    this.time += reducedMotion ? 0 : Math.min(delta, 1 / 30)
     if (reducedMotion) {
+      toSystem = toSystem > 0.5 ? 1 : 0
       camera = camera > 0.5 ? 1 : 0
       toWork = toWork > 0.5 ? 1 : 0
       inWork = Math.round(inWork * (WORK.cards - 1)) / (WORK.cards - 1)
@@ -80,6 +91,7 @@ export class JourneyState {
     this.camera = camera
     this.toWork = toWork
     this.inWork = inWork
+    this.toSystem = toSystem
     // The Core's move to the statement plays on its own clock once triggered (~1.4s), so
     // the slit always lands in front of the tagline, however fast the scroll.
     if (camera > 0.55) this.heading = 1
@@ -101,6 +113,16 @@ export class JourneyState {
     const workDistance = column ? 7.2 : WORK.distance
     this.distance = 10 + (workDistance - 10) * arrive
     this.angle = column ? 0 : inWork * SPIRAL * arrive
+
+    // On down from the last card to the skills graph, then a slow swing round it.
+    if (toSystem > 0) {
+      const down = smooth(toSystem)
+      const systemDistance = column ? SYSTEM.phoneDistance : SYSTEM.distance
+      this.y = workY + (PLACES.system - workY) * down
+      this.distance = workDistance + (systemDistance - workDistance) * down
+      const swing = Math.sin(this.time * 0.07) * SYSTEM.swing
+      this.angle = this.angle * (1 - down) + (column ? 0 : swing) * down
+    }
   }
 
   /** Height (Work space) where the camera centres on card `index` (fractional between). */

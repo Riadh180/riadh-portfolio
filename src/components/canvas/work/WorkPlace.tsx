@@ -21,7 +21,7 @@ export function WorkPlace({ journey, clock }: Props) {
   useFrame(() => {
     const g = group.current
     if (!g) return
-    g.visible = journey.toWork > 0.02
+    g.visible = journey.toWork > 0.02 && journey.toSystem < 0.98
     g.position.set(column ? 0 : WORK.x, PLACES.work, 0)
   })
 

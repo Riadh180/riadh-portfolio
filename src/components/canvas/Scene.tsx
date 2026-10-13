@@ -7,6 +7,7 @@ import { Backdrop } from './Backdrop'
 import { CameraRig } from './CameraRig'
 import { Emblem } from './hero/Emblem'
 import { DustSheet } from './journey/DustSheet'
+import { DustTrail } from './journey/DustTrail'
 import { FormMoment } from './journey/FormMoment'
 import { GoldCloud } from './journey/GoldCloud'
 import { type JourneyState, useJourneyState } from './journey/path'
@@ -16,6 +17,7 @@ import { ParticleField } from './particles/ParticleField'
 import { Effects } from './post/Effects'
 import type { Pointer } from './usePointer'
 import { useSceneClock } from './useSceneClock'
+import { SystemPlace } from './system/SystemPlace'
 import { WorkPlace } from './work/WorkPlace'
 
 type Props = {
@@ -28,10 +30,12 @@ type Props = {
  * The light the glass sees: the hero's look, blending into Work's darker rig (and no
  * light-follow) as the camera arrives at Work.
  */
-function blendLight(look: GlassLook, toWork: number) {
+function blendLight(look: GlassLook, toWork: number, toSystem: number) {
   const hero = sceneConfig.glass
   const work = sceneConfig.workLight
-  const w = (1 - Math.cos(Math.PI * toWork)) / 2
+  // Work's dark rig; back to the hero's light for the gems and The Core at System.
+  const ease = (x: number) => (1 - Math.cos(Math.PI * x)) / 2
+  const w = ease(toWork) * (1 - ease(toSystem))
   // Rounded so the environment only re-bakes when the light visibly changes.
   const mix = (a: number, b: number) => Math.round((a + (b - a) * w) * 100) / 100
   look.key = mix(hero.key, work.key)
@@ -43,7 +47,7 @@ function blendLight(look: GlassLook, toWork: number) {
 /** One mutable look, blended every frame. */
 function useLiveLook(journey: JourneyState) {
   const [look] = useState<GlassLook>(() => ({ ...sceneConfig.glass }))
-  useFrame(() => blendLight(look, journey.toWork), -3)
+  useFrame(() => blendLight(look, journey.toWork, journey.toSystem), -3)
   return look
 }
 
@@ -73,7 +77,15 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
       <DustSheet clock={clock} journey={journey} />
       <Tagline clock={clock} reducedMotion={reducedMotion} journey={journey} />
       <FormMoment journey={journey} simSize={simSize} clock={clock} />
+      <DustTrail journey={journey} />
       <WorkPlace journey={journey} clock={clock} />
+      <SystemPlace
+        journey={journey}
+        clock={clock}
+        look={look}
+        pointer={pointer}
+        reducedMotion={reducedMotion}
+      />
       <ParticleField
         simSize={simSize}
         clock={clock}

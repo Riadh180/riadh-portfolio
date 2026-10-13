@@ -1,6 +1,7 @@
 import { Approach } from '@/components/sections/Approach'
 import { Hero } from '@/components/sections/Hero'
 import { SectionShell } from '@/components/sections/SectionShell'
+import { SystemSection } from '@/components/sections/SystemSection'
 import { WorkSection } from '@/components/work/WorkSection'
 import { profile } from '@/content/site'
 
@@ -14,7 +15,7 @@ export function Home({ work = null }: { work?: string | null }) {
           through the dust as it snaps into a UI wireframe and scatters (the "Form" beat). */}
       <div aria-hidden className="h-[150svh]" />
       <WorkSection initial={work} />
-      <SectionShell id="system" title="System" />
+      <SystemSection />
       <SectionShell id="depth" title="Depth" />
       <SectionShell id="contact" title="Let’s talk">
         <a href={`mailto:${profile.email}`} className="self-start ui text-violet hover:text-text">

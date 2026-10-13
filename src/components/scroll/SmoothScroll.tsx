@@ -9,48 +9,70 @@ import { jobs } from '@/content/site'
 import { useJourney } from '@/stores/journey'
 import { useWork } from '@/stores/work'
 
-/** Scroll positions (px) where the path's progress reaches 0, 1, 1 (end of dwell), 2 and 3. */
-type Anchors = [number, number, number, number, number]
+/**
+ * The path as (scroll px, progress) pairs, measured from the sections: the statement
+ * (arrival, then a dwell), Work (arrival at the first card, down to the last), and
+ * System (arrival, then a dwell). Progress is piecewise linear between them.
+ */
+type Anchors = [scroll: number, progress: number][]
 
-/** Reads the anchors from the sections: statement arrival and dwell, Work arrival and end. */
 function measure(): Anchors {
   const top = (id: string) => document.getElementById(id)?.offsetTop ?? 0
   const height = (id: string) => document.getElementById(id)?.offsetHeight ?? 0
   const screen = window.innerHeight
-  const statement = Math.max(1, top('approach'))
-  const dwell = Math.max(statement, statement + height('approach') - screen)
-  const work = Math.max(dwell + 1, top('work'))
-  const end = Math.max(work + 1, work + height('work') - screen)
-  return [0, statement, dwell, work, end]
+  const end = (id: string) => top(id) + Math.max(0, height(id) - screen)
+  const points: Anchors = [
+    [0, 0],
+    [top('approach'), 1],
+    [end('approach'), 1],
+    [top('work'), 2],
+    [end('work'), 3],
+    [top('system'), 4],
+    [end('system'), 4],
+  ]
+  // Keep it strictly increasing in scroll, whatever the layout.
+  for (let i = 1; i < points.length; i++) {
+    const previous = points[i - 1]![0]
+    if (points[i]![0] <= previous) points[i]![0] = previous + 1
+  }
+  return points
 }
 
-/** Scroll position → path progress (piecewise linear between the anchors). */
-function toProgress(scroll: number, [, statement, dwell, work, end]: Anchors) {
-  if (scroll <= statement) return scroll / statement
-  if (scroll <= dwell) return 1
-  if (scroll <= work) return 1 + (scroll - dwell) / (work - dwell)
-  return Math.min(3, 2 + (scroll - work) / (end - work))
+function interpolate(value: number, anchors: Anchors, from: 0 | 1, to: 0 | 1) {
+  const last = anchors[anchors.length - 1]!
+  if (value >= last[from]) return last[to]
+  for (let i = 1; i < anchors.length; i++) {
+    const a = anchors[i - 1]!
+    const b = anchors[i]!
+    if (value <= b[from]) {
+      const span = b[from] - a[from]
+      // A dwell (equal progress) maps any progress inside it to its start.
+      const t = span <= 0 ? 0 : (value - a[from]) / span
+      return a[to] + (b[to] - a[to]) * t
+    }
+  }
+  return last[to]
 }
 
-/** Path progress → scroll position (the inverse, for jumps). */
-function toScroll(progress: number, [, statement, dwell, work, end]: Anchors) {
-  if (progress <= 1) return progress * statement
-  if (progress <= 2) return dwell + (progress - 1) * (work - dwell)
-  return work + (progress - 2) * (end - work)
-}
+/** Scroll position → path progress. */
+const toProgress = (scroll: number, anchors: Anchors) => interpolate(scroll, anchors, 0, 1)
+/** Path progress → scroll position (the first position reaching it). */
+const toScroll = (progress: number, anchors: Anchors) => interpolate(progress, anchors, 1, 0)
 
 /**
  * Key moments where the scroll settles with a soft magnet, as path progress: the
  * statement, the wireframe beat half-way down, and each job card.
  */
 function stopsAt(anchors: Anchors) {
-  const [, statement, dwell] = anchors
   const cards = Array.from({ length: jobs.length }, (_, i) => 2 + i / (jobs.length - 1))
+  const statement = anchors[1]![0]
+  const dwell = anchors[2]![0]
   return [
     0,
     (statement + dwell) / 2,
     toScroll(1 + (DESCENT.holdFrom + DESCENT.holdTo) / 2, anchors),
     ...cards.map((progress) => toScroll(progress, anchors)),
+    toScroll(4, anchors),
   ]
 }
 
