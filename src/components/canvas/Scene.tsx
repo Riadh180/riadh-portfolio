@@ -72,7 +72,7 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
       <GoldCloud journey={journey} clock={clock} reducedMotion={reducedMotion} />
       <DustSheet clock={clock} journey={journey} />
       <Tagline clock={clock} reducedMotion={reducedMotion} journey={journey} />
-      <FormMoment journey={journey} simSize={simSize} />
+      <FormMoment journey={journey} simSize={simSize} clock={clock} />
       <WorkPlace journey={journey} clock={clock} />
       <ParticleField
         simSize={simSize}

@@ -30,6 +30,7 @@ import dissolve from '../shaders/dissolve.glsl'
 import noise from '../shaders/noise.glsl'
 import type { SceneClock } from '../useSceneClock'
 import { CardFace } from './cardFace'
+import { COLUMN_SPACING, ORBIT_SPACING, orbitPose } from './layout'
 import { ChipCluster } from './Pebbles'
 
 /** Big, like the reference: the nearest card fills ~45% of the screen width. */
@@ -44,25 +45,28 @@ const BLOCK = { depth: 0.1, bevel: 0.06 }
  */
 export type CardLayout = 'orbit' | 'column'
 
-export const COLUMN_SPACING = 1.9
 /** Phones: smaller cards, so one fits the narrow screen with margin. */
 const COLUMN_SCALE = 0.62
-/** Vertical distance between cards in the orbit. */
-export const ORBIT_SPACING = 2.1
 
-function home(i: number, layout: CardLayout, target: { position: Vector3; turn: number }) {
+type Home = { position: Vector3; turn: number; pitch: number; roll: number }
+
+function home(i: number, layout: CardLayout, target: Home) {
   if (layout === 'column') {
     target.position.set(0, -i * COLUMN_SPACING, 1.25)
-    target.turn = 0
+    target.turn = target.pitch = target.roll = 0
     return
   }
-  // Down the column: every other card hangs centred in front of the spine, big (~45% of
-  // the screen width), overlapping it; the ones between swing out to the right, turned
-  // away and partly off-screen. Nothing ever crosses the UI column on the left.
-  const angle = i % 2 === 0 ? 0.04 : 0.95
-  const radius = 3
-  target.position.set(Math.sin(angle) * radius, 1.6 - i * ORBIT_SPACING, Math.cos(angle) * radius)
-  target.turn = angle
+  // Down the spiral: each card near the camera's line of sight at its own stop, in its own
+  // pose (layout.ts), its neighbours peeking in above and below.
+  const pose = orbitPose(i, jobs.length)
+  target.position.set(
+    Math.sin(pose.angle) * pose.radius,
+    pose.y,
+    Math.cos(pose.angle) * pose.radius,
+  )
+  target.turn = pose.angle
+  target.pitch = pose.pitch
+  target.roll = pose.roll
 }
 
 /** The card body: one thick rounded glass block with a wide, smooth bevel all round. */
@@ -299,7 +303,7 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
     dissolve: 0,
     scrambling: false,
     pointer: { x: 0, y: 0 },
-    target: { position: new Vector3(), turn: 0 },
+    target: { position: new Vector3(), turn: 0, pitch: 0, roll: 0 } as Home,
     open: new Vector3(),
     /** The camera, in the cards' own space (they live inside the Work place's group). */
     eye: new Vector3(),
@@ -387,9 +391,9 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
     // cursor, so the glass thickness and its lit edges always show.
     const t = clock.time
     s.euler.set(
-      Math.sin(t * 0.31 + index) * TILT.drift - s.pointer.y * TILT.cursor + 0.05,
+      Math.sin(t * 0.31 + index) * TILT.drift - s.pointer.y * TILT.cursor + target.pitch,
       Math.sin(t * 0.23 + index * 2.1) * TILT.drift + s.pointer.x * TILT.cursor - 0.08,
-      Math.sin(t * 0.17 + index * 0.7) * 0.015,
+      Math.sin(t * 0.17 + index * 0.7) * 0.015 + target.roll,
     )
     s.euler.x *= 1 - flown * 0.6
     s.euler.y *= 1 - flown * 0.6
@@ -398,7 +402,11 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
 
     // Depth: the cards swung out to the side sit out of focus, until focused; while
     // another card is open, the rest recede into the dark.
-    const side = layout === 'orbit' && index % 2 === 1 ? 1 : 0
+    // Cards away from the camera's height drift out of focus (depth of field).
+    const side =
+      layout === 'orbit'
+        ? Math.min(1, Math.max(0, Math.abs(target.position.y - s.eye.y) / ORBIT_SPACING - 0.35))
+        : 0
     const u = screenMaterial.uniforms
     u.uBlur!.value = Math.max(side * (1 - s.focus), s.others * 0.8)
     u.uBrightness!.value = (0.8 - side * 0.2 + 0.25 * s.focus) * (1 - s.others * 0.65)

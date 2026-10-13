@@ -16,7 +16,7 @@ export function Approach() {
   return (
     // Taller than the screen: the text holds still (sticky) while the camera dwells at the
     // statement, so the paragraph stays beside the 3D tagline.
-    <section id="approach" aria-labelledby="approach-title" className="relative h-[180svh]">
+    <section id="approach" aria-labelledby="approach-title" className="relative h-[130svh]">
       <div className="sticky top-0 page-grid h-svh content-end pb-(--margin) lg:content-start lg:pt-[47svh]">
         <h2 id="approach-title" className="sr-only">
           {profile.tagline}

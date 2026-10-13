@@ -1,7 +1,10 @@
 import { useFrame } from '@react-three/fiber'
 import { useState } from 'react'
 import { useJourney } from '@/stores/journey'
-import { COLUMN_SPACING } from '../work/WorkCards'
+import { DESCENT } from './descent'
+
+export { DESCENT }
+import { COLUMN_SPACING, SPIRAL, orbitPose } from '../work/layout'
 
 /** The places along the camera path (world y of each place's focus). */
 export const PLACES = {
@@ -16,25 +19,17 @@ export const PLACES = {
  * down it (see WorkCards). The camera walks down the cards, so these match WorkCards.
  */
 export const WORK = {
-  /** Height of the first and last card the camera centres on. */
-  first: 1.6,
-  spacing: 2.1,
   cards: 6,
   /** Shifted right of centre, leaving the left column to the list and details. */
   x: 1.1,
   /** Camera distance from the spine, and how far it turns round it on the way down. */
   distance: 7.8,
-  spiral: 0.5,
 }
 
-const smooth = (p: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, p)))) / 2
+/** Seconds The Core takes to travel to the statement (or back). */
+const OBJECTS_TRAVEL = 1.4
 
-/**
- * The descent from the statement to Work, with a beat half-way: the camera eases down,
- * holds while the dust snaps into a clean UI wireframe in front of it (FormMoment), then
- * eases on down to the spine as it scatters. `toWork` 0..1 → descent 0..1.
- */
-export const DESCENT = { holdFrom: 0.35, holdTo: 0.6 }
+const smooth = (p: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, p)))) / 2
 
 function descend(toWork: number) {
   const { holdFrom, holdTo } = DESCENT
@@ -46,15 +41,16 @@ function descend(toWork: number) {
 /**
  * The journey as the scene sees it, updated once per frame before anything else.
  * `camera` (hero → statement), `toWork` (statement → Work) and `inWork` (down the cards)
- * follow the smoothed scroll directly (Lenis settles a tick in ~0.7s); `objects` lags the
- * first leg with a slower, softer settle (~1.5–2s) so the glass and dust trail the camera,
- * as in the reference. With reduced motion there is no flight: it cuts between places and
+ * follow the smoothed scroll directly (Lenis settles a tick in ~0.7s); `objects` (The
+ * Core's move to the statement) plays on its own clock once triggered. With reduced motion there is no flight: it cuts between places and
  * between cards.
  */
 export class JourneyState {
   /** 0 (hero) → 1 (statement). */
   camera = 0
+  /** 0 (hero) → 1 (statement) for the objects that move with it, on their own clock. */
   objects = 0
+  private heading = 0
   /** 0 (statement) → 1 (arrived at Work). */
   toWork = 0
   /** 0 (first card) → 1 (last card). */
@@ -84,9 +80,14 @@ export class JourneyState {
     this.camera = camera
     this.toWork = toWork
     this.inWork = inWork
+    // The Core's move to the statement plays on its own clock once triggered (~1.4s), so
+    // the slit always lands in front of the tagline, however fast the scroll.
+    if (camera > 0.55) this.heading = 1
+    else if (camera < 0.35) this.heading = 0
+    const step = Math.min(delta, 1 / 30) / OBJECTS_TRAVEL
     this.objects = reducedMotion
-      ? camera
-      : this.objects + (camera - this.objects) * (1 - Math.exp(-Math.min(delta, 1 / 30) * 2.2))
+      ? this.heading
+      : this.objects + Math.max(-step, Math.min(step, this.heading - this.objects))
 
     // Hero → statement → the top of the Work column, then down it card by card.
     const statementY = PLACES.hero + (PLACES.statement - PLACES.hero) * smooth(camera)
@@ -99,14 +100,18 @@ export class JourneyState {
     // At Work: closer, and a slow turn round the spine on the way down (desktop only).
     const workDistance = column ? 7.2 : WORK.distance
     this.distance = 10 + (workDistance - 10) * arrive
-    this.angle = column ? 0 : inWork * WORK.spiral * arrive
+    this.angle = column ? 0 : inWork * SPIRAL * arrive
   }
 
   /** Height (Work space) where the camera centres on card `index` (fractional between). */
   cardY(index: number) {
     // Phones: the card sits in the upper half, the next one below the title at the bottom.
     if (this.column) return -index * COLUMN_SPACING - 0.6
-    return WORK.first - index * WORK.spacing + 0.15
+    const below = Math.floor(index)
+    const above = Math.min(WORK.cards - 1, below + 1)
+    const t = index - below
+    const y = (i: number) => orbitPose(i, WORK.cards).y + 0.15
+    return y(below) + (y(above) - y(below)) * t
   }
 }
 

@@ -96,7 +96,7 @@ export function ParticleField({
     // Ease toward the requested form; releasing it turns the drop into a scatter burst.
     const delta = Math.min(rawDelta, 1 / 30) * timeScale
     const previousForm = form.current
-    form.current += (particleTransition.form - form.current) * (1 - Math.exp(-delta * 2.5))
+    form.current += (particleTransition.form - form.current) * (1 - Math.exp(-delta * 4))
     const scatter = (Math.max(0, previousForm - form.current) / Math.max(delta, 1e-3)) * 6
 
     const { positions, velocities } = sim.step({

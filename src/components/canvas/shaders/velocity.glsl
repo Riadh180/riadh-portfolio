@@ -40,8 +40,8 @@ void main() {
 
   // Assemble: seek the target and arrive softly.
   if (bound > 0.0) {
-    vec3 seek = (target.xyz - position) * 3.0;
-    velocity = mix(velocity, seek, bound * (1.0 - exp(-uDelta * 5.0)));
+    vec3 seek = (target.xyz - position) * 5.0;
+    velocity = mix(velocity, seek, bound * (1.0 - exp(-uDelta * 7.0)));
   }
 
   // Dissolve: released particles burst outward along the curl field.
