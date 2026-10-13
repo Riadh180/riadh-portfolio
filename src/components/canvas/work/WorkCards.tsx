@@ -44,7 +44,7 @@ const BLOCK = { depth: 0.1, bevel: 0.06 }
  */
 export type CardLayout = 'orbit' | 'column'
 
-export const COLUMN_SPACING = 1.4
+export const COLUMN_SPACING = 1.9
 /** Phones: smaller cards, so one fits the narrow screen with margin. */
 const COLUMN_SCALE = 0.62
 /** Vertical distance between cards in the orbit. */

@@ -7,6 +7,7 @@ import { Backdrop } from './Backdrop'
 import { CameraRig } from './CameraRig'
 import { Emblem } from './hero/Emblem'
 import { DustSheet } from './journey/DustSheet'
+import { FormMoment } from './journey/FormMoment'
 import { GoldCloud } from './journey/GoldCloud'
 import { type JourneyState, useJourneyState } from './journey/path'
 import { Tagline } from './journey/Tagline'
@@ -57,7 +58,8 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
   return (
     <>
       <primitive attach="background" object={sceneColors.bg} />
-      <HeroLighting look={look} clock={clock} calm={() => journey.toWork} />
+      {/* The warm moment is the hero's: gone within the first third of the descent. */}
+      <HeroLighting look={look} clock={clock} calm={() => Math.min(1, journey.toWork * 3)} />
       <CameraRig pointer={pointer} journey={journey} enabled={!reducedMotion} />
       <Backdrop journey={journey} />
       <Emblem
@@ -70,6 +72,7 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
       <GoldCloud journey={journey} clock={clock} reducedMotion={reducedMotion} />
       <DustSheet clock={clock} journey={journey} />
       <Tagline clock={clock} reducedMotion={reducedMotion} journey={journey} />
+      <FormMoment journey={journey} simSize={simSize} />
       <WorkPlace journey={journey} clock={clock} />
       <ParticleField
         simSize={simSize}
@@ -77,7 +80,7 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
         pointer={pointer}
         timeScale={timeScale}
         cursorStrength={reducedMotion ? 0 : 1}
-        resting={() => journey.toWork > 0.85}
+        resting={() => journey.toWork > 0.95}
       />
       {/* At Work: no multisampling (heavy mass, capped DPR; see quality.ts). */}
       <Effects reducedMotion={reducedMotion} antialias={!atWork} />

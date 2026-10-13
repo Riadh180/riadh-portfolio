@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useState } from 'react'
 import { useJourney } from '@/stores/journey'
+import { COLUMN_SPACING } from '../work/WorkCards'
 
 /** The places along the camera path (world y of each place's focus). */
 export const PLACES = {
@@ -29,6 +30,20 @@ export const WORK = {
 const smooth = (p: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, p)))) / 2
 
 /**
+ * The descent from the statement to Work, with a beat half-way: the camera eases down,
+ * holds while the dust snaps into a clean UI wireframe in front of it (FormMoment), then
+ * eases on down to the spine as it scatters. `toWork` 0..1 → descent 0..1.
+ */
+export const DESCENT = { holdFrom: 0.35, holdTo: 0.6 }
+
+function descend(toWork: number) {
+  const { holdFrom, holdTo } = DESCENT
+  if (toWork <= holdFrom) return 0.5 * smooth(toWork / holdFrom)
+  if (toWork <= holdTo) return 0.5
+  return 0.5 + 0.5 * smooth((toWork - holdTo) / (1 - holdTo))
+}
+
+/**
  * The journey as the scene sees it, updated once per frame before anything else.
  * `camera` (hero → statement), `toWork` (statement → Work) and `inWork` (down the cards)
  * follow the smoothed scroll directly (Lenis settles a tick in ~0.7s); `objects` lags the
@@ -48,6 +63,9 @@ export class JourneyState {
   column = false
   /** World y of the camera's focus on the path. */
   y = PLACES.hero
+  /** Where the descent holds: the wireframe's height, and the camera's distance there. */
+  formY = 0
+  formDistance = 10
   /** Camera orbit round the path's axis: angle (radians) and distance. */
   angle = 0
   distance = 10
@@ -74,8 +92,10 @@ export class JourneyState {
     const statementY = PLACES.hero + (PLACES.statement - PLACES.hero) * smooth(camera)
     const workTop = PLACES.work + this.cardY(0)
     const workY = PLACES.work + this.cardY(inWork * (WORK.cards - 1))
-    const arrive = smooth(toWork)
+    const arrive = descend(toWork)
     this.y = toWork < 1 ? statementY + (workTop - statementY) * arrive : workY
+    this.formY = statementY + (workTop - statementY) * 0.5
+    this.formDistance = 10 + ((column ? 7.2 : WORK.distance) - 10) * 0.5
     // At Work: closer, and a slow turn round the spine on the way down (desktop only).
     const workDistance = column ? 7.2 : WORK.distance
     this.distance = 10 + (workDistance - 10) * arrive
@@ -84,7 +104,8 @@ export class JourneyState {
 
   /** Height (Work space) where the camera centres on card `index` (fractional between). */
   cardY(index: number) {
-    if (this.column) return -index * 1.4 - 0.35
+    // Phones: the card sits in the upper half, the next one below the title at the bottom.
+    if (this.column) return -index * COLUMN_SPACING - 0.6
     return WORK.first - index * WORK.spacing + 0.15
   }
 }

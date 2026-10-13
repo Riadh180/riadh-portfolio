@@ -10,6 +10,10 @@ uniform float uViewportHeight;
 uniform float uBrightness;
 uniform vec3 uCenter;
 uniform vec3 uBounds;
+/** Shape assembly: which particles are bound to a shape point, and how formed it is. */
+uniform sampler2D uTargets;
+uniform float uForm;
+uniform vec3 uShape;
 // teal, blue, violet, emerald, warm (gold), glow
 uniform vec3 uPalette[6];
 
@@ -64,5 +68,9 @@ void main() {
   float edge = smoothstep(uBounds.x, uBounds.x - 2.5, abs(worldPosition.x - uCenter.x))
     * smoothstep(uBounds.y, uBounds.y - 1.5, abs(worldPosition.y - uCenter.y));
 
-  vColor = color * uBrightness * energy * fog * edge * clearing;
+  // Bound into a shape: crisp, bright points of one colour, never dimmed by the clearing
+  // round the focal object (the shape is the focal object).
+  float bound = texture2D(uTargets, position.xy).w * uForm;
+  color = mix(color * uBrightness * energy * fog * edge * clearing, uShape * 1.1 * energy, bound);
+  vColor = color;
 }

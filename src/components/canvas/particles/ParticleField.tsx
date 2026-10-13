@@ -63,6 +63,9 @@ export function ParticleField({
       uFocusDistance: { value: 0 },
       uViewportHeight: { value: 0 },
       uBrightness: { value: 0 },
+      uTargets: { value: null as Texture | null },
+      uForm: { value: 0 },
+      uShape: { value: sceneColors.glow },
       uCenter: { value: FIELD.center },
       uBounds: { value: FIELD.bounds },
       uPalette: {
@@ -111,6 +114,8 @@ export function ParticleField({
     const { particles } = sceneConfig
     const u = material.current.uniforms
     u.uPositions!.value = positions
+    u.uTargets!.value = sim.targets
+    u.uForm!.value = form.current
     u.uVelocities!.value = velocities
     u.uTime!.value = clock.time
     u.uSize!.value = particles.size

@@ -72,7 +72,7 @@ export function WorkSection({ initial = null }: { initial?: string | null }) {
                 <WorkList />
               </div>
               {current && (
-                <div className="-mx-(--margin) flex flex-col gap-1 bg-linear-to-t from-bg via-bg/90 to-transparent px-(--margin) pt-16 lg:hidden">
+                <div className="-mx-(--margin) -mb-(--margin) flex flex-col gap-1 bg-linear-to-t from-bg from-60% to-transparent px-(--margin) pt-24 pb-(--margin) lg:hidden">
                   <p className="ui text-muted">
                     <span className="text-text">
                       {String(jobs.indexOf(current) + 1).padStart(2, '0')}

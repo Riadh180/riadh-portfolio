@@ -10,7 +10,9 @@ export function Home({ work = null }: { work?: string | null }) {
     <main id="main" className="relative">
       <Hero />
       <Approach />
-      <SectionShell id="form" title="Form" />
+      {/* The descent from the statement to Work: scroll room for the camera, which passes
+          through the dust as it snaps into a UI wireframe and scatters (the "Form" beat). */}
+      <div aria-hidden className="h-[220svh]" />
       <WorkSection initial={work} />
       <SectionShell id="system" title="System" />
       <SectionShell id="depth" title="Depth" />

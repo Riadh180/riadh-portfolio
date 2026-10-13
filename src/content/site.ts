@@ -22,11 +22,10 @@ export const about = {
 export const sections = [
   { id: 'signal', index: '00', label: 'Signal' },
   { id: 'approach', index: '01', label: 'Approach' },
-  { id: 'form', index: '02', label: 'Form' },
-  { id: 'work', index: '03', label: 'Work' },
-  { id: 'system', index: '04', label: 'System' },
-  { id: 'depth', index: '05', label: 'Depth' },
-  { id: 'contact', index: '06', label: 'Contact' },
+  { id: 'work', index: '02', label: 'Work' },
+  { id: 'system', index: '03', label: 'System' },
+  { id: 'depth', index: '04', label: 'Depth' },
+  { id: 'contact', index: '05', label: 'Contact' },
 ] as const
 
 export type SectionId = (typeof sections)[number]['id']

@@ -210,6 +210,8 @@ export function createSimulation(gl: WebGLRenderer, size: number) {
   return {
     step,
     setTargets,
+    /** Which particle holds which shape point (w = 1 if it takes part). */
+    targets,
     dispose: () => {
       particles.dispose()
       trail.dispose()

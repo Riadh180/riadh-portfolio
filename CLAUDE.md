@@ -275,15 +275,18 @@ Proposed (not yet approved) ideas for color in the particles themselves:
 ## Content (real — use this)
 
 ### Site structure (approved)
-HUD/nav format: `01 / FORM`. Section names are simple words, no jargon.
+HUD/nav format: `02 / WORK`. Section names are simple words, no jargon.
 These are now **places along the camera path** in one world:
 - `00 Signal` — Hero: the glass emblem; name, role, tagline in the small UI
 - `01 Approach` — Statement: refracted tagline + about text in mono
-- `02 Form` — Transformation: particle signal snaps into a clean glass interface layout
-- `03 Work` — Experience: glass sculpture + glass job cards with metrics
-- `04 System` — Skills graph
-- `05 Depth` — Data Engineering, my extra edge ("beneath the interface")
-- `06 Contact` — Let's talk
+- *(the descent, no section of its own)* — "Form": on the way down from the statement to
+  Work, the camera holds for a beat while the dust snaps into a clean UI wireframe (a
+  phone screen layout), then scatters as the spine comes into view. Complexity becomes a
+  polished product, and the dark gap is filled.
+- `02 Work` — Experience: glass sculpture (the spine) + glass job cards with metrics
+- `03 System` — Skills graph
+- `04 Depth` — Data Engineering, my extra edge ("beneath the interface")
+- `05 Contact` — Let's talk
 
 ### Hero
 Riadh Souissi — Senior React / React Native Developer
@@ -410,7 +413,7 @@ with a one-line reason before switching.
 4. One world + scroll-driven camera path (Lenis + ScrollTrigger), places along the path,
    loop back to the hero
 5. Preloader (real loading counter) → emblem reveal
-6. Statement: refracted 3D tagline + about (Approach) and the transformation (Form)
+6. Statement: refracted 3D tagline + about (Approach); the Form beat lives in the descent to Work
 7. Work: glass sculpture, glass job cards, hover tilt, fly-in + particle dissolve detail,
    "FILTER WORK →" filter
 8. Skills (System) + Data Engineering environment (Depth)
