@@ -10,13 +10,22 @@ import { GradeEffect } from './GradeEffect'
  * HDR pipeline: bloom on the brightest cores only, radial chromatic aberration
  * (canvas only, clean center), then the film grade (which also tone-maps highlights).
  */
-export function Effects({ reducedMotion }: { reducedMotion: boolean }) {
+type Props = {
+  reducedMotion: boolean
+  /**
+   * Off where it costs more than it gives: the Work spine is a heavy mass, not thin glass
+   * edges, and at its capped DPR multisampling would eat the savings.
+   */
+  antialias?: boolean
+}
+
+export function Effects({ reducedMotion, antialias = true }: Props) {
   const bloom = useRef<BloomEffect>(null)
   const chromatic = useRef<ChromaticAberrationEffect>(null)
   const grade = useMemo(() => new GradeEffect(), [])
   // Thin glass edges alias at 1–1.5 DPR; at ~2 DPR the pixels already supersample.
   const dpr = useThree((state) => state.viewport.dpr)
-  const multisampling = dpr < 1.75 ? 2 : 0
+  const multisampling = antialias && dpr < 1.75 ? 2 : 0
   useEffect(() => () => grade.dispose(), [grade])
 
   useFrame(() => {

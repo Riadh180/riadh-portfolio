@@ -12,6 +12,7 @@ import { Backdrop } from '@/components/canvas/Backdrop'
 import { sliders } from '@/components/canvas/dev/sliders'
 import { HeroLighting } from '@/components/canvas/hero/HeroLighting'
 import { Effects } from '@/components/canvas/post/Effects'
+import { PLACE_MAX_DPR } from '@/components/canvas/quality'
 import { useSceneClock } from '@/components/canvas/useSceneClock'
 import { Pebbles } from '@/components/canvas/work/Pebbles'
 import { Spine } from '@/components/canvas/work/Spine'
@@ -46,7 +47,7 @@ function WorkScene({ version }: { version: number }) {
       <Backdrop />
       <Spine key={`spine-${version}`} clock={clock} />
       <Pebbles key={`pebbles-${version}`} clock={clock} focusDistance={view.distance} />
-      <Effects reducedMotion={false} />
+      <Effects reducedMotion={false} antialias={false} />
     </>
   )
 }
@@ -155,7 +156,7 @@ export default function WorkLab() {
     <main id="main" className="h-dvh bg-bg">
       <h1 className="sr-only">Work lab</h1>
       <Canvas
-        dpr={[1, 2]}
+        dpr={[1, PLACE_MAX_DPR.work]}
         flat
         gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
         camera={{ position: [0, 0, 12], fov: 40, near: 0.1, far: 60 }}

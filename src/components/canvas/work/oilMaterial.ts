@@ -30,7 +30,7 @@ export function createOilMaterial() {
     shader.uniforms.uOilTeal = { value: sceneColors.teal }
     shader.uniforms.uOilGreen = { value: sceneColors.emerald }
     shader.uniforms.uOilViolet = { value: sceneColors.violet }
-    shader.uniforms.uOilGlow = { value: 0.85 }
+    shader.uniforms.uOilGlow = { value: 0.3 }
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vSpinePosition;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSpinePosition = position;')
@@ -52,7 +52,10 @@ export function createOilMaterial() {
       )
       .replace(
         '#include <normal_fragment_maps>',
-        '#include <normal_fragment_maps>\nnormal = oilGrain(normal, vSpinePosition);',
+        `#include <normal_fragment_maps>
+        #ifndef SCULPTED
+          normal = oilGrain(normal, vSpinePosition);
+        #endif`,
       )
       .replace(
         '#include <lights_physical_fragment>',
@@ -73,5 +76,6 @@ export function createOilMaterial() {
 }
 
 export function disposeOilMaterial(material: MeshPhysicalMaterial) {
+  material.normalMap?.dispose()
   material.dispose()
 }

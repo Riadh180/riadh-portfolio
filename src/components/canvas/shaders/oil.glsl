@@ -27,8 +27,10 @@ void oilStreaks(inout float iridescence, inout float thickness, vec3 p, float mi
   float bands = p.y * 1.7 + atan(p.z, p.x) * 0.9 + warp * 0.9;
   float line = abs(fract(bands * 2.2) - 0.5) * 2.0;
   // Only some bands carry colour, so the streaks come in irregular groups.
-  float carried = smoothstep(-0.2, 0.3, snoise(vec3(floor(bands * 2.2) * 0.37, 0.0, 3.0)));
-  oilStreakMask = (1.0 - smoothstep(0.0, 0.11, line)) * carried;
+  float carried = smoothstep(0.35, 0.75, snoise(vec3(floor(bands * 2.2) * 0.37, 0.0, 3.0)));
+  // Broken along their length too, so they read as sheen catching folds, not wires.
+  float broken = smoothstep(-0.1, 0.5, snoise(p * 1.6 + 7.0));
+  oilStreakMask = (1.0 - smoothstep(0.0, 0.06, line)) * carried * broken;
   oilStreakTone = fract(bands * 0.31 + warp * 0.2);
   iridescence *= oilStreakMask;
   thickness = mix(minimum, maximum, oilStreakTone);

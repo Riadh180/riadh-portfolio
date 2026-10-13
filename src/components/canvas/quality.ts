@@ -17,3 +17,12 @@ export function detectQuality(): Quality {
     ? { simSize: 64, maxDpr: Math.min(dpr, 1.5) }
     : { simSize: 96, maxDpr: Math.min(dpr, 2) }
 }
+
+/**
+ * Per-place DPR ceilings. The Work spine fills the screen with heavy per-pixel shading,
+ * so the Work place renders at most at 1.5× (keeps 50+ fps on an integrated GPU at
+ * Retina). Applied on top of the device / measured DPR.
+ */
+export const PLACE_MAX_DPR = {
+  work: 1.5,
+} as const
