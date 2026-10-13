@@ -276,6 +276,7 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
   const screenMesh = useRef<Mesh>(null)
   const blockMesh = useRef<Mesh>(null)
   const dustPoints = useRef<Points>(null)
+  const chips = useRef<Group>(null)
   const blockGlass = useMemo(() => createBlockGlass(), [])
   const dustMaterial = useMemo(
     () => (face ? createDustMaterial(face, index * 1.37) : null),
@@ -300,8 +301,11 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
     pointer: { x: 0, y: 0 },
     target: { position: new Vector3(), turn: 0 },
     open: new Vector3(),
+    /** The camera, in the cards' own space (they live inside the Work place's group). */
+    eye: new Vector3(),
     forward: new Vector3(),
     right: new Vector3(),
+    lift: new Vector3(),
     look: new Quaternion(),
     rest: new Quaternion(),
     tilt: new Quaternion(),
@@ -337,13 +341,17 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
       if (s.dissolve < 0.15) s.fly = Math.max(0, s.fly - dt / OPEN.fly)
     }
     const flown = easeInOut(s.fly)
+    const scale = layout === 'column' ? COLUMN_SCALE : 1
+
+    s.eye.copy(camera.position)
+    g.parent?.worldToLocal(s.eye)
 
     home(index, layout, target)
     // A slow float, each card on its own phase.
     target.position.y += Math.sin(clock.time * 0.4 + index * 1.7) * 0.05
     g.position.copy(target.position)
     // Focused: comes forward, towards the camera.
-    g.position.lerp(camera.position, s.focus * 0.12 * (1 - flown))
+    g.position.lerp(s.eye, s.focus * 0.12 * (1 - flown))
 
     // Flown in: centred in front of the camera, a little right of centre (the details
     // appear at the left), big enough to fill most of the view.
@@ -351,15 +359,20 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
       camera.getWorldDirection(s.forward)
       s.right.crossVectors(s.forward, s.up).normalize()
       // Big and sharp: ~57% of the screen width, centred right of the middle, leaving the
-      // left for the details (MOTION.md / at_08).
+      // left for the details (at_08). Phones: ~85% wide in the top third, above them.
       const perspective = camera as PerspectiveCamera
       const tan = Math.tan((perspective.fov * Math.PI) / 360)
-      const distance = CARD.width / (0.57 * 2 * tan * perspective.aspect)
+      const share = layout === 'column' ? 0.85 : 0.57
+      const distance = (CARD.width * scale) / (share * 2 * tan * perspective.aspect)
       const halfWidth = distance * tan * perspective.aspect
+      const halfHeight = distance * tan
+      s.lift.crossVectors(s.right, s.forward).normalize()
       s.open
         .copy(camera.position)
         .addScaledVector(s.forward, distance)
-        .addScaledVector(s.right, halfWidth * 0.2)
+        .addScaledVector(s.right, layout === 'column' ? 0 : halfWidth * 0.2)
+        .addScaledVector(s.lift, layout === 'column' ? halfHeight * 0.45 : 0)
+      g.parent?.worldToLocal(s.open)
       g.position.lerp(s.open, flown)
     }
 
@@ -381,7 +394,7 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
     s.euler.x *= 1 - flown * 0.6
     s.euler.y *= 1 - flown * 0.6
     g.quaternion.multiply(s.tilt.setFromEuler(s.euler))
-    g.scale.setScalar((layout === 'column' ? COLUMN_SCALE : 1) * (1 + s.focus * 0.06 * (1 - flown)))
+    g.scale.setScalar(scale * (1 + s.focus * 0.06 * (1 - flown)))
 
     // Depth: the cards swung out to the side sit out of focus, until focused; while
     // another card is open, the rest recede into the dark.
@@ -396,6 +409,8 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
     dustShader.uniforms.uDissolve!.value = s.dissolve
     dustShader.uniforms.uPointScale!.value = size.height * viewport.dpr * 0.012
     dustPoints.current!.visible = s.dissolve > 0
+    // Open, the card's own chips step aside (they would sit on the details).
+    if (chips.current) chips.current.visible = flown < 0.3
 
     // Scramble the title for its duration after the card gains focus.
     const elapsed = (performance.now() - since) / 1000
@@ -436,7 +451,15 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
         <points ref={dustPoints} geometry={dust} material={dustMaterial} frustumCulled={false} />
       )}
       {layout === 'orbit' && (
-        <ChipCluster clusters={EDGE_CHIPS} count={560} size={2} clock={clock} focusDistance={4.8} />
+        <group ref={chips}>
+          <ChipCluster
+            clusters={EDGE_CHIPS}
+            count={560}
+            size={2}
+            clock={clock}
+            focusDistance={4.8}
+          />
+        </group>
       )}
     </group>
   )

@@ -6,7 +6,7 @@ import { useJourney } from '@/stores/journey'
 import fragmentShader from '../shaders/tagline.frag'
 import vertexShader from '../shaders/tagline.vert'
 import type { SceneClock } from '../useSceneClock'
-import { PLACES } from './path'
+import { type JourneyState, PLACES } from './path'
 import { createTaglineTexture, TAGLINE_PAD } from './taglineTexture'
 
 /**
@@ -32,14 +32,14 @@ const GLITCH = 0.3
 
 const expoOut = (x: number) => (x >= 1 ? 1 : 1 - 2 ** (-10 * x))
 
-type Props = { clock: SceneClock; reducedMotion: boolean }
+type Props = { clock: SceneClock; reducedMotion: boolean; journey: JourneyState }
 
 /**
  * The statement tagline as large type in the world. It is drawn additively in the opaque
  * pass, so The Core's transmission sees it and bends it as the glass passes in front.
  * The lines rise in on arrival, and now and then one line glitches ("error → recovery").
  */
-export function Tagline({ clock, reducedMotion }: Props) {
+export function Tagline({ clock, reducedMotion, journey }: Props) {
   const material = useRef<ShaderMaterial>(null)
   const mesh = useRef<Mesh>(null)
   const [text, setText] = useState<{ texture: Texture; aspect: number } | null>(null)
@@ -79,6 +79,9 @@ export function Tagline({ clock, reducedMotion }: Props) {
 
   useFrame(({ camera, viewport }, rawDelta) => {
     if (!material.current || !mesh.current || !text) return
+    // Out of sight down at Work.
+    mesh.current.visible = journey.toWork < 0.85
+    if (!mesh.current.visible) return
 
     // Fit: never wider than the visible width, left edge inside the frame.
     const halfWidth = viewport.getCurrentViewport(camera, [0, camera.position.y, 0]).width / 2

@@ -11,6 +11,8 @@ type Routes = {
   base: string
   /** The opened slug in the current location, if any. */
   fromLocation: (location: Location) => string | null
+  /** Called once when the page loads with a card in its URL (e.g. to scroll to it). */
+  onArrive?: (slug: string) => void
 }
 
 /**
@@ -18,11 +20,15 @@ type Routes = {
  * opening pushes its URL, closing returns to the base, and Back / Forward open and close
  * cards. On load, a card in the URL opens straight away.
  */
-export function useWorkUrl({ toUrl, base, fromLocation }: Routes) {
+export function useWorkUrl({ toUrl, base, fromLocation, onArrive }: Routes) {
   useEffect(() => {
     const known = (slug: string | null) => (jobs.some((job) => job.slug === slug) ? slug : null)
     const initial = known(fromLocation(window.location))
-    if (initial) useWork.getState().open(initial)
+    if (initial) {
+      useWork.getState().open(initial)
+      onArrive?.(initial)
+    }
+    useWork.setState({ routed: true })
 
     let syncing = false
     const unsubscribe = useWork.subscribe((state, previous) => {
@@ -44,5 +50,5 @@ export function useWorkUrl({ toUrl, base, fromLocation }: Routes) {
       unsubscribe()
       window.removeEventListener('popstate', onPop)
     }
-  }, [toUrl, base, fromLocation])
+  }, [toUrl, base, fromLocation, onArrive])
 }

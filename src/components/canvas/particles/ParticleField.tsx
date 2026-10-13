@@ -1,6 +1,12 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import { AdditiveBlending, type PerspectiveCamera, type ShaderMaterial, type Texture } from 'three'
+import {
+  AdditiveBlending,
+  type PerspectiveCamera,
+  type Points,
+  type ShaderMaterial,
+  type Texture,
+} from 'three'
 import { sceneColors, sceneConfig } from '@/styles/scene'
 import fragmentShader from '../shaders/particles.frag'
 import vertexShader from '../shaders/particles.vert'
@@ -16,10 +22,20 @@ type Props = {
   timeScale: number
   /** 0 disables the cursor force (reduced motion). */
   cursorStrength: number
+  /** While true the dust is paused and hidden (the Work place has its own chips). */
+  resting?: () => boolean
 }
 
 /** Sparse multi-hue dust: atmosphere, cursor wake, and the medium for dissolves. */
-export function ParticleField({ simSize, clock, pointer, timeScale, cursorStrength }: Props) {
+export function ParticleField({
+  simSize,
+  clock,
+  pointer,
+  timeScale,
+  cursorStrength,
+  resting,
+}: Props) {
+  const points = useRef<Points>(null)
   const gl = useThree((state) => state.gl)
   const simulation = useRef<Simulation | null>(null)
   const material = useRef<ShaderMaterial>(null)
@@ -65,7 +81,9 @@ export function ParticleField({ simSize, clock, pointer, timeScale, cursorStreng
 
   useFrame((state, rawDelta) => {
     const sim = simulation.current
-    if (!sim || !material.current) return
+    if (!sim || !material.current || !points.current) return
+    points.current.visible = !resting?.()
+    if (!points.current.visible) return
 
     if (targetsVersion.current !== particleTransition.version) {
       targetsVersion.current = particleTransition.version
@@ -103,7 +121,7 @@ export function ParticleField({ simSize, clock, pointer, timeScale, cursorStreng
   }, -1)
 
   return (
-    <points frustumCulled={false}>
+    <points ref={points} frustumCulled={false}>
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[references, 3]} />
         <bufferAttribute attach="attributes-seed" args={[seeds, 4]} />

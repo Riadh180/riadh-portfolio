@@ -134,6 +134,8 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey }: Props) 
     const heldTurn = (hold.current ?? heroTurn) + Math.sin(t * 0.4) * 0.05 + tilt.current.y * 0.5
 
     const g = group.current
+    // Out of sight down at Work (and no transmission pass for it there).
+    g.visible = !journey || journey.toWork < 0.85
     const heroTiltX = REST.x + tilt.current.x + Math.sin(t * 0.3) * 0.05
     g.rotation.x = heroTiltX + (tilt.current.x * 0.4 - heroTiltX) * travel
     g.rotation.y = heroTurn + (heldTurn - heroTurn) * travel
@@ -154,9 +156,11 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey }: Props) 
     const facing = Math.round(turn / Math.PI) * Math.PI
     // Order 'YXZ': three applies the negated angles in this order, which makes it the exact
     // inverse of the emblem's own XYZ rotation (with 'XYZ' the tilt flips sign once turned).
+    // Down at Work the light stays put (its look was tuned unrotated).
+    const away = journey ? 1 - (1 - Math.cos(Math.PI * journey.toWork)) / 2 : 1
     scene.environmentRotation.set(
-      g.rotation.x * look.follow,
-      facing + (look.follow * Math.sin(2 * (turn - facing))) / 2,
+      g.rotation.x * look.follow * away,
+      (facing + (look.follow * Math.sin(2 * (turn - facing))) / 2) * away,
       0,
       'YXZ',
     )

@@ -4,7 +4,8 @@ import { PerformanceMonitor } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { lazy, Suspense, useState } from 'react'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
-import { detectQuality } from './quality'
+import { useJourney } from '@/stores/journey'
+import { detectQuality, PLACE_MAX_DPR } from './quality'
 import { Scene } from './Scene'
 import { usePointer } from './usePointer'
 
@@ -18,6 +19,8 @@ export default function SceneCanvas() {
   const [quality] = useState(detectQuality)
   const [dpr, setDpr] = useState(quality.maxDpr)
   const [ready, setReady] = useState(false)
+  // The Work place renders at a capped DPR (see PLACE_MAX_DPR).
+  const atWork = useJourney((state) => state.place === 'work')
 
   return (
     <div
@@ -25,8 +28,12 @@ export default function SceneCanvas() {
       className={`pointer-events-none fixed inset-0 transition-opacity duration-1400 ease-signal ${ready ? 'opacity-100' : 'opacity-0'}`}
     >
       <Canvas
-        dpr={dpr}
+        dpr={atWork ? Math.min(dpr, PLACE_MAX_DPR.work) : dpr}
         flat
+        // The canvas sits behind the page: take pointer events from the whole document, so
+        // the 3D cards respond to hover and clicks through the HTML layer.
+        eventSource={typeof document === 'undefined' ? undefined : document.body}
+        eventPrefix="client"
         gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
         camera={{ position: [0, 0, 10], fov: 40, near: 0.1, far: 60 }}
         onCreated={({ gl }) => {

@@ -7,9 +7,10 @@ import type { Pointer } from './usePointer'
 type Props = { pointer: Pointer; journey: JourneyState; enabled: boolean }
 
 /**
- * The camera rides the scroll path down through the world; a slow, heavy parallax toward
- * the pointer rides on top (disabled for reduced motion). The dust field's centre follows,
- * so the dust wraps round the camera instead of running out.
+ * The camera rides the scroll path down through the world, orbiting the path's axis at the
+ * Work place; a slow, heavy parallax toward the pointer rides on top (disabled for reduced
+ * motion). The dust field's centre follows, so the dust wraps round the camera instead of
+ * running out.
  */
 export function CameraRig({ pointer, journey, enabled }: Props) {
   const parallax = useRef({ x: 0, y: 0 })
@@ -19,9 +20,14 @@ export function CameraRig({ pointer, journey, enabled }: Props) {
     const p = parallax.current
     p.x += ((enabled ? (pointer.uv.x - 0.5) * 0.9 : 0) - p.x) * ease
     p.y += ((enabled ? (pointer.uv.y - 0.5) * 0.5 : 0) - p.y) * ease
-    camera.position.set(p.x, journey.y + p.y, camera.position.z)
-    camera.lookAt(0, journey.y, 0)
-    FIELD.center.y = journey.y
+    const { angle, distance, y } = journey
+    camera.position.set(
+      Math.sin(angle) * distance + p.x * Math.cos(angle),
+      y + p.y,
+      Math.cos(angle) * distance - p.x * Math.sin(angle),
+    )
+    camera.lookAt(0, y, 0)
+    FIELD.center.y = y
   }, -3)
 
   return null

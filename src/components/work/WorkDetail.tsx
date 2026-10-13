@@ -13,12 +13,13 @@ const APPEAR_DELAY = 1100
  * it opens and back to the card's button when it closes; Esc closes; previous / next walk
  * through the jobs without closing.
  */
-export function WorkDetail() {
+export function WorkDetail({ slug }: { slug?: string | null }) {
   const opened = useWork((state) => state.opened)
   const open = useWork((state) => state.open)
   const close = useWork((state) => state.close)
   const panel = useRef<HTMLDivElement>(null)
-  const job = jobs.find((item) => item.slug === opened)
+  // `slug` overrides the store (a /work/<slug> page shows its card before the URL is read).
+  const job = jobs.find((item) => item.slug === (slug === undefined ? opened : slug))
   const index = job ? jobs.indexOf(job) : -1
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import { AdditiveBlending, Color, type ShaderMaterial } from 'three'
+import { AdditiveBlending, Color, type Group, type ShaderMaterial } from 'three'
 import { sceneColors, sceneConfig } from '@/styles/scene'
 import particlesFragment from '../shaders/particles.frag'
 import motesVertex from '../shaders/motes.vert'
@@ -8,7 +8,7 @@ import slabFragment from '../shaders/slab.frag'
 import smokeVertex from '../shaders/smoke.vert'
 import type { SceneClock } from '../useSceneClock'
 import { createMotesGeometry, createMotesUniforms, gaussian } from './motes'
-import { PLACES } from './path'
+import { type JourneyState, PLACES } from './path'
 import { SlabField } from './slabField'
 
 const COUNT = 42000
@@ -43,7 +43,13 @@ function createSlab() {
  * the top of the frame with a crisp diagonal edge. Its colour shifts teal → gold →
  * red-orange.
  */
-export function DustSheet({ clock }: { clock: SceneClock }) {
+type Props = { clock: SceneClock; journey: JourneyState }
+
+/** Out of sight once the camera is well down towards Work: skip it entirely. */
+const GONE = 0.85
+
+export function DustSheet({ clock, journey }: Props) {
+  const group = useRef<Group>(null)
   const material = useRef<ShaderMaterial>(null)
   const gl = useThree((state) => state.gl)
   const geometry = useMemo(() => createSlab(), [])
@@ -79,7 +85,9 @@ export function DustSheet({ clock }: { clock: SceneClock }) {
   useEffect(() => () => field.dispose(), [field])
 
   useFrame(({ size, viewport }) => {
-    if (!material.current) return
+    if (!material.current || !group.current) return
+    group.current.visible = journey.toWork < GONE
+    if (!group.current.visible) return
     field.update(gl, clock.time)
     const u = material.current.uniforms
     u.uTime!.value = clock.time
@@ -103,7 +111,7 @@ export function DustSheet({ clock }: { clock: SceneClock }) {
 
   return (
     // Above the statement, tilted so its edge reads as a diagonal rising to the right.
-    <group position={[0, PLACES.statement + 3.1, 0]} rotation={[0.07, 0, 0.17]}>
+    <group ref={group} position={[0, PLACES.statement + 3.1, 0]} rotation={[0.07, 0, 0.17]}>
       {/* Faces down only: seen from above (the hero side) it is invisible. */}
       <mesh
         rotation-x={Math.PI / 2}

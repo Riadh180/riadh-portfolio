@@ -69,7 +69,14 @@ const SETTLE = 0.3
  * moment is live (~1.5s of every ~9s) or just after the look's light changes; otherwise it
  * stays baked, so the rest of the cycle costs nothing.
  */
-export function HeroLighting({ look, clock }: { look: GlassLook; clock: SceneClock }) {
+type Props = {
+  look: GlassLook
+  clock: SceneClock
+  /** 0..1: how far below the hero the camera is; the warm moment belongs to the hero. */
+  calm?: () => number
+}
+
+export function HeroLighting({ look, clock, calm }: Props) {
   const meshes = useRef<(Mesh | null)[]>([])
   const horizonMesh = useRef<Mesh>(null)
   const [live, setLive] = useState(false)
@@ -81,7 +88,7 @@ export function HeroLighting({ look, clock }: { look: GlassLook; clock: SceneClo
 
   useFrame(() => {
     const { warmPeriod, warmth } = sceneConfig.light
-    const warm = warmPulse(clock.time, warmPeriod) * warmth
+    const warm = warmPulse(clock.time, warmPeriod) * warmth * (1 - (calm?.() ?? 0))
 
     const key = lightKey(look)
     if (key !== lastKey.current) {

@@ -1,9 +1,7 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { Suspense } from 'react'
-import { notFound } from 'next/navigation'
 import { jobs, profile } from '@/content/site'
-import { JobDetail } from '@/components/work/JobDetail'
+import { Home } from '@/components/sections/Home'
 
 type Params = { slug: string }
 
@@ -25,36 +23,20 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 }
 
 /**
- * A job's own page: shareable, indexable, real HTML. Over the scene it reads like an
- * opened card (details in small mono at the left). Once the Work place is on the camera
- * path, this URL also opens its card in 3D; back returns to the Work place.
+ * A job's own page: shareable, indexable. It is the whole site, scrolled to the Work place
+ * with this job's card open in 3D; its details are in the server HTML. Closing the card
+ * returns to /, still at Work.
  */
 export default function WorkPage({ params }: { params: Promise<Params> }) {
+  // Reading the slug suspends; every slug is prerendered, so the page is still static.
   return (
-    <main id="main" className="relative page-grid min-h-svh content-end pb-(--margin)">
-      {/* Reading the slug suspends; every slug is prerendered, so the article is still in
-          the static HTML, and the page shell stays instant on navigation. */}
-      <Suspense fallback={null}>
-        <WorkArticle params={params} />
-      </Suspense>
-    </main>
+    <Suspense fallback={<Home />}>
+      <WorkHome params={params} />
+    </Suspense>
   )
 }
 
-async function WorkArticle({ params }: { params: Promise<Params> }) {
+async function WorkHome({ params }: { params: Promise<Params> }) {
   const { slug } = await params
-  const job = jobs.find((item) => item.slug === slug)
-  if (!job) notFound()
-
-  return (
-    <article
-      aria-labelledby="work-title"
-      className="col-span-12 flex flex-col gap-4 sm:col-span-7 lg:col-span-4"
-    >
-      <JobDetail job={job} headingId="work-title" as="h1" />
-      <Link href="/#work" className="self-start ui text-violet hover:text-text">
-        ← All work
-      </Link>
-    </article>
-  )
+  return <Home work={jobs.some((job) => job.slug === slug) ? slug : null} />
 }
