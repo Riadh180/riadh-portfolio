@@ -116,3 +116,85 @@ export const jobs: Job[] = [
     filters: ['Creative', 'React'],
   },
 ]
+
+export type Skill = {
+  name: string
+  /** Jobs (slugs) where the CV shows this skill in use; empty if the CV doesn't say. */
+  usedAt: string[]
+}
+
+export type SkillBranch = {
+  id: string
+  label: string
+  skills: Skill[]
+  /** The data branch: visually secondary, hanging below the graph. */
+  secondary?: boolean
+}
+
+/** The skills graph: React / TypeScript at the centre, branches around it. */
+export const skillGraph: { core: Skill; branches: SkillBranch[] } = {
+  core: {
+    name: 'React / TypeScript',
+    usedAt: ['bliggit', 'kuehne-nagel', 'adesso', 'eon', 'licht-und-schatten', 'freelance'],
+  },
+  branches: [
+    {
+      id: 'mobile',
+      label: 'Mobile',
+      skills: [
+        { name: 'React Native', usedAt: ['bliggit', 'licht-und-schatten'] },
+        { name: 'Expo', usedAt: ['bliggit'] },
+        { name: 'EAS', usedAt: ['bliggit'] },
+      ],
+    },
+    {
+      id: 'frontend',
+      label: 'Frontend',
+      skills: [
+        { name: 'Next.js', usedAt: [] },
+        { name: 'Vue.js', usedAt: ['kuehne-nagel'] },
+        { name: 'Angular', usedAt: ['adesso'] },
+        { name: 'Electron', usedAt: ['adesso'] },
+      ],
+    },
+    {
+      id: 'testing',
+      label: 'Testing & quality',
+      skills: [
+        { name: 'Cypress', usedAt: ['kuehne-nagel'] },
+        { name: 'Jest', usedAt: ['eon'] },
+        { name: 'React Testing Library', usedAt: ['eon'] },
+        { name: 'Sentry', usedAt: [] },
+        { name: 'CI/CD', usedAt: [] },
+      ],
+    },
+    {
+      id: 'performance',
+      label: 'Performance',
+      skills: [
+        { name: 'Profiling', usedAt: ['bliggit', 'adesso'] },
+        { name: 'Load time', usedAt: ['bliggit'] },
+        { name: 'Crash-free', usedAt: ['bliggit'] },
+      ],
+    },
+    {
+      id: 'creative',
+      label: 'Creative dev',
+      skills: [
+        { name: 'Three.js', usedAt: ['freelance'] },
+        { name: 'WebGL / GLSL', usedAt: ['freelance'] },
+        { name: 'GSAP', usedAt: ['freelance'] },
+        { name: 'Motion', usedAt: [] },
+      ],
+    },
+    {
+      id: 'data',
+      label: 'Data engineering',
+      secondary: true,
+      skills: ['Python', 'SQL', 'Spark', 'Kafka', 'Airflow', 'dbt', 'AWS'].map((name) => ({
+        name,
+        usedAt: [],
+      })),
+    },
+  ],
+}
