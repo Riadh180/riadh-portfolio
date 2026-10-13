@@ -1,78 +1,146 @@
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import { AdditiveBlending, type ShaderMaterial } from 'three'
-import { sceneColors } from '@/styles/scene'
+import { AdditiveBlending, Color, type ShaderMaterial } from 'three'
+import { sceneColors, sceneConfig } from '@/styles/scene'
 import particlesFragment from '../shaders/particles.frag'
 import motesVertex from '../shaders/motes.vert'
+import slabFragment from '../shaders/slab.frag'
+import smokeVertex from '../shaders/smoke.vert'
 import type { SceneClock } from '../useSceneClock'
 import { createMotesGeometry, createMotesUniforms, gaussian } from './motes'
 import { PLACES } from './path'
+import { SlabField } from './slabField'
 
-const COUNT = 22000
-/** Extent of the sheet: wide, deep enough to fill the view from below, and reaching past the camera so it flies through. */
-const HALF = { x: 16, zNear: 9.5, zFar: -8 }
-
+const COUNT = 42000
 /**
- * Mostly a thin layer, with a loose haze either side of it, denser towards its far edge so
- * that edge reads crisply from below: the diagonal line across the top of the frame.
+ * Extent of the slab (local, underside at y = 0). It reaches past the camera so the camera
+ * flies through it, and its far edge stops where, seen from the statement, it draws the
+ * diagonal about a quarter of the way down the frame.
  */
-function createSheet() {
+const SLAB = { x: 16, zNear: 9.5, zFar: -4.8, depth: 0.5 }
+
+/** Smoke layers under the underside (local y), for depth: cloudy volumes, dark gaps. */
+const SMOKE_LAYERS = [-0.03, -0.2, -0.42]
+
+const EXTENT: [number, number] = [SLAB.x * 2, SLAB.zNear - SLAB.zFar]
+const CENTER_Z = (SLAB.zNear + SLAB.zFar) / 2
+
+/** Dust packed under a dark underside: densest at the underside, thinning downwards. */
+function createSlab() {
   return createMotesGeometry(COUNT, (_, out) => {
-    const loose = Math.random() < 0.1
-    const depth = 1 - Math.random() ** 1.6
     out.set(
-      (Math.random() * 2 - 1) * HALF.x,
-      gaussian() * (loose ? 0.6 : 0.08),
-      HALF.zNear + (HALF.zFar - HALF.zNear) * depth,
+      (Math.random() * 2 - 1) * SLAB.x,
+      -Math.abs(gaussian()) * SLAB.depth * (Math.random() < 0.85 ? 0.22 : 1),
+      SLAB.zFar + Math.random() * (SLAB.zNear - SLAB.zFar),
     )
   })
 }
 
 /**
- * The scene change: a thin, slanted sheet of dust between the hero and the statement. The
- * camera passes through it on the way down (the wipe), and from below it stays as a dusty
- * ceiling with a diagonal edge at the top of the frame. Its hue drifts teal → gold → pink.
+ * The scene change: a thick slab of dust between the hero and the statement. The camera
+ * passes through it on the way down (the wipe); from the statement it hangs overhead as a
+ * dark ceiling of smoky, nebula-like volumes with sparkles gathered inside them, filling
+ * the top of the frame with a crisp diagonal edge. Its colour shifts teal → gold →
+ * red-orange.
  */
 export function DustSheet({ clock }: { clock: SceneClock }) {
   const material = useRef<ShaderMaterial>(null)
-  const geometry = useMemo(() => createSheet(), [])
-  const uniforms = useMemo(
-    () => createMotesUniforms([sceneColors.teal, sceneColors.warm, sceneColors.pink]),
+  const gl = useThree((state) => state.gl)
+  const geometry = useMemo(() => createSlab(), [])
+  const field = useMemo(() => new SlabField(EXTENT, CENTER_Z), [])
+  const colors = useMemo(
+    () => [sceneColors.teal, sceneColors.warm, sceneColors.ember] as [Color, Color, Color],
     [],
   )
+  const uniforms = useMemo(
+    () => ({
+      ...createMotesUniforms(colors),
+      uField: { value: field.texture },
+      uFieldExtent: { value: EXTENT },
+      uFieldCenterZ: { value: CENTER_Z },
+    }),
+    [colors, field],
+  )
+  const smoke = useRef<(ShaderMaterial | null)[]>([])
+  const smokeUniforms = useMemo(
+    () =>
+      SMOKE_LAYERS.map((_, layer) => ({
+        uField: { value: field.texture },
+        uOpacity: { value: 1 },
+        uLayer: { value: layer },
+        uColors: { value: colors },
+        uCycle: { value: 0 },
+      })),
+    [colors, field],
+  )
+  // The underside: darker than the world, so the slab reads as a body, not a line.
+  const shade = useMemo(() => new Color().copy(sceneColors.bg).multiplyScalar(0.45), [])
   useEffect(() => () => geometry.dispose(), [geometry])
+  useEffect(() => () => field.dispose(), [field])
 
   useFrame(({ size, viewport }) => {
     if (!material.current) return
+    field.update(gl, clock.time)
     const u = material.current.uniforms
     u.uTime!.value = clock.time
-    u.uOpacity!.value = 1.3
+    u.uOpacity!.value = 4.5
+    // Fine dust, not bokeh dots.
+    u.uSize!.value = sceneConfig.particles.size * 0.7
+    u.uCycle!.value = clock.time * 0.1
+    // One shared hue that drifts, with a little variation between motes.
+    u.uSpread!.value = 0.22
     // Flying through, the nearest motes stay fine sparks instead of big discs.
     u.uAperture!.value = 0.45
-    u.uMaxSize!.value = 14
+    u.uMaxSize!.value = 9
     // Little fog: the far edge stays crisp.
     u.uFogFar!.value = 60
-    u.uCycle!.value = clock.time * 0.05
     u.uViewportHeight!.value = size.height * viewport.dpr
+    smoke.current.forEach((layer) => {
+      if (!layer) return
+      layer.uniforms.uCycle!.value = clock.time * 0.1
+    })
   })
 
   return (
-    // Just above the statement, tilted so its edge reads as a diagonal rising to the right.
-    <points
-      geometry={geometry}
-      position={[0, PLACES.statement + 2.7, 0]}
-      rotation={[0.07, 0, 0.17]}
-      frustumCulled={false}
-    >
-      <shaderMaterial
-        ref={material}
-        vertexShader={motesVertex}
-        fragmentShader={particlesFragment}
-        uniforms={uniforms}
-        blending={AdditiveBlending}
-        transparent
-        depthWrite={false}
-      />
-    </points>
+    // Above the statement, tilted so its edge reads as a diagonal rising to the right.
+    <group position={[0, PLACES.statement + 3.1, 0]} rotation={[0.07, 0, 0.17]}>
+      {/* Faces down only: seen from above (the hero side) it is invisible. */}
+      <mesh
+        rotation-x={Math.PI / 2}
+        position-z={(SLAB.zNear + SLAB.zFar) / 2}
+        frustumCulled={false}
+      >
+        <planeGeometry args={[SLAB.x * 2, SLAB.zNear - SLAB.zFar]} />
+        <meshBasicMaterial color={shade} toneMapped={false} />
+      </mesh>
+      {SMOKE_LAYERS.map((y, i) => (
+        <mesh key={y} rotation-x={Math.PI / 2} position={[0, y, CENTER_Z]} frustumCulled={false}>
+          <planeGeometry args={[SLAB.x * 2, SLAB.zNear - SLAB.zFar]} />
+          <shaderMaterial
+            ref={(material) => {
+              smoke.current[i] = material
+            }}
+            vertexShader={smokeVertex}
+            fragmentShader={slabFragment}
+            uniforms={smokeUniforms[i]}
+            blending={AdditiveBlending}
+            transparent
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
+      <points geometry={geometry} frustumCulled={false}>
+        <shaderMaterial
+          ref={material}
+          defines={{ CLUMP: '' }}
+          vertexShader={motesVertex}
+          fragmentShader={particlesFragment}
+          uniforms={uniforms}
+          blending={AdditiveBlending}
+          transparent
+          depthWrite={false}
+        />
+      </points>
+    </group>
   )
 }

@@ -16,6 +16,7 @@ export const sceneColors = {
   emerald: new Color(palette.emerald),
   glow: new Color(palette.glow),
   warm: new Color(palette.warm),
+  ember: new Color(palette.ember),
   /** Tint of clear glass. */
   glass: new Color(palette.text),
 }
@@ -29,7 +30,8 @@ export const sceneConfig = {
     /** Depth-of-field strength: how fast particles blur away from the focus plane. */
     aperture: 1.2,
     focusDistance: 10,
-    brightness: 0.75,
+    /** Low: the screen stays mostly dark; the dust lives in the slab and the opening cloud. */
+    brightness: 0.2,
   },
   flow: {
     speed: 0.12,

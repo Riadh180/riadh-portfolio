@@ -1,6 +1,6 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import { AdditiveBlending, type Group, type ShaderMaterial, Vector3 } from 'three'
+import { AdditiveBlending, Color, type Group, type ShaderMaterial, Vector3 } from 'three'
 import { sceneColors, sceneConfig } from '@/styles/scene'
 import particlesFragment from '../shaders/particles.frag'
 import motesVertex from '../shaders/motes.vert'
@@ -15,7 +15,11 @@ import type { JourneyState } from './path'
 const ORIGIN = new Vector3(0, 0.15, -0.4)
 const COUNT = 7000
 
-/** Wisps of smoke behind and around The Core: [width, height, x, y, z, roll, seed]. */
+/** Nebula colours, from the tokens: a deeper amber body and pale gold filaments. */
+const AMBER = new Color().copy(sceneColors.warm).multiplyScalar(0.7)
+const PALE_GOLD = new Color().copy(sceneColors.warm).lerp(sceneColors.glass, 0.3)
+
+/** Nebula layers behind and around The Core: [width, height, x, y, z, roll, seed]. */
 const WISPS: [number, number, number, number, number, number, number][] = [
   [7.5, 4.6, 0, 0.2, -1.2, 0.35, 0.1],
   [8.5, 5, 0.6, 0.4, -2.2, -0.55, 0.4],
@@ -38,22 +42,28 @@ function createCloud() {
   })
 }
 
-/** Blooms as the scroll starts, peaks as the camera leaves, gone before the sheet. */
-const bloom = (p: number) => {
-  const rise = Math.min(1, Math.max(0, (p - 0.02) / 0.16))
-  const fall = Math.min(1, Math.max(0, (p - 0.42) / 0.25))
+/**
+ * Once the scroll starts, the nebula plays out on its own over ~1.5s, whatever the scroll
+ * speed: blooms in 0.35s, holds, fades by 1.5s. Re-arms back at the hero.
+ */
+const PLAY = 1.5
+const envelope = (t: number) => {
+  if (t < 0 || t > PLAY) return 0
+  const rise = Math.min(1, t / 0.35)
+  const fall = Math.min(1, Math.max(0, (t - 0.8) / (PLAY - 0.8)))
   return rise * rise * (3 - 2 * rise) * (1 - fall * fall * (3 - 2 * fall))
 }
 
 type Props = { journey: JourneyState; clock: SceneClock; reducedMotion: boolean }
 
 /**
- * The golden cloud of the first scroll: gold dust and smoky wisps bloom round The Core as
- * the visitor starts to scroll, then thin out as the camera descends (MOTION.md §2).
+ * The golden cloud of the first scroll: a warm nebula with an orange glow and gold dust
+ * blooms round The Core as the visitor starts to scroll, then fades (MOTION.md §2).
  */
 export function GoldCloud({ journey, clock, reducedMotion }: Props) {
   const group = useRef<Group>(null)
   const motes = useRef<ShaderMaterial>(null)
+  const playedAt = useRef(-1)
   const smoke = useRef<(ShaderMaterial | null)[]>([])
   const geometry = useMemo(() => createCloud(), [])
   const uniforms = useMemo(
@@ -67,15 +77,21 @@ export function GoldCloud({ journey, clock, reducedMotion }: Props) {
         uOpacity: { value: 0 },
         uSeed: { value: seed },
         uAspect: { value: width / height },
-        uColor: { value: sceneColors.warm },
-        uHighlight: { value: sceneColors.glass },
+        uColor: { value: AMBER },
+        uHighlight: { value: PALE_GOLD },
       })),
     [],
   )
   useEffect(() => () => geometry.dispose(), [geometry])
 
   useFrame(({ size, viewport }) => {
-    const amount = reducedMotion ? 0 : bloom(journey.camera)
+    const now = clock.time
+    if (playedAt.current < 0 && journey.camera > 0.015) playedAt.current = now
+    if (playedAt.current >= 0 && journey.camera < 0.005 && now - playedAt.current > PLAY) {
+      playedAt.current = -1
+    }
+    const elapsed = playedAt.current < 0 ? -1 : now - playedAt.current
+    const amount = reducedMotion ? 0 : envelope(elapsed)
     // Only drawn while it shows: the smoke is a full-screen noise shader.
     if (group.current) group.current.visible = amount > 0.001
     if (motes.current) {
@@ -84,14 +100,14 @@ export function GoldCloud({ journey, clock, reducedMotion }: Props) {
       u.uOpacity!.value = amount * 3
       u.uSize!.value = sceneConfig.particles.size * 0.9
       u.uMaxSize!.value = 20
-      u.uExpand!.value = journey.objects * 0.5
+      u.uExpand!.value = Math.max(0, elapsed / PLAY) * 0.6
       u.uDrift!.value = 0.08
       u.uViewportHeight!.value = size.height * viewport.dpr
     }
     smoke.current.forEach((material) => {
       if (!material) return
       material.uniforms.uTime!.value = clock.time
-      material.uniforms.uOpacity!.value = amount * 0.16
+      material.uniforms.uOpacity!.value = amount * 0.6
     })
   })
 

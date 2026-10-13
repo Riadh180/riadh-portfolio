@@ -25,7 +25,31 @@ type Props = {
  */
 const POSES = {
   hero: new Vector3(0, 0.15, 0),
-  statement: new Vector3(0.6, PLACES.statement - 0.65, 3),
+  statement: new Vector3(-0.2, PLACES.statement - 0.65, 3),
+}
+
+/**
+ * At the statement The Core stops spinning and holds near edge-on (a tall slit of thick
+ * glass with rainbow edges, like the reference disc), upright and larger, spanning all
+ * three tagline lines.
+ */
+const STATEMENT = { scale: 1.45, edge: 1.1 }
+
+/** The held angle nearest `angle`: kπ ± the edge angle (either side, either face). */
+function nearestEdge(angle: number) {
+  const k = Math.round(angle / Math.PI)
+  let best = angle
+  let distance = Infinity
+  for (const base of [k - 1, k, k + 1]) {
+    for (const side of [-1, 1]) {
+      const candidate = base * Math.PI + side * STATEMENT.edge
+      if (Math.abs(candidate - angle) < distance) {
+        distance = Math.abs(candidate - angle)
+        best = candidate
+      }
+    }
+  }
+  return best
 }
 
 /** Resting angle: slightly off face-on so the bands catch the light while it dwells. */
@@ -66,6 +90,10 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey }: Props) 
   const group = useRef<Group>(null)
   const inner = useRef<Mesh>(null)
   const tilt = useRef({ x: 0, y: 0 })
+  /** Spin clock: runs with scene time at the hero, slows to a stop at the statement. */
+  const spinClock = useRef({ time: 0, last: 0 })
+  /** The edge-on angle held at the statement, picked once as The Core starts to travel. */
+  const hold = useRef<number | null>(null)
   const frame = useMemo(() => createFrame(), [])
   const innerShape = useMemo(() => createInner(), [])
   // Created once; the look is applied every frame below so it can be tuned live.
@@ -91,20 +119,31 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey }: Props) 
 
     tilt.current.x += (tiltX - tilt.current.x) * ease
     tilt.current.y += (tiltY - tilt.current.y) * ease
-    // The idle turn is continuous, never damped: highlights slide along the bands as it turns.
-    const spin = reducedMotion ? 0 : idleSpin(t, emblem.halfTurn, emblem.dwell)
-
-    const g = group.current
-    g.rotation.x = REST.x + tilt.current.x + Math.sin(t * 0.3) * 0.05
-    g.rotation.y = REST.y + tilt.current.y + spin
     // Travels with the objects' slower settle, so it trails the camera down the path.
     const travel = journey ? journey.objects * journey.objects * (3 - 2 * journey.objects) : 0
+
+    // The idle turn is continuous, never damped: highlights slide along the bands as it
+    // turns. It winds down as The Core leaves for the statement.
+    const spinClockState = spinClock.current
+    spinClockState.time += Math.max(0, t - spinClockState.last) * (1 - travel)
+    spinClockState.last = t
+    const spin = reducedMotion ? 0 : idleSpin(spinClockState.time, emblem.halfTurn, emblem.dwell)
+    const heroTurn = REST.y + tilt.current.y + spin
+    if (travel > 0.001) hold.current ??= nearestEdge(heroTurn)
+    else hold.current = null
+    const heldTurn = (hold.current ?? heroTurn) + Math.sin(t * 0.4) * 0.05 + tilt.current.y * 0.5
+
+    const g = group.current
+    const heroTiltX = REST.x + tilt.current.x + Math.sin(t * 0.3) * 0.05
+    g.rotation.x = heroTiltX + (tilt.current.x * 0.4 - heroTiltX) * travel
+    g.rotation.y = heroTurn + (heldTurn - heroTurn) * travel
     g.position.lerpVectors(POSES.hero, POSES.statement, travel)
     // Narrow screens: stay over the (narrower) tagline.
     g.position.x *= Math.min(1, size.width / size.height / 1.6)
     g.position.y += Math.sin(t * 0.5) * emblem.float
     // Portrait screens see a narrower slice of the world: keep the emblem's share of width.
-    g.scale.setScalar(emblem.scale * Math.min(1, Math.max(0.55, (size.width / size.height) * 0.9)))
+    const portrait = Math.min(1, Math.max(0.55, (size.width / size.height) * 0.9))
+    g.scale.setScalar(emblem.scale * portrait * (1 + (STATEMENT.scale - 1) * travel))
 
     // The light rig turns part of the way with the emblem near face-on, so the bevels keep
     // mirroring the edge light, and eases back to fixed towards edge-on, where following
@@ -131,9 +170,12 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey }: Props) 
     )
 
     // Deeper refraction at the statement, so the glass visibly bends the tagline behind it.
+    // At the held angle the reflections stay up, so the slit of glass stays bright.
+    const faceOn = Math.abs(Math.cos(turn - facing))
     applyGlassLook(glass, look, {
-      facing: Math.abs(Math.cos(turn - facing)),
+      facing: faceOn + (0.7 - faceOn) * travel,
       depth: 1 + 2 * travel,
+      rainbow: travel,
     })
   })
 

@@ -27,7 +27,7 @@ const RISE = 0.9
 const STAGGER = 0.12
 const HIDE = 0.4
 
-/** Glitch: one line at a time, ~0.3s, every 1.6–3.8s. */
+/** Glitch: one line at a time, ~0.3s, every 1.5–2s. */
 const GLITCH = 0.3
 
 const expoOut = (x: number) => (x >= 1 ? 1 : 1 - 2 ** (-10 * x))
@@ -111,7 +111,7 @@ export function Tagline({ clock, reducedMotion }: Props) {
     if (!reducedMotion && shown && now >= s.nextGlitch) {
       s.glitchStart = now
       s.glitchLine = (s.glitchLine + 1 + Math.floor(Math.random() * 2)) % 3
-      s.nextGlitch = now + 1.6 + Math.random() * 2.2
+      s.nextGlitch = now + 1.5 + Math.random() * 0.5
     }
     if (s.glitchStart >= 0 && now - s.glitchStart < GLITCH) {
       glitch = Math.sin((Math.PI * (now - s.glitchStart)) / GLITCH)

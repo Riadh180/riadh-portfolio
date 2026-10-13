@@ -236,6 +236,17 @@ Proposed (not yet approved) ideas for color in the particles themselves:
    in, it dissolves into particles, and details appear in small mono type on the left.
    Filter, in our own words (never "What are you looking for?" / "Ask me anything"):
    `FILTER WORK → REACT · REACT NATIVE · TESTING · CREATIVE · DATA`.
+   **The spine + glass particles (plan):**
+   - The sculpture is a **vertical spine**: a tall column of stacked, slightly offset
+     glass layers (rounded rects and thin panes, the same cut glass as The Core),
+     turning slowly. It is the axis of the Work place; the camera spirals down along it
+     as you scroll, with the job cards orbiting it at different heights and depths
+     (MOTION.md §4).
+   - **Glass particles:** the dust around the spine is partly tiny glass shards
+     (instanced, lit by the environment and catching the edge light, no per-shard
+     transmission so it stays cheap), streaming up the column as the signal. They
+     thicken into the clouds that wrap the spine, and a clicked card dissolves into them.
+   - Accent: violet. Our own forms only: never their column, ribbon or projects.
 5. **Depth (Data Engineering):** its own environment beneath a water surface (caustics
    seen from below): "beneath the interface".
 6. **Contact:** calm; "Let's talk" with the email; the world loops back to the hero

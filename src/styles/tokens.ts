@@ -21,6 +21,8 @@ export const palette = {
   glow: '#7FF5E1',
   /** Rare: gold sparks, one contact moment. */
   warm: '#FFB36B',
+  /** Scene only: the red-orange end of the dust slab and the opening nebula's glow. */
+  ember: '#FF5A2E',
 } as const
 
 export type ColorToken = keyof typeof palette

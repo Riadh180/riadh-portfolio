@@ -29,7 +29,7 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
       <primitive attach="background" object={sceneColors.bg} />
       <HeroLighting look={sceneConfig.glass} clock={clock} />
       <CameraRig pointer={pointer} journey={journey} enabled={!reducedMotion} />
-      <Backdrop />
+      <Backdrop journey={journey} />
       <Emblem
         look={sceneConfig.glass}
         pointer={pointer}

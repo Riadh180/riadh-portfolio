@@ -18,6 +18,7 @@ export function createMotesUniforms(colors: [Color, Color, Color], origin = new 
     uDrift: { value: 0.05 },
     uColors: { value: colors },
     uCycle: { value: 0 },
+    uSpread: { value: 1 },
   }
 }
 

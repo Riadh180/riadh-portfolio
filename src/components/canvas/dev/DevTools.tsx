@@ -26,6 +26,7 @@ const current: Palette = {
   emerald: palette.emerald,
   glow: palette.glow,
   warm: palette.warm,
+  ember: palette.ember,
   glass: palette.text,
 }
 
