@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ogImage } from '@/lib/ogImage'
 import Link from 'next/link'
 import { about, depth, jobs, profile, skillGraph } from '@/content/site'
 
@@ -6,6 +7,13 @@ export const metadata: Metadata = {
   title: `CV — ${profile.name}`,
   description: `${profile.role}. ${profile.summary}`,
   alternates: { canonical: '/cv' },
+  openGraph: {
+    type: 'profile',
+    title: `CV — ${profile.name}`,
+    description: `${profile.role}. ${profile.summary}`,
+    url: '/cv',
+    images: [ogImage],
+  },
 }
 
 /** The PDF version, generated from this page at build time (scripts/cv-pdf.mjs). */

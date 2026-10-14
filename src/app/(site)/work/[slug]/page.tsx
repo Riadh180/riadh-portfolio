@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ogImage } from '@/lib/ogImage'
 import { Suspense } from 'react'
 import { jobs, profile } from '@/content/site'
 import { Home } from '@/components/sections/Home'
@@ -18,7 +19,13 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     title,
     description: job.summary,
     alternates: { canonical: `/work/${job.slug}` },
-    openGraph: { title, description: job.summary, type: 'article' },
+    openGraph: {
+      title,
+      description: job.summary,
+      type: 'article',
+      url: `/work/${job.slug}`,
+      images: [ogImage],
+    },
   }
 }
 

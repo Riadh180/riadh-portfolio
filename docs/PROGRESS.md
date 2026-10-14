@@ -205,3 +205,13 @@ System 59, Depth 47, Contact 47.
 5. **Performance headroom.** Lighthouse Performance 67–79 (target 90): scene construction
    still blocks ~0.45s; on integrated-only GPUs the lite tier drops The Core's refraction
    (the statement tagline is no longer bent by the glass there).
+
+---
+# Round 2 (2026-10-14)
+
+## Part 1 — Site address
+- `lib/siteUrl.ts`: NEXT_PUBLIC_SITE_URL, else `https://riadhsouissi.vercel.app` (never a
+  preview or localhost URL). Verified in the production build: canonical, og:url and
+  og:image on `/`, `/cv`, `/work/<slug>`; sitemap `<loc>`s; robots `Sitemap:` line.
+- `lib/ogImage.ts`: pages with their own `openGraph` (cv, work) list the shared image
+  (a page-level openGraph replaces the inherited one, dropping og:image).
