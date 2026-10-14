@@ -136,7 +136,9 @@ export class CardFace {
       palette.emerald,
       palette.warm,
     ]
-    const muted = (hex: string) => mix(hex, palette.bg, 0.55)
+    // Rich colour (the card media are a material, not the environment), still dark enough
+    // for the title to read.
+    const muted = (hex: string) => mix(hex, palette.bg, 0.3)
     const from = muted(tones[this.index % tones.length] ?? palette.violet)
     const to = muted(tones[(this.index + 2) % tones.length] ?? palette.teal)
     const gradient = c.createLinearGradient(0, 0, WIDTH, HEIGHT)

@@ -154,8 +154,11 @@ export const sceneConfig = {
     lift: 0.22,
     /** How much the cool teal-grey leans into the shadows. */
     shadowTint: 0.18,
-    /** Muted overall; nothing more saturated than the ceiling (chroma / luma). */
-    saturation: 0.74,
-    saturationCeiling: 0.9,
+    /**
+     * Muted world, vivid materials: the environment (haze, water, backdrops) is authored
+     * muted, so the grade leaves colour alone; the ceiling only catches true neon.
+     */
+    saturation: 1,
+    saturationCeiling: 2.4,
   },
 }

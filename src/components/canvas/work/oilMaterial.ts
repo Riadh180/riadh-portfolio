@@ -23,14 +23,14 @@ export function createOilMaterial() {
     iridescence: 1,
     iridescenceIOR: 2.1,
     iridescenceThicknessRange: [380, 820],
-    envMapIntensity: 0.7,
+    envMapIntensity: 0.95,
     flatShading: true,
   })
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uOilTeal = { value: sceneColors.teal }
     shader.uniforms.uOilGreen = { value: sceneColors.emerald }
     shader.uniforms.uOilViolet = { value: sceneColors.violet }
-    shader.uniforms.uOilGlow = { value: 0.3 }
+    shader.uniforms.uOilGlow = { value: 0.45 }
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vSpinePosition;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSpinePosition = position;')

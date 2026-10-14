@@ -56,8 +56,9 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
     lowerLeft.copy(sceneColors.violet)
     upperRight.copy(sceneColors.teal).lerp(sceneColors.glass, 0.35)
     if (accent) upperRight.lerp(accent.color, accent.amount)
-    lowerLeft.lerp(sceneColors.ember, warm * 0.25)
-    upperRight.lerp(sceneColors.warm, warm * 0.45)
+    // Contact: one soft warm bleed from the upper right; the violet lower left stays.
+    upperRight.lerp(sceneColors.warm, warm * 0.85)
+    u.uStrength!.value = sceneConfig.light.corners * (1 + warm * 0.6)
     material.current.uniforms.uAspect!.value = size.width / size.height
   })
 

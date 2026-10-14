@@ -65,9 +65,9 @@ void main() {
   float energy = clamp((focusSize * focusSize) / (size * size), 0.08, 1.0);
   gl_PointSize = size * ends;
 
-  // Less saturated: tinted glass, not candy.
+  // Vivid tinted glass (the world around is muted; the materials carry the colour).
   vec3 hue = pebbleColor(seed.y);
-  vec3 color = mix(vec3(dot(hue, vec3(0.299, 0.587, 0.114))), hue, 0.6) * mix(0.35, 0.8, seed.w);
+  vec3 color = mix(vec3(dot(hue, vec3(0.299, 0.587, 0.114))), hue, 0.92) * mix(0.4, 0.95, seed.w);
   vColor = color * uBrightness * energy;
   vShape = seed.z;
   // Facets flash as the chip tumbles past the light.

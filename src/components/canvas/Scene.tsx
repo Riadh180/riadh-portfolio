@@ -10,6 +10,7 @@ import { CameraRig } from './CameraRig'
 import { Emblem } from './hero/Emblem'
 import { Drift } from './motion/Drift'
 import { DustSheet } from './journey/DustSheet'
+import { ContactGlow } from './journey/ContactGlow'
 import { FormMoment } from './journey/FormMoment'
 import { GoldCloud } from './journey/GoldCloud'
 import { type JourneyState, useJourneyState } from './journey/path'
@@ -105,6 +106,7 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
         reducedMotion={reducedMotion}
       />
       <DepthPlace journey={journey} clock={clock} />
+      <ContactGlow journey={journey} />
       <ParticleField
         simSize={simSize}
         clock={clock}
