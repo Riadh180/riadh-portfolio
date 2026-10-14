@@ -9,11 +9,11 @@ import { DepthPlace } from './depth/DepthPlace'
 import { CameraRig } from './CameraRig'
 import { Emblem } from './hero/Emblem'
 import { DustSheet } from './journey/DustSheet'
-import { DustTrail } from './journey/DustTrail'
 import { FormMoment } from './journey/FormMoment'
 import { GoldCloud } from './journey/GoldCloud'
 import { type JourneyState, useJourneyState } from './journey/path'
 import { Tagline } from './journey/Tagline'
+import { Trails } from './journey/Trails'
 import { HeroLighting } from './hero/HeroLighting'
 import { ParticleField } from './particles/ParticleField'
 import { Effects } from './post/Effects'
@@ -90,7 +90,7 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
       <DustSheet clock={clock} journey={journey} />
       <Tagline clock={clock} reducedMotion={reducedMotion} journey={journey} />
       <FormMoment journey={journey} simSize={simSize} clock={clock} />
-      <DustTrail journey={journey} />
+      <Trails journey={journey} />
       <WorkPlace journey={journey} clock={clock} />
       <SystemPlace
         journey={journey}

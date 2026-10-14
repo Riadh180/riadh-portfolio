@@ -21,6 +21,8 @@ export function SystemList() {
   const focus = useSystem((state) => state.focus)
   const all = [skillGraph.core, ...skillGraph.branches.flatMap((branch) => branch.skills)]
   const current = all.find((skill) => skill.name === focused)
+  const open = (branch: (typeof skillGraph.branches)[number]) =>
+    focused === branch.id || branch.skills.some((skill) => skill.name === focused)
   const props = (id: string) => ({
     onPointerEnter: () => focus(id),
     onPointerLeave: () => {
@@ -47,7 +49,10 @@ export function SystemList() {
             >
               {branch.label}
             </button>
-            <ul className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
+            {/* Phones: only the branch names, a branch's skills when it's in focus. */}
+            <ul
+              className={`mt-1 flex-wrap gap-x-2 gap-y-0.5 lg:flex ${open(branch) ? 'flex' : 'hidden'}`}
+            >
               {branch.skills.map((skill) => (
                 <li key={skill.name}>
                   <button

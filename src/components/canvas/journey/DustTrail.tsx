@@ -1,58 +1,74 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import { AdditiveBlending, type Points, type ShaderMaterial } from 'three'
-import { sceneColors } from '@/styles/scene'
+import { AdditiveBlending, type Color, type Points, type ShaderMaterial } from 'three'
 import particlesFragment from '../shaders/particles.frag'
 import motesVertex from '../shaders/motes.vert'
 import { createMotesGeometry, createMotesUniforms, gaussian } from './motes'
-import { DESCENT } from './descent'
-import { type JourneyState, PLACES, WORK } from './path'
 
-const COUNT = 1800
+type Trail = {
+  /** World heights the trail runs between (top to bottom). */
+  top: number
+  bottom: number
+  /** Its centre line's x at the top and at the bottom (it drifts across on the way). */
+  fromX: number
+  toX: number
+  /** Loose width round the centre line, and how far it spreads in depth. */
+  width: number
+  depth: number
+  count: number
+  colors: [Color, Color, Color]
+  /** How strongly the trail shows now (0 hides it): set from the journey. */
+  amount: () => number
+  brightness?: number
+}
 
-/**
- * A faint trail of dust from the wireframe beat down to the top of the spine: after the
- * wireframe scatters, the camera follows it down, so the last stretch of the descent is
- * never empty. A loose, slowly curving column, teal fading to Work's violet.
- */
-function createTrail() {
-  const top = (PLACES.statement + PLACES.work) / 2
-  const bottom = PLACES.work + 2.5
-  return createMotesGeometry(COUNT, (_, out) => {
+type Shape = Pick<Trail, 'top' | 'bottom' | 'fromX' | 'toX' | 'width' | 'depth' | 'count'>
+
+function createTrail({ top, bottom, fromX, toX, width, depth, count }: Shape) {
+  return createMotesGeometry(count, (_, out) => {
     const t = Math.random()
-    const y = top + (bottom - top) * t
-    // Drifts towards the spine (right of centre on desktop) on the way down.
-    const x = WORK.x * t * t + Math.sin(t * 5) * 0.4
-    out.set(x + gaussian() * 0.9, y, gaussian() * 1.4 - 1)
+    const x = fromX + (toX - fromX) * t * t + Math.sin(t * 5) * width * 0.4
+    // Spread in depth towards the camera (z > 0): the camera passes through it.
+    out.set(x + gaussian() * width * 1.6, top + (bottom - top) * t, gaussian() * depth * 1.8 + 1.5)
   })
 }
 
-type Props = { journey: JourneyState }
-
-export function DustTrail({ journey }: Props) {
+/**
+ * A faint trail of dust between two places, so a transition always passes through
+ * something: the camera follows it down. A loose, slowly curving column of motes.
+ */
+export function DustTrail({
+  top,
+  bottom,
+  fromX,
+  toX,
+  width,
+  depth,
+  count,
+  colors,
+  amount,
+  brightness = 1.6,
+}: Trail) {
   const points = useRef<Points>(null)
-  const geometry = useMemo(() => createTrail(), [])
-  const uniforms = useMemo(
-    () => createMotesUniforms([sceneColors.teal, sceneColors.violet, sceneColors.glow]),
-    [],
+  const geometry = useMemo(
+    () => createTrail({ top, bottom, fromX, toX, width, depth, count }),
+    [top, bottom, fromX, toX, width, depth, count],
   )
+  const uniforms = useMemo(() => createMotesUniforms(colors), [colors])
   useEffect(() => () => geometry.dispose(), [geometry])
 
   useFrame(({ size, viewport, clock }) => {
     const p = points.current
     if (!p) return
-    const { toWork } = journey
-    // Fades in as the wireframe goes, out once the spine fills the view.
-    const amount =
-      Math.min(1, Math.max(0, (toWork - DESCENT.holdTo + 0.05) / 0.1)) *
-      Math.min(1, Math.max(0, (1 - toWork) / 0.12))
-    p.visible = amount > 0.01
+    const value = amount()
+    p.visible = value > 0.01
     if (!p.visible) return
     const u = (p.material as ShaderMaterial).uniforms
     u.uTime!.value = clock.elapsedTime
-    u.uOpacity!.value = amount * 0.9
+    u.uOpacity!.value = value * brightness
     u.uSpread!.value = 0.5
     u.uDrift!.value = 0.12
+    u.uSize!.value = 0.03
     u.uViewportHeight!.value = size.height * viewport.dpr
   })
 

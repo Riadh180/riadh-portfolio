@@ -10,7 +10,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
-    "check:contrast": "node scripts/check-contrast.mts"
+    "check:contrast": "node scripts/check-contrast.mts",
+    "cv:pdf": "node scripts/cv-pdf.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
@@ -36,8 +37,12 @@
     "leva": "^0.10.1",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "puppeteer-core": "^25.13.0",
     "raw-loader": "^4.0.2",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -1,4 +1,4 @@
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import {
   type Group,
@@ -79,6 +79,7 @@ type Props = { clock: SceneClock }
  * threads. The data roots from the surface converge on it (DepthWorld).
  */
 export function CapstonePanel({ clock }: Props) {
+  const column = useThree((state) => state.size.width < 700)
   const panel = useRef<Group>(null)
   const gems = useRef<InstancedMesh>(null)
   const latticeMaterial = useRef<ShaderMaterial>(null)
@@ -159,7 +160,7 @@ export function CapstonePanel({ clock }: Props) {
 
   return (
     <group>
-      <group ref={panel} position={PANEL} scale={1.35}>
+      <group ref={panel} position={PANEL} scale={column ? 1.05 : 1.35}>
         <mesh geometry={block} material={glass} />
         <mesh
           geometry={screenGeometry}

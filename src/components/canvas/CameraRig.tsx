@@ -1,5 +1,6 @@
 import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
+import type { PerspectiveCamera } from 'three'
 import type { JourneyState } from './journey/path'
 import { FIELD } from './particles/simulation'
 import type { Pointer } from './usePointer'
@@ -15,7 +16,7 @@ type Props = { pointer: Pointer; journey: JourneyState; enabled: boolean }
 export function CameraRig({ pointer, journey, enabled }: Props) {
   const parallax = useRef({ x: 0, y: 0 })
 
-  useFrame(({ camera }, delta) => {
+  useFrame(({ camera, size }, delta) => {
     const ease = 1 - Math.exp(-Math.min(delta, 1 / 30) * 1.4)
     const p = parallax.current
     p.x += ((enabled ? (pointer.uv.x - 0.5) * 0.9 : 0) - p.x) * ease
@@ -27,6 +28,16 @@ export function CameraRig({ pointer, journey, enabled }: Props) {
       Math.cos(angle) * distance - p.x * Math.sin(angle),
     )
     camera.lookAt(0, y + lookUp, 0)
+    // Phones: shift the picture up so the subject clears the text at the bottom.
+    const perspective = camera as PerspectiveCamera
+    const shift = Math.round(journey.screenShift * size.height)
+    if (shift > 0) {
+      if (perspective.view?.offsetY !== shift || perspective.view.fullHeight !== size.height) {
+        perspective.setViewOffset(size.width, size.height, 0, shift, size.width, size.height)
+      }
+    } else if (perspective.view?.enabled) {
+      perspective.clearViewOffset()
+    }
     FIELD.center.y = y
   }, -3)
 

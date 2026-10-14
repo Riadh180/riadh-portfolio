@@ -176,7 +176,15 @@ export const skillGraph: { core: Skill; branches: SkillBranch[] } = {
     {
       id: 'performance',
       label: 'Performance',
-      skills: [{ name: 'Profiling', usedAt: ['bliggit', 'adesso'] }],
+      skills: [
+        { name: 'Profiling', usedAt: ['bliggit', 'adesso'] },
+        { name: 'Lazy loading', usedAt: ['bliggit'] },
+        { name: 'React Profiler', usedAt: [] },
+        { name: 'Suspense', usedAt: [] },
+        { name: 'react-window', usedAt: [] },
+        { name: 'Web Vitals', usedAt: [] },
+        { name: 'Lighthouse', usedAt: [] },
+      ],
     },
     {
       id: 'creative',

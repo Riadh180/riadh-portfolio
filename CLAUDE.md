@@ -411,6 +411,51 @@ with a one-line reason before switching.
 5. If an idea will hurt performance or usability, say so and propose a better one.
 6. Keep code clean: small components, shaders in their own files, no dead code.
 
+### Polish pass (next phase — look and feel only, no new features)
+Scene by scene against `docs/reference/` and the recording. Every change is judged side by
+side with the reference (strips at the same timing), and FPS on the HD 630 is re-measured.
+
+- **Motion feel — one shared motion system.** Weight and inertia everywhere: the camera
+  overshoots slightly and settles; objects lag the camera and drift; nothing ever comes to
+  a dead stop (idle breathing on every subject, slow dust drift, never a frozen frame).
+  One module owns the easing curves, damping constants, settle times and idle drift
+  (`motion.ts`-style), and every scene uses it instead of per-scene tuning.
+- **One consistent grade.** A single colour treatment, light quality, bloom, grain,
+  vignette and chromatic aberration across all scenes (one post stack, one set of
+  values, per-place accents only through light and particles), so the whole site reads as
+  one world.
+- **Micro-interactions.** A custom cursor (small ring, morphs on interactive elements,
+  hidden on touch); a hover reaction on every interactive element (magnetic buttons,
+  glow, scramble); text reveals and scrambles used consistently (one implementation).
+- **Sound** (off by default, visible toggle, remembered): an ambient bed per place,
+  crossfading along the path, plus subtle interaction ticks; respects reduced motion.
+- **Content slots.** Real project images or short muted videos in the job cards
+  (`public/work/<slug>/`), the capstone (`public/work/capstone/`), and the sculpted spine
+  model (`public/models/spine.glb`) when it arrives.
+
+**Top 10 look-and-feel gaps vs the reference (ranked by impact, 2026-10-14):**
+1. **Real imagery in the glass.** Their cards and panels carry rich, detailed, colourful
+   media (renders, video) behind the frost; ours show soft generated placeholders, so the
+   most-viewed objects look empty. (Content slots; biggest single lift.)
+2. **Organic sculpted matter.** Their column and the Lab are dense, sculpted, scanned forms
+   with fine detail; our spine is procedural rocks and Depth's lattice is sparse lines.
+3. **Motion weight.** Their camera and objects carry inertia, overshoot and a slow
+   secondary settle; ours ease cleanly and stop. (Shared motion system.)
+4. **Particles as volume.** Their dust is volumetric and layered with depth of field
+   (gold nebula, clouds wrapping objects); our trails and clouds read as flat sprites.
+5. **One grade.** Theirs has one consistent filmic look (lifted blacks, purple-teal haze,
+   soft halation, fine grain); ours shifts per place (teal Depth, warm Contact, flat System).
+6. **Light on glass.** Their glass has thick bodies, caustic-like inner light and strong
+   rim highlights; ours is often thin outlines on black (cards, gems, The Core at System).
+7. **Typography in the scene.** Their display type is huge, glitched and interacts with the
+   glass everywhere; ours appears big only at the statement and Contact.
+8. **Transitions as events.** Theirs pass through dense, colourful particle walls and wipes;
+   ours are trails the camera follows: present, but quiet.
+9. **Micro-interactions.** Custom cursor, hover glow and scramble on every element, sound;
+   we have hover only on cards and lists, no cursor, no sound.
+10. **Depth and atmosphere.** Every frame of theirs has foreground, subject and background
+    layers (out-of-focus foreground debris); ours is often one layer on dark.
+
 ### Build order
 1. ✅ Project setup, fonts, colors, design tokens, base layout & typography
 2. ✅ GPU particle engine + cursor trail (now reused as atmosphere & transitions)

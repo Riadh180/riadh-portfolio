@@ -25,7 +25,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       <body>
         <a
           href="#main"
-          className="fixed top-3 left-3 z-50 -translate-y-20 bg-text px-3 py-2 ui text-bg focus:translate-y-0"
+          className="fixed top-3 left-3 z-50 -translate-y-20 bg-text px-3 py-2 ui text-bg focus:translate-y-0 print:hidden"
         >
           Skip to content
         </a>

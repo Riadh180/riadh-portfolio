@@ -102,9 +102,21 @@
     color: var(--text);
   }
 
+  /* Focus: a thin rounded ring with a soft glow (no hard box), warm inside Contact. */
   :focus-visible {
-    outline: 1px solid var(--glow);
-    outline-offset: 4px;
+    outline: 1px solid color-mix(in oklab, var(--glow) 80%, transparent);
+    outline-offset: 5px;
+    border-radius: 4px;
+    box-shadow: 0 0 0 6px color-mix(in oklab, var(--glow) 10%, transparent);
+  }
+
+  #contact :focus-visible {
+    outline-color: color-mix(in oklab, var(--warm) 85%, transparent);
+    box-shadow: 0 0 0 6px color-mix(in oklab, var(--warm) 12%, transparent);
+  }
+
+  #contact a.rounded-full:focus-visible {
+    border-radius: 9999px;
   }
 }
 
@@ -134,4 +146,19 @@
       animation-delay: 0s;
     }
   }
+}
+
+/* The printable CV (plain CSS: these classes are only used by /cv). */
+.cv-h2 {
+  margin-bottom: 0.75rem;
+  font-family: var(--font-departure), ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, #14171c 60%, transparent);
+}
+
+.cv a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

@@ -31,6 +31,10 @@ export function TopBar() {
             CV
           </a>
         </nav>
+        {/* The email, always one click away. */}
+        <a href={`mailto:${profile.email}`} className={`ui text-violet max-sm:hidden ${link}`}>
+          {profile.email}
+        </a>
         <SectionIndicator />
       </div>
     </header>

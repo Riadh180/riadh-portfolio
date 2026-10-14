@@ -26,7 +26,7 @@ export const DEPTH = { x: 1.2, distance: 7.5, below: 2.6, lookUp: 1.3, phoneDist
 export const CONTACT = { distance: 7, hero: 10 }
 
 /** The System place: the graph right of centre, seen from further back (it's wide). */
-export const SYSTEM = { x: 2.2, distance: 14, phoneDistance: 24, swing: 0.45 }
+export const SYSTEM = { x: 2.2, distance: 14, phoneDistance: 30, phoneShift: 0.24, swing: 0.45 }
 
 /**
  * The Work place's layout, in its own space: the spine on the axis, the cards stacked
@@ -79,6 +79,11 @@ export class JourneyState {
   loop = 0
   /** How far above its focus the camera looks (Depth looks up at the surface). */
   lookUp = 0
+  /**
+   * Phones: how far the picture is shifted up (fraction of the screen height), so a
+   * scene's subject sits in the upper part and the text below never covers it.
+   */
+  screenShift = 0
   private time = 0
   /** Phones: the cards hang in a column; the camera rides straight down it. */
   column = false
@@ -158,6 +163,7 @@ export class JourneyState {
       this.angle = this.angle * (1 - down) + (column ? 0 : swing) * down
     }
     this.lookUp = 0
+    this.screenShift = column ? SYSTEM.phoneShift * smooth(toSystem) : 0
 
     // On down through the water surface into Depth, looking up at it.
     if (toDepth > 0) {
@@ -167,7 +173,8 @@ export class JourneyState {
       this.distance += (depthDistance - this.distance) * down
       this.angle *= 1 - down
       // Phones look lower, so the panel sits in the upper half, above the text.
-      this.lookUp = (column ? -1.4 : DEPTH.lookUp) * down
+      this.lookUp = (column ? -0.9 : DEPTH.lookUp) * down
+      this.screenShift *= 1 - down
     }
 
     // On down into the dark, where The Core rises for Contact.
