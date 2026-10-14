@@ -68,9 +68,9 @@ const REST = { x: 0.14, y: -0.25 }
 /** The calm outside: a flat, bevelled band in the app-icon outline. */
 function createFrame() {
   return createBandGeometry(roundedSquareCurve(), {
-    width: 0.22,
-    depth: 0.08,
-    chamfer: 0.04,
+    width: 0.24,
+    depth: 0.15,
+    chamfer: 0.055,
     innerChamfer: 0.015,
     segments: 600,
   })
@@ -82,9 +82,9 @@ function createFrame() {
  */
 function createInner() {
   return createBandGeometry(roundedSquareCurve(0.64, 0.2), {
-    width: 0.12,
-    depth: 0.07,
-    chamfer: 0.035,
+    width: 0.13,
+    depth: 0.11,
+    chamfer: 0.04,
     innerChamfer: 0.014,
     segments: 400,
   })

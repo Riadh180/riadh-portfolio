@@ -1,5 +1,6 @@
-import { type DataTexture, MeshPhysicalMaterial } from 'three'
+import { Color, type DataTexture, MeshPhysicalMaterial } from 'three'
 import { sceneColors } from '@/styles/scene'
+import { addGlassBody } from '../glass/glassBody'
 import { type GlassLook, surfaceKey } from './glassLook'
 import {
   createFilmTexture,
@@ -30,6 +31,12 @@ export function createGlassMaterial(look: GlassLook) {
     emissiveMap: createRimTexture(),
   })
   applyGlassLook(material, look)
+  // Thick glass: light held in the band's body, not just bright edges on black.
+  addGlassBody(material, {
+    color: new Color().copy(sceneColors.glass).lerp(sceneColors.teal, 0.2),
+    strength: 0.05,
+    edge: 0.8,
+  })
   return material
 }
 

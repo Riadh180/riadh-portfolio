@@ -46,7 +46,11 @@ void main() {
 
   // Milky haze over the frost, stronger at grazing angles (thick glass seen edge-on).
   float grazing = 1.0 - abs(dot(normalize(vNormal), normalize(vView)));
-  color = mix(color, uHaze, (frost * 0.22 + grazing * 0.25) * (1.0 - clear));
+  // Milky, thick glass: a base haze everywhere (the media sits inside the slab), more where
+  // the frost is thick and towards grazing angles, a little more towards the top (lit
+  // from above).
+  float milk = 0.16 + frost * 0.3 + grazing * 0.3 + (vUv.y - 0.5) * 0.08;
+  color = mix(color, uHaze, clamp(milk, 0.0, 0.8) * (1.0 - clear));
 
   vec4 title = texture2D(uTitle, vUv);
   // Open, the title moves to the details beside the image: it clears with the frost.

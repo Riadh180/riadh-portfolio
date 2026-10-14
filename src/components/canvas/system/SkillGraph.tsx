@@ -5,7 +5,7 @@ import {
   type InstancedMesh,
   Matrix4,
   MeshPhysicalMaterial,
-  OctahedronGeometry,
+  IcosahedronGeometry,
   Quaternion,
   Vector3,
   BufferGeometry,
@@ -26,6 +26,7 @@ import edgeFragment from '../shaders/skillEdge.frag'
 import edgeVertex from '../shaders/skillEdge.vert'
 import nodeFragment from '../shaders/skillNode.frag'
 import nodeVertex from '../shaders/skillNode.vert'
+import { addGlassBody } from '../glass/glassBody'
 import type { GlassLook } from '../hero/glassLook'
 import { Emblem } from '../hero/Emblem'
 import type { Pointer } from '../usePointer'
@@ -51,7 +52,7 @@ function colorOf(node: GraphNode) {
 /** Glow sizes (world units); the core's light is The Core itself. */
 const SIZE = { core: 0, branch: 0.34, leaf: 0.2 }
 /** Gem sizes. */
-const GEM = { core: 0, branch: 0.15, leaf: 0.085 }
+const GEM = { core: 0, branch: 0.21, leaf: 0.12 }
 /** Skill labels show when the camera is closer than this (or on focus). */
 const NEAR = 12
 
@@ -60,7 +61,7 @@ const NEAR = 12
  * flat-shaded facets that flash as they turn, clear-coated, with The Core's thin film.
  */
 function createGemMaterial() {
-  return new MeshPhysicalMaterial({
+  const material = new MeshPhysicalMaterial({
     color: 0xffffff,
     metalness: 1,
     roughness: 0.08,
@@ -69,9 +70,12 @@ function createGemMaterial() {
     iridescence: 0.7,
     iridescenceIOR: 1.3,
     iridescenceThicknessRange: [180, 420],
-    envMapIntensity: 5,
+    envMapIntensity: 3.2,
     flatShading: true,
   })
+  // Little lumps of lit glass, not dark specks: light held in each gem's body.
+  addGlassBody(material, { color: new Color().copy(sceneColors.glass), strength: 0.035, edge: 0.9 })
+  return material
 }
 
 /** A small mono label on a canvas, for a sprite next to its node. */
@@ -187,7 +191,8 @@ export function SkillGraph({ clock, look, pointer, reducedMotion }: Props) {
     [nodes],
   )
   const hitGeometry = useMemo(() => new SphereGeometry(1, 8, 8), [])
-  const gemGeometry = useMemo(() => new OctahedronGeometry(1, 0), [])
+  // A round brilliant-ish cut: more facets than an octahedron, so light breaks across it.
+  const gemGeometry = useMemo(() => new IcosahedronGeometry(1, 0), [])
   const gemMaterial = useMemo(() => createGemMaterial(), [])
   const gems = useRef<InstancedMesh>(null)
   const gemNodes = useMemo(() => nodes.filter((n) => n.kind !== 'core'), [nodes])

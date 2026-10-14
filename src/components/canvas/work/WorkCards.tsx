@@ -21,6 +21,7 @@ import { SCRAMBLE_DURATION } from '@/lib/scramble'
 import { useWork } from '@/stores/work'
 import { sceneColors } from '@/styles/scene'
 import { loadAssets } from '../assets'
+import { addGlassBody } from '../glass/glassBody'
 import { roundedRectShape } from '../hero/bandGeometry'
 import frostFragment from '../shaders/frost.frag'
 import frostVertex from '../shaders/frost.vert'
@@ -36,7 +37,7 @@ import { ChipCluster } from './Pebbles'
 /** Big, like the reference: the nearest card fills ~45% of the screen width. */
 export const CARD = { width: 2.4, height: 1.5, radius: 0.2 }
 /** One heavy glass block: thick, with a wide bevel that catches the light along its edges. */
-export const BLOCK = { depth: 0.1, bevel: 0.06 }
+export const BLOCK = { depth: 0.24, bevel: 0.08 }
 
 /**
  * Where the cards sit. `orbit` (desktop): a descending helix round the spine, facing out.
@@ -90,9 +91,10 @@ export function createBlock() {
  */
 export function createBlockGlass() {
   const material = new MeshPhysicalMaterial({
-    color: new Color(0, 0, 0),
-    metalness: 0.6,
-    roughness: 0.06,
+    // Dark, cool glass: its body is lit from inside (glassBody), its faces stay glossy.
+    color: new Color().copy(sceneColors.bg).multiplyScalar(0.6),
+    metalness: 0.45,
+    roughness: 0.12,
     clearcoat: 1,
     clearcoatRoughness: 0.03,
     iridescence: 1,
@@ -114,16 +116,22 @@ export function createBlockGlass() {
         '#include <opaque_fragment>',
         `{
           float grazing = 1.0 - abs(dot(normal, normalize(vViewPosition)));
-          float line = smoothstep(0.45, 0.95, grazing);
+          float line = smoothstep(0.62, 0.97, grazing);
           float hue = fract(atan(normal.y, normal.x) / 6.28318 + 0.5);
           vec3 rim = hue < 0.33 ? mix(uRimColors[0], uRimColors[1], hue * 3.0)
             : hue < 0.66 ? mix(uRimColors[1], uRimColors[2], hue * 3.0 - 1.0)
             : mix(uRimColors[2], uRimColors[0], hue * 3.0 - 2.0);
-          outgoingLight += mix(vec3(1.0), rim, 0.55) * line * 0.9;
+          outgoingLight += mix(vec3(1.0), rim, 0.55) * line * 0.7;
         }
         #include <opaque_fragment>`,
       )
   }
+  // A thick slab: light held in its body, brightest along its sides and lower edge.
+  addGlassBody(material, {
+    color: new Color().copy(sceneColors.glass).lerp(sceneColors.teal, 0.25),
+    strength: 0.09,
+    edge: 0.85,
+  })
   return material
 }
 
@@ -149,7 +157,9 @@ export function createScreenMaterial(face: CardFace, seed: number) {
       uBrightness: { value: 1 },
       uBlur: { value: 0 },
       uSeed: { value: seed },
-      uHaze: { value: new Color().copy(sceneColors.glass).multiplyScalar(0.55) },
+      uHaze: {
+        value: new Color().copy(sceneColors.glass).lerp(sceneColors.teal, 0.15).multiplyScalar(0.5),
+      },
       uDissolve: { value: 0 },
       uEdgeGlow: { value: sceneColors.glow },
     },

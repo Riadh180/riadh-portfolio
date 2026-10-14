@@ -26,7 +26,7 @@ export function detectQuality(): Quality {
  * Applied on top of the device / measured DPR.
  */
 export const PLACE_MAX_DPR: Record<Place, number> = {
-  hero: 1.5,
+  hero: 1.4,
   statement: 1.25,
   work: 1.5,
   system: 2,
