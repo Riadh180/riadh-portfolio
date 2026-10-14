@@ -40,7 +40,7 @@ export default function DepthLab() {
       <Canvas
         dpr={[1, 2]}
         flat
-        gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
+        gl={{ antialias: false, stencil: false, powerPreference: 'high-performance' }}
         camera={{ position: [0, -1.5, 7], fov: 50, near: 0.1, far: 80 }}
       >
         <DepthScene />

@@ -27,6 +27,7 @@ import {
   createScreenGeometry,
   createScreenMaterial,
 } from '../work/WorkCards'
+import { FrostField } from '../work/frostField'
 
 /** Where the panel hangs in Depth's space; the data roots converge on it. */
 export const PANEL = new Vector3(2.3, -1.4, -2.5)
@@ -87,7 +88,13 @@ export function CapstonePanel({ clock }: Props) {
   const glass = useMemo(() => createBlockGlass(), [])
   const screenGeometry = useMemo(() => createScreenGeometry(), [])
   const face = useMemo(() => new CardFace(capstone, 4, 'DEPTH / 2026'), [])
-  const screen = useMemo(() => createScreenMaterial(face, 9.1), [face])
+  const field = useMemo(() => new FrostField(9.1), [])
+  const screen = useMemo(() => createScreenMaterial(face, field, 9.1), [face, field])
+  const gl = useThree((state) => state.gl)
+  useEffect(() => {
+    field.bake(gl)
+    return () => field.dispose()
+  }, [field, gl])
   const lattice = useMemo(() => createLattice(), [])
   const gemGeometry = useMemo(() => new OctahedronGeometry(1, 0), [])
   const gemMaterial = useMemo(

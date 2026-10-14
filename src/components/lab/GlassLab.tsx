@@ -54,7 +54,7 @@ function LabVariant({ variant, index }: { variant: Variant; index: number }) {
       <Canvas
         dpr={1.5}
         flat
-        gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
+        gl={{ antialias: false, stencil: false, powerPreference: 'high-performance' }}
         camera={{ position: [0, 0, 10], fov: 22, near: 0.1, far: 60 }}
         onCreated={({ gl }) => {
           gl.transmissionResolutionScale = 0.5

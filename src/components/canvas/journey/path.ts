@@ -40,6 +40,14 @@ export const WORK = {
   distance: 7.8,
 }
 
+/**
+ * Short phones (e.g. 375×667): the statement's text block reaches higher up the screen, so
+ * the tagline and The Core sit this much higher (world units) to stay clear of it.
+ */
+export function statementLift(width: number, height: number) {
+  return width < 700 && height < 760 ? 0.9 : 0
+}
+
 /** Seconds The Core takes to travel to the statement (or back). */
 const OBJECTS_TRAVEL = 1.4
 

@@ -2,7 +2,7 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { type Group, type Mesh, Vector3 } from 'three'
 import { sceneConfig } from '@/styles/scene'
-import { type JourneyState, PLACES } from '../journey/path'
+import { type JourneyState, PLACES, statementLift } from '../journey/path'
 import type { Pointer } from '../usePointer'
 import type { SceneClock } from '../useSceneClock'
 import { createBandGeometry, roundedSquareCurve } from './bandGeometry'
@@ -11,6 +11,7 @@ import { applyGlassLook, createGlassMaterial, disposeGlassMaterial } from './gla
 import { idleSpin } from './motion'
 import { useCursor } from '@/stores/cursor'
 import { revealed } from '@/stores/loading'
+import { useTier } from '@/stores/tier'
 import { BURST } from './IntroBurst'
 
 type Props = {
@@ -157,6 +158,7 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     g.rotation.x = heroTiltX + (tilt.current.x * 0.4 - heroTiltX) * travel
     g.rotation.y = heroTurn + (heldTurn - heroTurn) * travel
     g.position.lerpVectors(POSES.hero, POSES.statement, travel)
+    g.position.y += statementLift(size.width, size.height) * travel
     // Narrow screens: stay over the (narrower) tagline.
     g.position.x *= Math.min(1, size.width / size.height / 1.6)
     g.position.y += Math.sin(t * 0.5) * emblem.float
@@ -213,7 +215,7 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
       rainbow: travel,
       // A small anchored Core reflects only: no refraction pass (it would re-render the
       // scene for an emblem a few hundred pixels wide).
-      reflectOnly: !!anchored,
+      reflectOnly: !!anchored || useTier.getState().tier === 'lite',
     })
   })
 

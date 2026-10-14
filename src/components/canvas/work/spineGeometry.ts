@@ -40,7 +40,11 @@ const pick = (i: number, seed: number) => hash(i, seed, 3)
  * carved along its normals by layered noise and left faceted, so it reads like a raw,
  * crystalline sculpture rather than assembled plastic.
  */
-export function createSpineGeometry() {
+/**
+ * `edge` is the tessellation's longest edge: 0.13 for the full tier; the lite tier uses a
+ * coarser 0.24 (about a third of the triangles, the same sculpture, chunkier facets).
+ */
+export function createSpineGeometry(edge = 0.13) {
   const { pieces, height, twist, offset, tilt, fins, bulge } = sceneConfig.spine
   const parts: BufferGeometry[] = []
   const matrix = new Matrix4()
@@ -96,7 +100,7 @@ export function createSpineGeometry() {
   // Dense, even triangles everywhere (the flat caps included), so the sculpting below can
   // carve detail anywhere on the surface.
   // Fine enough for the folds; the finest grain lives in the shader (oil.glsl).
-  const dense = new TessellateModifier(0.13, 6).modify(merged)
+  const dense = new TessellateModifier(edge, 6).modify(merged)
   merged.dispose()
   const spine = mergeVertices(dense)
   dense.dispose()

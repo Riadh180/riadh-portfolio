@@ -48,12 +48,15 @@ export function createOilMaterial() {
       )
       .replace(
         '#include <roughnessmap_fragment>',
-        '#include <roughnessmap_fragment>\nroughnessFactor = oilRoughness(roughnessFactor, vSpinePosition);',
+        `#include <roughnessmap_fragment>
+        #ifndef OIL_LITE
+          roughnessFactor = oilRoughness(roughnessFactor, vSpinePosition);
+        #endif`,
       )
       .replace(
         '#include <normal_fragment_maps>',
         `#include <normal_fragment_maps>
-        #ifndef SCULPTED
+        #if !defined(SCULPTED) && !defined(OIL_LITE)
           normal = oilGrain(normal, vSpinePosition);
         #endif`,
       )

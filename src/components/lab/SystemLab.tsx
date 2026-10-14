@@ -70,7 +70,7 @@ export default function SystemLab() {
       <Canvas
         dpr={[1, 2]}
         flat
-        gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
+        gl={{ antialias: false, stencil: false, powerPreference: 'high-performance' }}
         camera={{ position: [0, 0, 11], fov: 40, near: 0.1, far: 60 }}
         eventSource={typeof document === 'undefined' ? undefined : document.body}
         eventPrefix="client"

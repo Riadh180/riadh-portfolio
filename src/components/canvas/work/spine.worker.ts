@@ -2,8 +2,8 @@
 // welding and carving), so the page and the hero never wait for it.
 import { createSpineGeometry } from './spineGeometry'
 
-self.onmessage = () => {
-  const geometry = createSpineGeometry()
+self.onmessage = ({ data }: MessageEvent<{ edge: number }>) => {
+  const geometry = createSpineGeometry(data.edge)
   const attributes: Record<string, { array: Float32Array; itemSize: number }> = {}
   const transfer: ArrayBuffer[] = []
   for (const [name, attribute] of Object.entries(geometry.attributes)) {

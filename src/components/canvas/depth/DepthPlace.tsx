@@ -24,6 +24,8 @@ const INK = new Color().copy(sceneColors.glass).lerp(sceneColors.glow, 0.45).mul
 export function DepthPlace({ journey, clock }: Props) {
   const group = useRef<Group>(null)
   const column = useThree((state) => state.size.width < 700)
+  // Short phones: the HTML heading sits where the word would be; it says the same.
+  const short = useThree((state) => state.size.width < 700 && state.size.height < 760)
   const reducedMotion = useReducedMotion()
 
   useFrame(() => {
@@ -46,7 +48,9 @@ export function DepthPlace({ journey, clock }: Props) {
         clock={clock}
         reducedMotion={reducedMotion}
         ripple
-        amount={() => ease((journey.toDepth - 0.55) / 0.45) * (1 - ease(journey.toContact * 2.5))}
+        amount={() =>
+          short ? 0 : ease((journey.toDepth - 0.55) / 0.45) * (1 - ease(journey.toContact * 2.5))
+        }
       />
       <Drift journey={journey} seed={37} weight={1.2}>
         <DepthWorld clock={clock} fog={DEPTH_FOG} />

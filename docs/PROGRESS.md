@@ -136,3 +136,46 @@ materials, Contact warm moment), 3 (light on glass, `5c13529`).
   rejection-sampling noise (~0.27s → negligible); shader error checks off in production
   (sync program-log reads). Reveal at 1.4–2.1s (was 2.9–3.6s) at Retina, headless.
 - Sheet: `docs/screens/polish-10-preloader.jpg`.
+
+## Step 9 — Build completion
+**Critical finding:** R3F requests `powerPreference: 'high-performance'` by default, so on
+this dual-GPU MacBook Chrome rendered on the **AMD Radeon Pro 560**, not the Intel HD 630.
+Every FPS number before this point (this run and earlier sessions) was the AMD GPU. Forced
+onto the HD 630 (`--force_low_power_gpu`) the site ran: hero 53.8, statement 31, Work 33–38,
+System 59, Depth 47, Contact 47.
+- Fix: an adaptive **tier** (`stores/tier.ts`). Everyone starts on `full`; the
+  PerformanceMonitor (bounds 55–70 fps) drops the visit to `lite` once if it measures below
+  55. Lite: The Core keeps its glass without the refraction pass (`reflectOnly`), bloom at
+  ¼ res / 4 levels, DPR ≤ 1 (`LITE_MAX_DPR`), card frost 2 taps, card blocks without thin
+  film / clear coat, live card scenes every 3rd frame, spine coarser (tessellation edge
+  0.24, built in the worker) and its oil without per-pixel grain / roughness noise / film.
+- For everyone: card frost relief baked once per card (`work/frostField.ts`,
+  `shaders/frostField.frag`; was ~8 noise evaluations per pixel), bloom at ½ res, MSAA
+  decided by the device DPR (a lowered DPR no longer switches it on), transmission pass at
+  0.35 res.
+- Production keeps `powerPreference: 'high-performance'` (your approved look on the AMD,
+  dual-GPU laptops); integrated-only machines get the lite tier by measurement.
+- FPS (prod, Retina): **HD 630 (lite):** hero 56.4, statement 58.8, Work 60.2 (60.3 at every
+  card), System/Depth/Contact 60.2. **AMD (full):** hero 58.6, statement 59.6, Work 60.2
+  (60.3 every card), System/Depth/Contact 60.2.
+- Load: staged mounting (`canvas/Deferred.tsx`: hero first, then one place per idle
+  callback, all at once when the visitor moves), no frames until shaders are compiled
+  async (`SceneCanvas` frameloop), WebGL fallback detection skips software renderers.
+- SEO: `lib/siteUrl.ts` (NEXT_PUBLIC_SITE_URL or Vercel's production URL), full metadata
+  (OG/Twitter/canonical/robots), `sitemap.ts`, `robots.ts` (disallow /lab), Person JSON-LD
+  (`layout/PersonSchema.tsx`). Brand images rendered from a real frame of The Core by
+  `npm run brand:images` (`scripts/brand-images.mjs`): opengraph/twitter (1200×630),
+  apple-icon, favicon.ico (from the new `app/icon.svg`; the default Next.js icon is gone).
+- 404: `app/not-found.tsx` ("Signal lost", glitching, static world, way back).
+- No WebGL / software GL / context failure: `canvas/StaticWorld.tsx` + `ui/CoreMark.tsx`
+  (CSS corner bleeds + a turning glass-like Core ring), error boundary in `SceneLoader`.
+- Mobile: short phones (≤760px tall) lift the statement (tagline + Core) clear of the text,
+  hide Depth's 3D words (the HTML heading says the same), "SYSTEM" fainter on phones.
+  Checked 390×844 and 375×667 at every place.
+- Reduced motion: checked at every place (calm, static Core face-on, no glitches/burst).
+- Lighthouse (desktop, prod, local): Accessibility 100, Best Practices 100, SEO 100.
+  Performance **67** on this dual-GPU Mac (waking the AMD GPU blocks ~0.6s), **79** with the
+  integrated GPU (TBT ~450 ms, FCP 0.3s, LCP 0.6s, CLS 0). **Open:** reach ≥ 90 — split the
+  remaining scene-construction tasks (Work's cards / card faces / live scenes per idle
+  chunk), consider `low-power` on battery.
+- Sheets: `docs/screens/polish-12-lite-tier.jpg`, `polish-12-404-nowebgl.jpg`.

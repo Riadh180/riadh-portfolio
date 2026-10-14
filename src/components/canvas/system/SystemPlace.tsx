@@ -49,7 +49,12 @@ export function SystemPlace({ journey, clock, look, pointer, reducedMotion }: Pr
         clock={clock}
         reducedMotion={reducedMotion}
         fit={0.95}
-        amount={() => ease((journey.toSystem - 0.6) / 0.4) * (1 - ease(journey.toDepth * 2.5))}
+        // Phones: the graph is small and its labels sit over the word: fainter there.
+        amount={() =>
+          (column ? 0.45 : 1) *
+          ease((journey.toSystem - 0.6) / 0.4) *
+          (1 - ease(journey.toDepth * 2.5))
+        }
       />
       <Drift journey={journey} seed={23} weight={1}>
         <SkillGraph clock={clock} look={look} pointer={pointer} reducedMotion={reducedMotion} />

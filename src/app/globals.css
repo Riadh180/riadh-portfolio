@@ -269,3 +269,80 @@
     animation: none !important;
   }
 }
+
+/* The world without WebGL (canvas/StaticWorld.tsx) and on the 404: the corner light
+   bleeds over charcoal, never an all-over wash. */
+.static-world {
+  background:
+    radial-gradient(
+      60% 55% at 0% 100%,
+      color-mix(in oklab, var(--color-violet) 22%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      55% 50% at 100% 0%,
+      color-mix(in oklab, var(--color-teal) 18%, transparent),
+      transparent 70%
+    ),
+    var(--color-bg);
+}
+
+/* CoreMark: The Core as a CSS glass ring (no WebGL). The gradient turns slowly, like the
+   iridescence sliding round the bevels. */
+@property --core-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+.core-mark {
+  width: clamp(120px, 16vw, 200px);
+  aspect-ratio: 1;
+}
+.core-mark-ring,
+.core-mark-inner {
+  position: absolute;
+  inset: 0;
+  border-radius: 28%;
+  padding: 9%;
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in oklab, var(--color-text) 55%, transparent),
+      transparent 45%
+    ),
+    conic-gradient(
+      from var(--core-angle),
+      var(--color-glow),
+      var(--color-violet),
+      var(--color-text),
+      var(--color-teal),
+      var(--color-glow)
+    );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.8;
+  filter: drop-shadow(0 0 18px color-mix(in oklab, var(--color-glow) 25%, transparent));
+  animation: core-turn 12s linear infinite;
+}
+.core-mark-inner {
+  inset: 31%;
+  padding: 14%;
+  border-radius: 24%;
+  transform: rotate(45deg);
+  opacity: 0.65;
+  animation-direction: reverse;
+}
+@keyframes core-turn {
+  to {
+    --core-angle: 360deg;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .core-mark-ring,
+  .core-mark-inner {
+    animation: none;
+  }
+}

@@ -10,12 +10,12 @@ export function Warmup() {
   const gl = useThree((state) => state.gl)
   const scene = useThree((state) => state.scene)
   const camera = useThree((state) => state.camera)
-
   useEffect(() => {
     const { complete } = useLoading.getState()
     complete('scene')
     let cancelled = false
-    // Two frames in, so every place's objects exist.
+    // The canvas holds its frames until this is done (SceneCanvas). Two animation frames
+    // in, so everything mounted with the hero exists.
     const frame = requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         void gl

@@ -23,6 +23,7 @@ import {
 import { type Job, jobs } from '@/content/site'
 import { SCRAMBLE_DURATION } from '@/lib/scramble'
 import { useCursor } from '@/stores/cursor'
+import { useTier } from '@/stores/tier'
 import { useWork } from '@/stores/work'
 import { sceneColors } from '@/styles/scene'
 import { loadAssets } from '../assets'
@@ -36,6 +37,7 @@ import dissolve from '../shaders/dissolve.glsl'
 import noise from '../shaders/noise.glsl'
 import type { SceneClock } from '../useSceneClock'
 import { CardFace } from './cardFace'
+import { FrostField } from './frostField'
 import { type CardScene, createCardScene } from './cardScenes'
 import { COLUMN_SPACING, ORBIT_SPACING, orbitPose } from './layout'
 import { ChipCluster } from './Pebbles'
@@ -155,13 +157,19 @@ export function createScreenGeometry() {
 }
 
 /** The frosted screen: sits on the block's flat front face (inside the bevel). */
-export function createScreenMaterial(face: CardFace, seed: number, live?: Texture) {
+export function createScreenMaterial(
+  face: CardFace,
+  field: FrostField,
+  seed: number,
+  live?: Texture,
+) {
   return new ShaderMaterial({
     vertexShader: frostVertex,
     fragmentShader: `${noise}\n${dissolve}\n${frostFragment}`,
     uniforms: {
       uImage: { value: live ?? face.image },
       uTitle: { value: face.texture },
+      uField: { value: field.target.texture },
       uShade: { value: live ? 1 : 0 },
       uBrightness: { value: 1 },
       uBlur: { value: 0 },
@@ -243,14 +251,19 @@ export function WorkCards({ layout, clock }: Props) {
   const faces = useMemo(() => jobs.map((job, i) => new CardFace(job, i)), [])
   // Confidential work (and Freelance): a live scene in the card instead of an image.
   const scenes = useMemo(() => jobs.map((job) => createCardScene(job.slug)), [])
+  const fields = useMemo(() => jobs.map((_, i) => new FrostField(i * 1.37)), [])
   const screens = useMemo(
-    () => faces.map((face, i) => createScreenMaterial(face, i * 1.37, scenes[i]?.target.texture)),
-    [faces, scenes],
+    () =>
+      faces.map((face, i) =>
+        createScreenMaterial(face, fields[i]!, i * 1.37, scenes[i]?.target.texture),
+      ),
+    [faces, fields, scenes],
   )
   const gl = useThree((state) => state.gl)
   useEffect(() => {
     scenes.forEach((scene) => void scene?.precompile(gl))
-  }, [scenes, gl])
+    fields.forEach((field) => field.bake(gl))
+  }, [scenes, fields, gl])
   useEffect(() => {
     void loadAssets().then(({ work }) => {
       jobs.forEach((job, i) => {
@@ -267,8 +280,9 @@ export function WorkCards({ layout, clock }: Props) {
       screens.forEach((screen) => screen.dispose())
       faces.forEach((face) => face.dispose())
       scenes.forEach((scene) => scene?.dispose())
+      fields.forEach((field) => field.dispose())
     },
-    [block, plane, dust, screens, faces, scenes],
+    [block, plane, dust, screens, faces, scenes, fields],
   )
 
   return (
@@ -479,7 +493,16 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     // At rest it updates every other frame (staggered between cards): inside the frost the
     // difference doesn't show, and it halves the cost; focused or open, every frame.
     s.frame++
-    const due = isFocused || isOpen || (s.frame + index) % 2 === 0
+    const lite = useTier.getState().tier === 'lite'
+    const due = isFocused || isOpen || (s.frame + index) % (lite ? 3 : 2) === 0
+    // Lite tier: the frost's cheaper variant and plain glossy glass for the block (no
+    // thin film or clear coat), compiled once, on the switch.
+    if (lite && !screenMaterial.defines.LITE) {
+      screenMaterial.defines = { ...screenMaterial.defines, LITE: '' }
+      screenMaterial.needsUpdate = true
+      glass.iridescence = 0
+      glass.clearcoat = 0
+    }
     if (live && due && shown(g) && s.others < 0.95 && s.dissolve < 1.6) {
       s.projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
       s.frustum.setFromProjectionMatrix(s.projection)

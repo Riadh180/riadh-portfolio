@@ -6,7 +6,7 @@ import { useJourney } from '@/stores/journey'
 import fragmentShader from '../shaders/tagline.frag'
 import vertexShader from '../shaders/tagline.vert'
 import type { SceneClock } from '../useSceneClock'
-import { type JourneyState, PLACES } from './path'
+import { type JourneyState, PLACES, statementLift } from './path'
 import { createTaglineTexture, TAGLINE_PAD } from './taglineTexture'
 
 /**
@@ -77,7 +77,7 @@ export function Tagline({ clock, reducedMotion, journey }: Props) {
     [],
   )
 
-  useFrame(({ camera, viewport }, rawDelta) => {
+  useFrame(({ camera, viewport, size }, rawDelta) => {
     if (!material.current || !mesh.current || !text) return
     // Out of sight down at Work.
     mesh.current.visible = journey.toWork < 0.85
@@ -90,7 +90,11 @@ export function Tagline({ clock, reducedMotion, journey }: Props) {
     const left = Math.max(LEFT, -halfWidth * FIT)
     const textLeft = (TAGLINE_PAD / (1 + 2 * TAGLINE_PAD)) * width * scale
     mesh.current.scale.setScalar(scale)
-    mesh.current.position.set(left - textLeft + (width * scale) / 2, CENTER_Y, 0)
+    mesh.current.position.set(
+      left - textLeft + (width * scale) / 2,
+      CENTER_Y + statementLift(size.width, size.height),
+      0,
+    )
 
     const now = clock.time
     const delta = Math.min(rawDelta, 1 / 30)

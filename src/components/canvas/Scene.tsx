@@ -6,6 +6,7 @@ import { sceneColors, sceneConfig } from '@/styles/scene'
 import { Backdrop, warmth } from './Backdrop'
 import { DepthBackdrop } from './depth/DepthBackdrop'
 import { DepthPlace } from './depth/DepthPlace'
+import { Deferred } from './Deferred'
 import { CameraRig } from './CameraRig'
 import { Emblem } from './hero/Emblem'
 import { Drift } from './motion/Drift'
@@ -78,12 +79,6 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
       />
       <CameraRig pointer={pointer} journey={journey} enabled={!reducedMotion} />
       <Backdrop journey={journey} />
-      <DepthBackdrop
-        opacity={() => {
-          const ease = (x: number) => (1 - Math.cos(Math.PI * x)) / 2
-          return ease(journey.toDepth) * (1 - ease(journey.toContact))
-        }}
-      />
       <Drift journey={journey} seed={3} weight={1.3}>
         <Emblem
           look={look}
@@ -96,22 +91,41 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
       <IntroBurst reducedMotion={reducedMotion} />
       <Warmup />
       <GoldCloud journey={journey} clock={clock} reducedMotion={reducedMotion} />
-      <DustSheet clock={clock} journey={journey} />
-      <Drift journey={journey} seed={7} weight={2}>
-        <Tagline clock={clock} reducedMotion={reducedMotion} journey={journey} />
-      </Drift>
-      <FormMoment journey={journey} simSize={simSize} clock={clock} />
-      <Trails journey={journey} clock={clock} />
-      <WorkPlace journey={journey} clock={clock} />
-      <SystemPlace
-        journey={journey}
-        clock={clock}
-        look={look}
-        pointer={pointer}
-        reducedMotion={reducedMotion}
-      />
-      <DepthPlace journey={journey} clock={clock} />
-      <ContactGlow journey={journey} />
+      {/* Further down the path: mounted in stages after the hero (see Deferred). */}
+      <Deferred>
+        <DustSheet clock={clock} journey={journey} />
+        <Drift journey={journey} seed={7} weight={2}>
+          <Tagline clock={clock} reducedMotion={reducedMotion} journey={journey} />
+        </Drift>
+      </Deferred>
+      <Deferred>
+        <FormMoment journey={journey} simSize={simSize} clock={clock} />
+      </Deferred>
+      <Deferred>
+        <Trails journey={journey} clock={clock} />
+      </Deferred>
+      <Deferred>
+        <WorkPlace journey={journey} clock={clock} />
+      </Deferred>
+      <Deferred>
+        <SystemPlace
+          journey={journey}
+          clock={clock}
+          look={look}
+          pointer={pointer}
+          reducedMotion={reducedMotion}
+        />
+      </Deferred>
+      <Deferred>
+        <DepthBackdrop
+          opacity={() => {
+            const ease = (x: number) => (1 - Math.cos(Math.PI * x)) / 2
+            return ease(journey.toDepth) * (1 - ease(journey.toContact))
+          }}
+        />
+        <DepthPlace journey={journey} clock={clock} />
+        <ContactGlow journey={journey} />
+      </Deferred>
       <Atmosphere journey={journey} clock={clock} />
       <ParticleField
         simSize={simSize}

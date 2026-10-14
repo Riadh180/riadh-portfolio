@@ -33,3 +33,9 @@ export const PLACE_MAX_DPR: Record<Place, number> = {
   depth: 1.5,
   contact: 2,
 }
+
+/**
+ * The lite tier's resolution ceiling: on integrated GPUs the full-screen passes (HDR
+ * buffer, bloom, grade) scale with pixels, so the lite tier renders at 1×.
+ */
+export const LITE_MAX_DPR = 1

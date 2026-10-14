@@ -1,13 +1,41 @@
 import type { Metadata, Viewport } from 'next'
 import type { CSSProperties } from 'react'
 import { profile } from '@/content/site'
+import { siteUrl } from '@/lib/siteUrl'
 import { departure, martian } from '@/styles/fonts'
 import { cssVariables, palette } from '@/styles/tokens'
 import './globals.css'
 
+const title = `${profile.name} — ${profile.role}`
+const description = `${profile.tagline} ${profile.summary}`
+
 export const metadata: Metadata = {
-  title: `${profile.name} — ${profile.role}`,
-  description: `${profile.tagline} ${profile.summary}`,
+  metadataBase: siteUrl,
+  title,
+  description,
+  applicationName: profile.name,
+  authors: [{ name: profile.name, url: profile.linkedin }],
+  creator: profile.name,
+  keywords: [
+    'Senior React Developer',
+    'React Native',
+    'TypeScript',
+    'Next.js',
+    'Essen',
+    'Germany',
+    'Remote',
+  ],
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'profile',
+    title,
+    description,
+    siteName: profile.name,
+    locale: 'en_US',
+    url: '/',
+  },
+  twitter: { card: 'summary_large_image', title, description },
+  robots: { index: true, follow: true },
 }
 
 export const viewport: Viewport = {

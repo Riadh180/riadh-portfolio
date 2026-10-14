@@ -1,6 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BufferAttribute, BufferGeometry, type Mesh, type MeshPhysicalMaterial } from 'three'
+import { useTier } from '@/stores/tier'
 import { sceneConfig } from '@/styles/scene'
 import type { SceneClock } from '../useSceneClock'
 import { createOilMaterial, disposeOilMaterial } from './oilMaterial'
@@ -18,7 +19,8 @@ type Props = { clock: SceneClock }
 export function Spine({ clock }: Props) {
   const mesh = useRef<Mesh>(null)
   const gl = useThree((state) => state.gl)
-  const standIn = useStandIn()
+  const lite = useTier((state) => state.tier === 'lite')
+  const standIn = useStandIn(lite ? 0.24 : 0.13)
   const material = useMemo(() => createOilMaterial(), [])
   const [model, setModel] = useState<BufferGeometry | null>(null)
 
@@ -55,7 +57,14 @@ export function Spine({ clock }: Props) {
     const { turn, sheen, gloss } = sceneConfig.spine
     mesh.current.rotation.y = clock.time * turn
     const oil = mesh.current.material as MeshPhysicalMaterial
-    oil.iridescence = sheen
+    // Lite tier: no thin film, clear coat or per-pixel grain (one recompile on the switch).
+    const lite = useTier.getState().tier === 'lite'
+    oil.iridescence = lite ? 0 : sheen
+    oil.clearcoat = lite ? 0 : oil.clearcoat
+    if (lite && !oil.defines?.OIL_LITE) {
+      oil.defines = { ...oil.defines, OIL_LITE: '' }
+      oil.needsUpdate = true
+    }
     oil.roughness = 1 - gloss
   })
 
@@ -72,7 +81,7 @@ type Built = {
  * The procedural stand-in, built in a worker (it is far down the path; the hero must not
  * wait for it). Falls back to building it here if workers are unavailable.
  */
-function useStandIn() {
+function useStandIn(edge: number) {
   const [geometry, setGeometry] = useState<BufferGeometry | null>(null)
   useEffect(() => {
     let worker: Worker | null = null
@@ -82,7 +91,7 @@ function useStandIn() {
       worker = null
     }
     if (!worker) {
-      const idle = window.setTimeout(() => setGeometry(createSpineGeometry()), 1500)
+      const idle = window.setTimeout(() => setGeometry(createSpineGeometry(edge)), 1500)
       return () => window.clearTimeout(idle)
     }
     worker.onmessage = ({ data }: MessageEvent<Built>) => {
@@ -95,8 +104,8 @@ function useStandIn() {
       setGeometry(built)
       worker?.terminate()
     }
-    worker.postMessage(null)
+    worker.postMessage({ edge })
     return () => worker?.terminate()
-  }, [])
+  }, [edge])
   return geometry
 }

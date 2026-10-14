@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "check:contrast": "node scripts/check-contrast.mts",
-    "cv:pdf": "node scripts/cv-pdf.mjs"
+    "cv:pdf": "node scripts/cv-pdf.mjs",
+    "brand:images": "node scripts/brand-images.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

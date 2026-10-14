@@ -211,7 +211,7 @@ export default function WorkLab() {
     <Canvas
       dpr={[1, PLACE_MAX_DPR.work]}
       flat
-      gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
+      gl={{ antialias: false, stencil: false, powerPreference: 'high-performance' }}
       camera={{ position: [0, 0, 7.5], fov: 40, near: 0.1, far: 60 }}
       onCreated={({ gl }) => {
         gl.transmissionResolutionScale = 0.5
