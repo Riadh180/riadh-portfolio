@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { ogImage } from '@/lib/ogImage'
 import Link from 'next/link'
-import { about, depth, jobs, profile, skillGraph } from '@/content/site'
+import { about, cv, depth, jobs, profile, skillGraph } from '@/content/site'
 
 export const metadata: Metadata = {
   title: `CV — ${profile.name}`,
@@ -68,7 +68,10 @@ export default function CvPage() {
             Profile
           </h2>
           <p>{about.body}</p>
-          <p className="mt-1">Languages: {about.languages.join(', ')}</p>
+          <p className="mt-1">
+            Languages:{' '}
+            {cv.languages.map((language) => `${language.name} ${language.level}`).join(' · ')}
+          </p>
         </section>
 
         <section className="mb-8" aria-labelledby="cv-experience">
@@ -82,9 +85,18 @@ export default function CvPage() {
                   <h3 className="font-ui text-[0.9rem] tracking-wide uppercase">
                     {job.company} — {job.role}
                   </h3>
-                  <span className="font-ui text-[0.75rem] tracking-wider">{job.years}</span>
+                  <span className="font-ui text-[0.75rem] tracking-wider">
+                    {job.dates} · {job.location}
+                  </span>
                 </div>
                 <p className="mt-1">{job.summary}</p>
+                {job.details && (
+                  <ul className="mt-1 list-disc pl-5">
+                    {job.details.map((detail) => (
+                      <li key={detail}>{detail}</li>
+                    ))}
+                  </ul>
+                )}
                 <p className="mt-1 text-[#14171c]/70">{job.stack.join(' · ')}</p>
               </li>
             ))}
@@ -106,6 +118,12 @@ export default function CvPage() {
                 <dd>{branch.skills.map((skill) => skill.name).join(', ')}</dd>
               </div>
             ))}
+            {cv.moreSkills.map((group) => (
+              <div key={group.label} className="contents">
+                <dt className="font-ui tracking-wide uppercase">{group.label}</dt>
+                <dd>{group.skills.join(', ')}</dd>
+              </div>
+            ))}
           </dl>
         </section>
 
@@ -116,6 +134,15 @@ export default function CvPage() {
           <p className="font-ui tracking-wide uppercase">{depth.programme}</p>
           <p>{depth.details}</p>
           <p className="mt-1 text-[#14171c]/70">{depth.stack.join(' · ')}</p>
+          {cv.education.map((item) => (
+            <div key={item.title} className="mt-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+                <p className="font-ui tracking-wide uppercase">{item.title}</p>
+                <span className="font-ui text-[0.75rem] tracking-wider">{item.dates}</span>
+              </div>
+              <p>{item.place}</p>
+            </div>
+          ))}
         </section>
       </main>
     </>

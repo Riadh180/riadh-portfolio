@@ -270,3 +270,12 @@ System 59, Depth 47, Contact 47.
   System/Depth/Contact 60.2. HD 630 lite — hero 57.4, statement 57.0, Work 60.0–60.3,
   System/Depth/Contact 60.2.
 - Sheet: `docs/screens/round2-work-composition.jpg` (reference, before, after, lite).
+
+## Part "CV page" (restored from the stash)
+- `content/site.ts`: per-job `dates`, `location`, `details` (Bliggit, E.ON, Licht &
+  Schatten, from the CV); `cv` block with language levels, the B.Sc. (Monastir, 2014) and
+  extra skill groups (state & data, React performance, back end, design & UI, tooling).
+- `app/cv/page.tsx`: dates · location per job, detail bullets, languages with levels,
+  extra skill rows, the B.Sc. under Education. No phone number.
+- PDF regenerated (`node scripts/cv-pdf.mjs <url>`): `public/cv/riadh-souissi-cv.pdf`.
+- Print view: `docs/screens/round2-cv.png`.

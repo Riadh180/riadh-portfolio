@@ -15,6 +15,34 @@ export const profile = {
 /** The tagline as it is set in the 3D statement scene, one entry per line. */
 export const statementLines = ['Complex inside.', 'Effortless', 'on screen.'] as const
 
+/** CV-only facts (the /cv page and its PDF). */
+export const cv = {
+  languages: [
+    { name: 'English', level: 'fluent (C1/C2)' },
+    { name: 'German', level: 'advanced (B2/C1)' },
+    { name: 'French', level: 'native / fluent' },
+    { name: 'Arabic', level: 'native' },
+  ],
+  education: [
+    {
+      title: 'B.Sc. Computer Science — Information Systems',
+      place: 'Faculty of Sciences, Monastir, Tunisia',
+      dates: '2014',
+    },
+  ],
+  /** Skills beyond the graph, grouped. */
+  moreSkills: [
+    { label: 'State & data', skills: ['TanStack Query', 'Jotai', 'Recoil', 'GraphQL', 'REST'] },
+    {
+      label: 'React performance',
+      skills: ['useTransition', 'react-virtualized', 'Webpack Bundle Analyzer'],
+    },
+    { label: 'Back end', skills: ['Node.js', 'Java', 'Spring', 'MongoDB'] },
+    { label: 'Design & UI', skills: ['Figma', 'Zeplin', 'Atomic Design'] },
+    { label: 'Tooling', skills: ['Docker', 'NX Monorepo', 'Vercel', 'Jira', 'Confluence'] },
+  ],
+} as const
+
 export const about = {
   body: '7.5+ years building production web and mobile apps across fintech, enterprise SaaS and logistics with React, React Native and TypeScript — and I understand the data behind the interface.',
   languages: ['English', 'German', 'French', 'Arabic'],
@@ -42,6 +70,11 @@ export type Job = {
   company: string
   role: string
   years: string
+  /** Exact dates and place, for the CV. */
+  dates: string
+  location: string
+  /** Extra detail lines for the CV (from the CV itself). */
+  details?: string[]
   /** The card title: company · metric. */
   metric: string
   summary: string
@@ -56,6 +89,14 @@ export const jobs: Job[] = [
     company: 'Bliggit',
     role: 'Senior Software Developer',
     years: '2024–2026',
+    dates: '07/2024–01/2026',
+    location: 'Wuppertal',
+    details: [
+      'Apple Pay & PayPal integration via Payone',
+      'Lazy loading and navigation improvements: ~30% faster screen loads',
+      'Crash monitoring with Sentry (>99% crash-free sessions)',
+      'CI/CD with GitLab and EAS: weekly releases, zero rollbacks',
+    ],
     metric: '>99% crash-free',
     summary:
       'Led the Treuewelt Wuppertal app (React Native / Expo) for Stadtsparkasse Wuppertal, used by tens of thousands of bank customers. Apple Pay & PayPal integration, ~30% faster screen loads, >99% crash-free sessions, weekly releases with zero rollbacks.',
@@ -67,6 +108,8 @@ export const jobs: Job[] = [
     company: 'Kühne+Nagel',
     role: 'Senior Full Stack Developer',
     years: '2023–2024',
+    dates: '11/2023–04/2024',
+    location: 'Hamburg',
     metric: 'Cypress guidelines',
     summary:
       'myKN customer platform for one of the world’s largest logistics companies. Vue.js / TypeScript on the front end, Java / Spring behind it; authored the team’s Cypress testing guidelines.',
@@ -78,6 +121,8 @@ export const jobs: Job[] = [
     company: 'Adesso SE',
     role: 'Senior Software Developer',
     years: '2023',
+    dates: '01/2023–07/2023',
+    location: 'Essen',
     metric: '−40% coupling',
     summary:
       'Angular + Electron architecture: found 10+ security vulnerabilities, cut module coupling by ~40% and fixed UI lag.',
@@ -89,6 +134,12 @@ export const jobs: Job[] = [
     company: 'RRI at E.ON',
     role: 'Software Developer',
     years: '2020–2022',
+    dates: '02/2020–12/2022',
+    location: 'Essen',
+    details: [
+      'Built 12+ form-table components',
+      'End-to-end tests with Cypress and Robot Framework; unit tests with Jest and React Testing Library',
+    ],
     metric: '>80% test coverage',
     summary:
       'Enterprise React / TypeScript device-management platform. Co-authored the reference architecture for a 15+ person team, kept test coverage above 80% and mentored juniors.',
@@ -100,6 +151,13 @@ export const jobs: Job[] = [
     company: 'Licht & Schatten',
     role: 'Fullstack React / Node.js',
     years: '2018–2020',
+    dates: '07/2018–01/2020',
+    location: 'Tunis',
+    details: [
+      'Custom React component library',
+      'Native adaptations for iOS and Android',
+      'MongoDB aggregation pipelines and REST APIs',
+    ],
     metric: 'MERN end to end',
     summary:
       'MERN web and mobile apps built end to end, including a data-collection platform for ad campaigns.',
@@ -111,6 +169,8 @@ export const jobs: Job[] = [
     company: 'Freelance',
     role: 'Creative Frontend',
     years: '2017–2018',
+    dates: '07/2017–06/2018',
+    location: 'Tunis',
     metric: 'This site',
     summary:
       'Three.js, WebGL / GLSL shaders and GSAP: a 3D product portfolio with custom interactions. This site is the proof I still do this at the highest level: real-time glass, GPU particles and a scroll-driven camera, built with React Three Fiber.',
@@ -238,6 +298,8 @@ export const capstone: Job = {
   company: 'Capstone project',
   role: 'Data Engineering Programme',
   years: '2026',
+  dates: '04/2026–08/2026',
+  location: '',
   metric: 'Data engineering',
   summary: 'Capstone project',
   stack: [],
