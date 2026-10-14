@@ -62,7 +62,7 @@ export const SHOWN: Record<'work' | 'system' | 'depth' | 'contact', [number, num
   work: [1.75, 3.12],
   system: [3.75, 4.2],
   depth: [4.75, 5.2],
-  contact: [5.75, 6.35],
+  contact: [5.75, 6.2],
 }
 
 export function isShown(progress: number, place: keyof typeof SHOWN) {

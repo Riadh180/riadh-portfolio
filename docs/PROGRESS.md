@@ -179,3 +179,29 @@ System 59, Depth 47, Contact 47.
   remaining scene-construction tasks (Work's cards / card faces / live scenes per idle
   chunk), consider `low-power` on battery.
 - Sheets: `docs/screens/polish-12-lite-tier.jpg`, `polish-12-404-nowebgl.jpg`.
+
+## Step 10 — Final self-review
+- Full journey recorded with the mouse wheel in production (56 frames, 1s apart): hero →
+  statement → Form → Work (6 cards) → System → Depth → Contact → loop → hero again, no gaps
+  from the staged mounting. Sheet: `docs/screens/polish-13-journey.jpg`; next to the
+  reference strips: `docs/screens/polish-13-reference-vs-ours.jpg`.
+- Fixed: at the start of the loop The Core crossed the still-visible "Let's talk"; the
+  Contact HTML now hides a little earlier (`SHOWN.contact` ends at 6.2).
+
+### Open for later (the 5 biggest differences vs the reference)
+1. **Card media.** Their cards carry bright, full-bleed photographic / video media that fill
+   the glass; ours carry mock screens and abstract live scenes, darker and smaller in the
+   frame. Biggest lift: real covers in `public/work/<slug>/cover.webp` (Bliggit, capstone)
+   and possibly brighter live scenes.
+2. **Scale and density at Work.** Their cards and the column fill the frame, overlap and
+   cut the edges; the column is a lit, iridescent sculpted mass wrapped in dense particle
+   clouds. Ours: a darker procedural spine (waiting for `public/models/spine.glb`), cards
+   smaller in frame.
+3. **Foreground objects.** Their frames have big glass panels passing close to the lens,
+   cut by the frame; ours have out-of-focus bokeh only (step 2). Next: one or two
+   out-of-focus glass shards near the camera per place.
+4. **Mid-tone lift at Work.** Their Work frames sit brighter (purple haze over the column);
+   ours are darker. Needs a careful pass against the approved grade.
+5. **Performance headroom.** Lighthouse Performance 67–79 (target 90): scene construction
+   still blocks ~0.45s; on integrated-only GPUs the lite tier drops The Core's refraction
+   (the statement tagline is no longer bent by the glass there).
