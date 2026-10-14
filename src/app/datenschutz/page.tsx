@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { LegalPage } from '@/components/legal/LegalPage'
+import { legalAddress } from '@/content/legal'
 import { profile } from '@/content/site'
 
 export const metadata: Metadata = {
@@ -11,10 +12,17 @@ export const metadata: Metadata = {
 export default function DatenschutzPage() {
   return (
     <LegalPage title="Datenschutz">
-      <p>
-        Verantwortlich: {profile.name}, Essen, Germany ·{' '}
-        <a href={`mailto:${profile.email}`}>{profile.email}</a>
-      </p>
+      <div>
+        <h2 className="ui text-text">Verantwortlich</h2>
+        <p>
+          {legalAddress.map((line) => (
+            <span key={line} className="block">
+              {line}
+            </span>
+          ))}
+          E-Mail: <a href={`mailto:${profile.email}`}>{profile.email}</a>
+        </p>
+      </div>
       <p>
         Diese Website setzt keine Cookies und verwendet kein Tracking und keine Analyse-Tools.
         Schriften werden selbst gehostet; es werden keine Inhalte von Drittanbietern geladen.

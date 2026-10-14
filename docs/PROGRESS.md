@@ -352,3 +352,10 @@ System 59, Depth 47, Contact 47.
   product portfolio with custom interactions." (the site keeps the longer line).
 - Education: "Capstone: AI × Work" with its one-liner, stack and repo link under the
   Data Engineering Programme. PDF regenerated.
+
+## Part F — Impressum
+- `/impressum`: the given text (Angaben gemäß § 5 DDG, address, Kontakt with e-mail and
+  phone, Verantwortlich für den Inhalt). The phone number lives only in
+  `app/impressum/page.tsx`; verified absent from /, /cv, /datenschutz, /work/* and the PDF.
+- `/datenschutz`: "Verantwortlich" with the same name and address
+  (`content/legal.ts`, no phone).
