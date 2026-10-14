@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { ogImage } from '@/lib/ogImage'
 import Link from 'next/link'
-import { about, cv, depth, jobs, profile, skillGraph } from '@/content/site'
+import { about, capstone, cv, depth, jobs, profile, skillGraph } from '@/content/site'
 
 export const metadata: Metadata = {
   title: `CV — ${profile.name}`,
@@ -89,7 +89,7 @@ export default function CvPage() {
                     {job.dates} · {job.location}
                   </span>
                 </div>
-                <p className="mt-1">{job.summary}</p>
+                <p className="mt-1">{job.cvSummary ?? job.summary}</p>
                 {job.details && (
                   <ul className="mt-1 list-disc pl-5">
                     {job.details.map((detail) => (
@@ -134,6 +134,16 @@ export default function CvPage() {
           <p className="font-ui tracking-wide uppercase">{depth.programme}</p>
           <p>{depth.details}</p>
           <p className="mt-1 text-[#14171c]/70">{depth.stack.join(' · ')}</p>
+          <p className="mt-2">
+            <strong className="font-ui tracking-wide uppercase">
+              Capstone: {capstone.company}
+            </strong>{' '}
+            — {capstone.summary}
+          </p>
+          <p className="mt-1 text-[#14171c]/70">
+            {capstone.stack.join(' · ')} ·{' '}
+            <a href={capstone.repo}>github.com/Riadh180/data-engineering-capstone</a>
+          </p>
           {cv.education.map((item) => (
             <div key={item.title} className="mt-4">
               <div className="flex flex-wrap items-baseline justify-between gap-x-4">

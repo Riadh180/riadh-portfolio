@@ -346,3 +346,9 @@ System 59, Depth 47, Contact 47.
 - `cardFace.drawPlaceholder`: tones mixed 45% towards the background, 5 soft blobs (was 18),
   softer highlights. Only a fallback now (Bliggit and the capstone have real media, the
   other jobs live scenes). `mix()` returns hex so mixes chain.
+
+## Part E — CV
+- `Job.cvSummary`: Freelance on /cv reads "Three.js, WebGL / GLSL shaders and GSAP: a 3D
+  product portfolio with custom interactions." (the site keeps the longer line).
+- Education: "Capstone: AI × Work" with its one-liner, stack and repo link under the
+  Data Engineering Programme. PDF regenerated.

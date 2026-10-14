@@ -75,6 +75,8 @@ export type Job = {
   location: string
   /** Extra detail lines for the CV (from the CV itself). */
   details?: string[]
+  /** A shorter summary for the CV, where the site's wording doesn't fit. */
+  cvSummary?: string
   /** More images shown in the opened card's details (public/work/<slug>/…). */
   gallery?: { src: string; alt: string }[]
   /** A public repository, linked from the details. */
@@ -178,6 +180,8 @@ export const jobs: Job[] = [
     years: '2017–2018',
     dates: '07/2017–06/2018',
     location: 'Tunis',
+    cvSummary:
+      'Three.js, WebGL / GLSL shaders and GSAP: a 3D product portfolio with custom interactions.',
     metric: 'This site',
     summary:
       'Three.js, WebGL / GLSL shaders and GSAP: a 3D product portfolio with custom interactions. This site is the proof I still do this at the highest level: real-time glass, GPU particles and a scroll-driven camera, built with React Three Fiber.',
