@@ -15,7 +15,9 @@ export function GET() {
   const exists = (...path: string[]) => existsSync(join(process.cwd(), 'public', ...path))
   const work = Object.fromEntries(
     [...jobs, capstone].map((job) => {
-      const cover = COVERS.find((file) => exists('work', job.slug, file))
+      const cover = [job.coverFile, ...COVERS].find(
+        (file) => file && exists('work', job.slug, file),
+      )
       return [job.slug, cover ? `/work/${job.slug}/${cover}` : null]
     }),
   )

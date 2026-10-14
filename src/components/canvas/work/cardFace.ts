@@ -74,7 +74,14 @@ export class CardFace {
       this.hasCover = true
       const context = this.background.getContext('2d')
       if (!context) return
-      if (image.width < image.height) {
+      if (url.endsWith('.svg')) {
+        // A diagram: shown whole on the dark screen, never cropped.
+        context.fillStyle = palette.bg
+        context.fillRect(0, 0, WIDTH, HEIGHT)
+        const fit = Math.min(WIDTH / image.width, (HEIGHT * 0.86) / image.height)
+        const w = image.width * fit
+        context.drawImage(image, (WIDTH - w) / 2, HEIGHT * 0.02, w, image.height * fit)
+      } else if (image.width < image.height) {
         // A phone screenshot: shown whole, right of centre, over a blurred, darkened
         // enlargement of itself (so the card stays full and its colours carry).
         const fill = Math.max(WIDTH / image.width, HEIGHT / image.height)

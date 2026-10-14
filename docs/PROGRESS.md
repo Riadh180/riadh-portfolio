@@ -330,3 +330,14 @@ System 59, Depth 47, Contact 47.
   `Job.repo` adds a "Repository on GitHub" link (used by the capstone).
 - The 3D "SELECTED WORK" hides while a card is open (it sat behind the details).
 - Sheet: `docs/screens/round3-bliggit.jpg`.
+
+## Part C — Capstone "AI × Work"
+- `public/work/capstone/aiwork_medallion.svg` copied from the repo (explicit 1320×720 size
+  added to our copy so canvases draw it right); `Job.coverFile` lets a cover keep its own
+  name (`assets.json` checks it first). SVG covers are drawn whole on the dark screen.
+- `capstone` in `content/site.ts`: name, one-liner, stack (Python, dbt, PostgreSQL (Neon),
+  Cloudflare R2, Apache Airflow, Docker, Streamlit, Plotly), repo link, card title
+  "AI × WORK / BRONZE → GOLD". The "Capstone project" placeholders are gone.
+- Depth HTML panel: capstone name, one-liner, stack and "Repository on GitHub"; on phones
+  the two stack lines are screen-reader-only so the 3D panel stays clear.
+- Sheet: `docs/screens/round3-capstone.jpg`.

@@ -79,6 +79,8 @@ export type Job = {
   gallery?: { src: string; alt: string }[]
   /** A public repository, linked from the details. */
   repo?: string
+  /** A cover with its own file name in public/work/<slug>/ (otherwise cover.webp|jpg|png). */
+  coverFile?: string
   /** The card title: company · metric. */
   metric: string
   summary: string
@@ -291,22 +293,30 @@ export const depth = {
     'Docker',
     'AWS (S3, Glue, Redshift, Lambda)',
   ],
-  capstone: 'Capstone project',
 } as const
 
-/**
- * The capstone project, shown as Depth's glass panel. Placeholder until the name,
- * description and link arrive; its cover goes in public/work/capstone/.
- */
+/** The capstone project, shown as Depth's glass panel (cover: public/work/capstone/). */
 export const capstone: Job = {
   slug: 'capstone',
-  company: 'Capstone project',
-  role: 'Data Engineering Programme',
+  company: 'AI × Work',
+  role: 'Data Engineering Programme · capstone',
   years: '2026',
   dates: '04/2026–08/2026',
   location: '',
-  metric: 'Data engineering',
-  summary: 'Capstone project',
-  stack: [],
+  metric: 'Bronze → Gold',
+  summary:
+    'A cloud data pipeline (bronze → silver → gold) that measures how AI is changing software development and the German job market, served through a public dashboard.',
+  stack: [
+    'Python',
+    'dbt',
+    'PostgreSQL (Neon)',
+    'Cloudflare R2',
+    'Apache Airflow',
+    'Docker',
+    'Streamlit',
+    'Plotly',
+  ],
+  repo: 'https://github.com/Riadh180/data-engineering-capstone',
+  coverFile: 'aiwork_medallion.svg',
   filters: ['Data'],
 }
