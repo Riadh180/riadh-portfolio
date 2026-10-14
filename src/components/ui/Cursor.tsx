@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { MOTION, Spring } from '@/components/canvas/motion/motion'
+import { sound } from '@/lib/sound/engine'
 import { type SceneCursor, useCursor } from '@/stores/cursor'
 
 type Mode = 'default' | 'link' | Exclude<SceneCursor, null>
@@ -68,7 +69,14 @@ export function Cursor() {
       }
       element.dataset.visible = 'true'
     }
-    const over = (event: PointerEvent) => setHtml(htmlMode(event.target))
+    let previous: Mode | null = null
+    const over = (event: PointerEvent) => {
+      const next = htmlMode(event.target)
+      // A soft tick as the cursor reaches something it can use (sound on only).
+      if (next && next !== previous) sound.tick()
+      previous = next
+      setHtml(next)
+    }
     const out = () => {
       element.dataset.visible = 'false'
     }

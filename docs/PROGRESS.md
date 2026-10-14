@@ -103,3 +103,18 @@ materials, Contact warm moment), 3 (light on glass, `5c13529`).
   58.2, statement 59.8, System/Depth/Contact 60.2. **Open:** arrival flight into Work
   still dips (~43–45 for 1.5s, same without live scenes).
 - Sheet: `docs/screens/polish-9-live-cards.jpg`.
+
+## Step 7 — Sound
+- `lib/sound/engine.ts` (Web Audio, synthesised, no files) + `lib/sound/beds.ts`: one
+  ambient bed per place (detuned soft tones through a breathing low-pass, a little brown
+  noise for air; Depth muffled, Contact warm), crossfaded by journey progress (the loop
+  flows back into the hero's bed). Interaction sounds: hover tick, card open (rising air +
+  soft bell), close (falling air), nav flight (long low rush). Master 0.14 through a
+  compressor, 1.2s fades. Reduced motion: no ticks, slower swells.
+- Toggle: the nav's signal bars are now the sound button (`aria-pressed`, "Sound"): flat
+  and grey when off (default), live when on. `stores/sound.ts` remembers the choice in
+  localStorage; a remembered "on" resumes on the first gesture (`SoundBridge`).
+- Triggers: `SoundBridge` (journey, work open/close, 3D hover), `Cursor` (HTML hover
+  ticks), `SmoothScroll` (nav flights).
+- Verified: off by default; click → context running, master 0.14, hero bed 0.84;
+  reload → restored; off → fades to 0. No GPU cost (FPS unchanged).

@@ -8,6 +8,7 @@ import { DESCENT } from '@/components/canvas/journey/descent'
 import { jobs } from '@/content/site'
 import { useJourney } from '@/stores/journey'
 import { useWork } from '@/stores/work'
+import { sound } from '@/lib/sound/engine'
 
 /**
  * The path as (scroll px, progress) pairs, measured from the sections: the statement
@@ -199,6 +200,7 @@ export function SmoothScroll() {
       const progress = id ? PLACE_PROGRESS[id] : undefined
       if (progress === undefined) return
       event.preventDefault()
+      sound.flight()
       const target = toScroll(progress, anchors)
       const distance = Math.abs(target - lenis.scroll) / window.innerHeight
       snapping = true

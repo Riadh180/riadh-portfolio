@@ -1,4 +1,5 @@
 import { SceneLoader } from '@/components/canvas/SceneLoader'
+import { SoundBridge } from '@/components/layout/SoundBridge'
 import { TopBar } from '@/components/layout/TopBar'
 import { Cursor } from '@/components/ui/Cursor'
 import { SmoothScroll } from '@/components/scroll/SmoothScroll'
@@ -12,6 +13,7 @@ export default function SiteLayout({ children }: LayoutProps<'/'>) {
       <TopBar />
       {children}
       <Cursor />
+      <SoundBridge />
     </>
   )
 }
