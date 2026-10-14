@@ -32,13 +32,21 @@ export function createOilMaterial() {
     shader.uniforms.uOilViolet = { value: sceneColors.violet }
     shader.uniforms.uOilGlow = { value: 0.45 }
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vSpinePosition;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSpinePosition = position;')
+      .replace(
+        '#include <common>',
+        '#include <common>\nvarying vec3 vSpinePosition;\nattribute float oilSmooth;\nvarying float vOilSmooth;',
+      )
+      .replace(
+        '#include <begin_vertex>',
+        '#include <begin_vertex>\nvSpinePosition = position;\nvOilSmooth = oilSmooth;',
+      )
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
         `#include <common>
         varying vec3 vSpinePosition;
+        // 1 on the smooth oily wings, collars and drips; 0 on the carved crystal bodies.
+        varying float vOilSmooth;
         uniform vec3 uOilTeal;
         uniform vec3 uOilGreen;
         uniform vec3 uOilViolet;
@@ -51,13 +59,16 @@ export function createOilMaterial() {
         `#include <roughnessmap_fragment>
         #ifndef OIL_LITE
           roughnessFactor = oilRoughness(roughnessFactor, vSpinePosition);
-        #endif`,
+        #endif
+        // Wings and collars: wet, near-mirror oil.
+        roughnessFactor = mix(roughnessFactor, 0.06, vOilSmooth);`,
       )
       .replace(
         '#include <normal_fragment_maps>',
         `#include <normal_fragment_maps>
         #if !defined(SCULPTED) && !defined(OIL_LITE)
-          normal = oilGrain(normal, vSpinePosition);
+          // Grain and chips on the bodies only; the wings stay smooth.
+          normal = normalize(mix(oilGrain(normal, vSpinePosition), normal, vOilSmooth));
         #endif`,
       )
       .replace(
@@ -66,12 +77,14 @@ export function createOilMaterial() {
         #ifdef USE_IRIDESCENCE
           oilStreaks(material.iridescence, material.iridescenceThickness, vSpinePosition,
             iridescenceThicknessMinimum, iridescenceThicknessMaximum);
+          // The oily rainbow lives on the wings' edges and collars.
+          material.iridescence = mix(material.iridescence * 0.45, min(1.0, material.iridescence * 1.6), vOilSmooth);
         #endif`,
       )
       .replace(
         '#include <opaque_fragment>',
         `outgoingLight += oilStreakGlow(normal, normalize(vViewPosition), uOilTeal, uOilGreen,
-          uOilViolet, uOilGlow);
+          uOilViolet, uOilGlow * (0.6 + 1.6 * vOilSmooth));
         #include <opaque_fragment>`,
       )
   }

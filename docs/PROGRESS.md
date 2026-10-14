@@ -230,3 +230,22 @@ System 59, Depth 47, Contact 47.
   Accessibility 100, Best Practices 100, SEO 100. TBT 180–190 ms, LCP 0.5s, CLS 0.
 - FPS (prod, Retina): AMD full — hero 58.2, statement 60.2, Work/System/Depth/Contact 60.2.
   HD 630 lite — hero 57.0, statement 56.0, Work 60.2, System 60.2, Depth 59.4, Contact 60.2.
+
+## Round 2, session 2
+- Interrupted session left the part-3 CV work uncommitted (`src/app/cv/page.tsx`,
+  `src/content/site.ts`, the regenerated PDF): stashed as
+  `stash@{0} round2-part3-cv (interrupted session)`, to be popped for the CV part.
+
+## Part "Spine" — procedural rebuild (no spine-raw.glb present)
+- `work/spineGeometry.ts` rewritten after `docs/spine-concept.png` (built in the worker):
+  14 fused vertebrae, each a thick rounded-square body of its own size, tilt and turn, the
+  column wobbling off the axis; bodies tessellated + carved + faceted (crystal chips);
+  smooth oily collars at the seams; 1–2 wings per vertebra, swept tapered blades of
+  lens-shaped section, varied (long, short, curled tips, broken ends); drips (lathe
+  strands with a bead) under some wings. One merged mesh with an `oilSmooth` attribute.
+- `oilMaterial.ts`: `oilSmooth` keeps wings / collars / drips wet and near-mirror, puts the
+  iridescent streaks and stronger glow on them, and the grain / chips on the bodies only.
+  The lite tier still drops grain, film and clear coat (coarser body tessellation).
+- FPS (prod, Retina) down the Work cards: AMD full 60.3 at every card; HD 630 lite 60.3.
+- Sheet: `docs/screens/round2-spine.jpg` (concept, reference column, ours, lite).
+- Open: the column reads darker than the studio-lit concept (part 2's mid-tone lift).
