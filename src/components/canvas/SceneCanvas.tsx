@@ -39,6 +39,9 @@ export default function SceneCanvas() {
         onCreated={({ gl }) => {
           // The glass tubes are thin: what they refract doesn't need full resolution.
           gl.transmissionResolutionScale = 0.5
+          // Shader error checks read the program log synchronously (a stall per shader):
+          // development only.
+          gl.debug.checkShaderErrors = process.env.NODE_ENV === 'development'
           setReady(true)
         }}
       >

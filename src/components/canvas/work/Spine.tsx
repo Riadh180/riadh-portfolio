@@ -1,6 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { BufferGeometry, Mesh, MeshPhysicalMaterial } from 'three'
+import { BufferAttribute, BufferGeometry, type Mesh, type MeshPhysicalMaterial } from 'three'
 import { sceneConfig } from '@/styles/scene'
 import type { SceneClock } from '../useSceneClock'
 import { createOilMaterial, disposeOilMaterial } from './oilMaterial'
@@ -18,7 +18,7 @@ type Props = { clock: SceneClock }
 export function Spine({ clock }: Props) {
   const mesh = useRef<Mesh>(null)
   const gl = useThree((state) => state.gl)
-  const standIn = useMemo(() => createSpineGeometry(), [])
+  const standIn = useStandIn()
   const material = useMemo(() => createOilMaterial(), [])
   const [model, setModel] = useState<BufferGeometry | null>(null)
 
@@ -47,13 +47,8 @@ export function Spine({ clock }: Props) {
     }
   }, [gl, material])
 
-  useEffect(
-    () => () => {
-      standIn.dispose()
-      disposeOilMaterial(material)
-    },
-    [standIn, material],
-  )
+  useEffect(() => () => standIn?.dispose(), [standIn])
+  useEffect(() => () => disposeOilMaterial(material), [material])
 
   useFrame(() => {
     if (!mesh.current) return
@@ -64,5 +59,44 @@ export function Spine({ clock }: Props) {
     oil.roughness = 1 - gloss
   })
 
-  return <mesh ref={mesh} geometry={model ?? standIn} material={material} />
+  const geometry = model ?? standIn
+  return geometry ? <mesh ref={mesh} geometry={geometry} material={material} /> : null
+}
+
+type Built = {
+  attributes: Record<string, { array: Float32Array; itemSize: number }>
+  index: Uint32Array | null
+}
+
+/**
+ * The procedural stand-in, built in a worker (it is far down the path; the hero must not
+ * wait for it). Falls back to building it here if workers are unavailable.
+ */
+function useStandIn() {
+  const [geometry, setGeometry] = useState<BufferGeometry | null>(null)
+  useEffect(() => {
+    let worker: Worker | null = null
+    try {
+      worker = new Worker(new URL('./spine.worker.ts', import.meta.url), { type: 'module' })
+    } catch {
+      worker = null
+    }
+    if (!worker) {
+      const idle = window.setTimeout(() => setGeometry(createSpineGeometry()), 1500)
+      return () => window.clearTimeout(idle)
+    }
+    worker.onmessage = ({ data }: MessageEvent<Built>) => {
+      const built = new BufferGeometry()
+      for (const [name, { array, itemSize }] of Object.entries(data.attributes)) {
+        built.setAttribute(name, new BufferAttribute(array, itemSize))
+      }
+      if (data.index) built.setIndex(new BufferAttribute(data.index, 1))
+      built.computeBoundingSphere()
+      setGeometry(built)
+      worker?.terminate()
+    }
+    worker.postMessage(null)
+    return () => worker?.terminate()
+  }, [])
+  return geometry
 }

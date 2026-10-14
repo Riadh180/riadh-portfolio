@@ -118,3 +118,21 @@ materials, Contact warm moment), 3 (light on glass, `5c13529`).
   ticks), `SmoothScroll` (nav flights).
 - Verified: off by default; click → context running, master 0.14, hero bed 0.84;
   reload → restored; off → fades to 0. No GPU cost (FPS unchanged).
+
+## Step 8 — Preloader
+- `stores/loading.ts`: four real steps (fonts, scene mounted, `/assets.json`, the first
+  scene's shaders compiled via `compileAsync` in `hero/Warmup.tsx`), performance marks
+  `signal:<step>` / `signal:reveal`.
+- `layout/Preloader.tsx`: small mono counter 000 → 100 + 1px line under where The Core
+  appears; never ahead of real progress (max 160%/s so it reads as a count); at 100 the
+  reveal starts and the counter fades. Skipped on repeat visits (sessionStorage
+  `signal-intro`); 5s safety timeout. Name and role are HTML from the first paint
+  (FCP ≈ 0.1s).
+- `hero/IntroBurst.tsx` + `shaders/introBurst.*`: 2200 motes scattered in the dark
+  condense onto The Core's outline (and its inner ring), flare, and fade as The Core
+  scales in, turning (`Emblem` reveal). Reduced motion: no burst, a short scale-in.
+- Load time cuts (to hit ~1.8s): the procedural spine (~0.6s) now builds in a Web Worker
+  (`work/spine.worker.ts`); particle walls sample a 64² density table instead of
+  rejection-sampling noise (~0.27s → negligible); shader error checks off in production
+  (sync program-log reads). Reveal at 1.4–2.1s (was 2.9–3.6s) at Retina, headless.
+- Sheet: `docs/screens/polish-10-preloader.jpg`.

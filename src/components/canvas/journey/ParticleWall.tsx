@@ -10,22 +10,43 @@ import { createMotesGeometry, createMotesUniforms, gaussian } from './motes'
 /** The sheet: a wide disc of dust, thin, gathered into clouds with dark gaps between. */
 const SHEET = { radius: 22, thickness: 0.45, count: 18000 }
 
+/** Cells of the density grid the sheet is sampled from. */
+const GRID = 64
+
+/**
+ * Clumped, never even: a cloudy density over the disc on a coarse grid, then each mote
+ * picks a cell in proportion to its density (a cumulative table) and a spot inside it.
+ * Cheap enough to build at load (a few thousand noise samples, not millions).
+ */
 function createSheet(seed: number) {
-  return createMotesGeometry(SHEET.count, (_, out) => {
-    // Rejection sampling against a cloudy density, so the sheet is clumped, never even.
-    for (let tries = 0; tries < 24; tries++) {
-      const a = Math.random() * Math.PI * 2
-      const r = Math.sqrt(Math.random()) * SHEET.radius
-      const x = Math.cos(a) * r
-      const z = Math.sin(a) * r
+  const cell = (SHEET.radius * 2) / GRID
+  const cumulative = new Float32Array(GRID * GRID)
+  let total = 0
+  for (let j = 0; j < GRID; j++) {
+    for (let i = 0; i < GRID; i++) {
+      const x = -SHEET.radius + (i + 0.5) * cell
+      const z = -SHEET.radius + (j + 0.5) * cell
+      const inside = x * x + z * z < SHEET.radius * SHEET.radius
       const cloud =
         valueNoise3(x * 0.22, z * 0.22, seed, seed) * 0.7 +
         valueNoise3(x * 0.7, z * 0.7, seed + 3, seed) * 0.3
-      if (Math.random() < cloud ** 3 * 2.2 || tries === 23) {
-        out.set(x, gaussian() * SHEET.thickness * (0.4 + cloud), z)
-        return
-      }
+      total += inside ? cloud ** 3 : 0
+      cumulative[j * GRID + i] = total
     }
+  }
+  return createMotesGeometry(SHEET.count, (_, out) => {
+    const r = Math.random() * total
+    let lo = 0
+    let hi = cumulative.length - 1
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1
+      if ((cumulative[mid] ?? 0) < r) lo = mid + 1
+      else hi = mid
+    }
+    const x = -SHEET.radius + ((lo % GRID) + Math.random()) * cell
+    const z = -SHEET.radius + (Math.floor(lo / GRID) + Math.random()) * cell
+    const cloud = valueNoise3(x * 0.22, z * 0.22, seed, seed)
+    out.set(x, gaussian() * SHEET.thickness * (0.4 + cloud), z)
   })
 }
 

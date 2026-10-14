@@ -10,6 +10,8 @@ import type { GlassLook } from './glassLook'
 import { applyGlassLook, createGlassMaterial, disposeGlassMaterial } from './glassMaterial'
 import { idleSpin } from './motion'
 import { useCursor } from '@/stores/cursor'
+import { revealed } from '@/stores/loading'
+import { BURST } from './IntroBurst'
 
 type Props = {
   look: GlassLook
@@ -165,6 +167,14 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     if (anchored) {
       g.position.set(0, Math.sin(t * 0.5) * emblem.float, 0)
       g.scale.setScalar(anchored.scale)
+    } else {
+      // The preloader's reveal: The Core resolves out of the condensing dust, turning in.
+      const reveal = reducedMotion ? revealed(0.6) : revealed(1.1, BURST * 0.55)
+      if (reveal < 1) {
+        g.visible &&= reveal > 0.001
+        g.scale.multiplyScalar(0.001 + 0.999 * reveal)
+        g.rotation.y += (1 - reveal) * 2.2
+      }
     }
 
     // The light rig turns part of the way with the emblem near face-on, so the bevels keep

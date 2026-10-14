@@ -18,6 +18,8 @@ import { type JourneyState, useJourneyState } from './journey/path'
 import { Tagline } from './journey/Tagline'
 import { Trails } from './journey/Trails'
 import { HeroLighting } from './hero/HeroLighting'
+import { IntroBurst } from './hero/IntroBurst'
+import { Warmup } from './hero/Warmup'
 import { ParticleField } from './particles/ParticleField'
 import { Effects } from './post/Effects'
 import type { Pointer } from './usePointer'
@@ -91,6 +93,8 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
           journey={journey}
         />
       </Drift>
+      <IntroBurst reducedMotion={reducedMotion} />
+      <Warmup />
       <GoldCloud journey={journey} clock={clock} reducedMotion={reducedMotion} />
       <DustSheet clock={clock} journey={journey} />
       <Drift journey={journey} seed={7} weight={2}>
