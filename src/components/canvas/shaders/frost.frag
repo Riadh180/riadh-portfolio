@@ -15,6 +15,8 @@ uniform vec3 uHaze;
 /** 0 frosted .. 1 fully cleared (the glass has broken away into particles). */
 uniform float uDissolve;
 uniform vec3 uEdgeGlow;
+/** 1 for live scenes: darken the lower part here, where the title sits (covers are pre-shaded). */
+uniform float uShade;
 
 varying vec2 vUv;
 varying vec3 vNormal;
@@ -62,6 +64,7 @@ void main() {
     color.b += texture2D(uImage, tap - shift * 0.22).b;
   }
   color /= 5.0;
+  color *= 1.0 - uShade * 0.75 * smoothstep(0.55, 0.0, vUv.y);
 
   // Milky grey-green body: a base tint everywhere (the image sits inside the glass), thicker
   // where the glass swells and at grazing angles, a little brighter towards the top (lit

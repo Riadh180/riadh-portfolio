@@ -28,7 +28,7 @@ export function detectQuality(): Quality {
 export const PLACE_MAX_DPR: Record<Place, number> = {
   hero: 1.4,
   statement: 1.25,
-  work: 1.5,
+  work: 1.4,
   system: 2,
   depth: 1.5,
   contact: 2,

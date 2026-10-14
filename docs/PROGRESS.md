@@ -83,3 +83,23 @@ materials, Contact warm moment), 3 (light on glass, `5c13529`).
 - FPS (prod, Retina): hero 58.2, statement 59.6, Work 60.2, System 60.2, Depth 60.2,
   Contact 60.2.
 - Sheet: `docs/screens/polish-8-cursor.jpg`.
+
+## Step 6 — Live 3D scenes inside the cards
+- `work/cardScenes/`: `CardScene` base (768×480 render target, MSAA 2, own backdrop with
+  small corner bleeds, glass-rim material, twinkling dots, async precompile) and five
+  original scenes: `GlobeRoutes` (Kühne+Nagel: pulses travelling along routes over a dark
+  globe), `DeviceGrid` (E.ON: a fleet of devices with update waves rippling across),
+  `ShieldLattice` (Adesso: glass shield + lock in a turning lattice, flaws flickering),
+  `CampaignBars` (Licht & Schatten: data particles arcing into growing bars), `MiniWorld`
+  (Freelance: a tiny Core in its dust). Shaders in `shaders/cardScenes/`.
+- `WorkCards`: confidential jobs + Freelance use the live texture (screen and dissolve
+  dust); Bliggit and the capstone keep the image slot (cover or mock app screen). A scene
+  renders only when its card is in the frustum and its place visible, every other frame at
+  rest (staggered), every frame when focused/open. `frost.frag` darkens the title area for
+  live textures (`uShade`).
+- Gotcha: the post stack disables `autoClear`; the target must be cleared explicitly.
+- Perf: Work's DPR cap 1.5 → 1.4 (the dip between cards 2–3 predates this step: 54.7
+  without live scenes). FPS (prod, Retina): Work down the cards 60.3 at every step; hero
+  58.2, statement 59.8, System/Depth/Contact 60.2. **Open:** arrival flight into Work
+  still dips (~43–45 for 1.5s, same without live scenes).
+- Sheet: `docs/screens/polish-9-live-cards.jpg`.

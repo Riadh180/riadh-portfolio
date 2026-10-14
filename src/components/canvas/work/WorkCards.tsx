@@ -1,7 +1,11 @@
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import {
   BufferGeometry,
+  Frustum,
+  Matrix4,
+  Sphere,
+  type Texture,
   Color,
   Float32BufferAttribute,
   type PerspectiveCamera,
@@ -32,6 +36,7 @@ import dissolve from '../shaders/dissolve.glsl'
 import noise from '../shaders/noise.glsl'
 import type { SceneClock } from '../useSceneClock'
 import { CardFace } from './cardFace'
+import { type CardScene, createCardScene } from './cardScenes'
 import { COLUMN_SPACING, ORBIT_SPACING, orbitPose } from './layout'
 import { ChipCluster } from './Pebbles'
 
@@ -150,13 +155,14 @@ export function createScreenGeometry() {
 }
 
 /** The frosted screen: sits on the block's flat front face (inside the bevel). */
-export function createScreenMaterial(face: CardFace, seed: number) {
+export function createScreenMaterial(face: CardFace, seed: number, live?: Texture) {
   return new ShaderMaterial({
     vertexShader: frostVertex,
     fragmentShader: `${noise}\n${dissolve}\n${frostFragment}`,
     uniforms: {
-      uImage: { value: face.image },
+      uImage: { value: live ?? face.image },
       uTitle: { value: face.texture },
+      uShade: { value: live ? 1 : 0 },
       uBrightness: { value: 1 },
       uBlur: { value: 0 },
       uSeed: { value: seed },
@@ -192,12 +198,12 @@ function createDustGeometry() {
   return geometry
 }
 
-function createDustMaterial(face: CardFace, seed: number) {
+function createDustMaterial(face: CardFace, seed: number, live?: Texture) {
   return new ShaderMaterial({
     vertexShader: `${noise}\n${dissolve}\n${cardDustVertex}`,
     fragmentShader: cardDustFragment,
     uniforms: {
-      uImage: { value: face.image },
+      uImage: { value: live ?? face.image },
       uDissolve: { value: 0 },
       uSeed: { value: seed },
       uSize: { value: [CARD.width, CARD.height] },
@@ -235,18 +241,24 @@ export function WorkCards({ layout, clock }: Props) {
   const plane = useMemo(() => createScreenGeometry(), [])
   const dust = useMemo(() => createDustGeometry(), [])
   const faces = useMemo(() => jobs.map((job, i) => new CardFace(job, i)), [])
+  // Confidential work (and Freelance): a live scene in the card instead of an image.
+  const scenes = useMemo(() => jobs.map((job) => createCardScene(job.slug)), [])
   const screens = useMemo(
-    () => faces.map((face, i) => createScreenMaterial(face, i * 1.37)),
-    [faces],
+    () => faces.map((face, i) => createScreenMaterial(face, i * 1.37, scenes[i]?.target.texture)),
+    [faces, scenes],
   )
+  const gl = useThree((state) => state.gl)
+  useEffect(() => {
+    scenes.forEach((scene) => void scene?.precompile(gl))
+  }, [scenes, gl])
   useEffect(() => {
     void loadAssets().then(({ work }) => {
       jobs.forEach((job, i) => {
         const cover = work[job.slug]
-        if (cover) faces[i]?.setCover(cover)
+        if (cover && !scenes[i]) faces[i]?.setCover(cover)
       })
     })
-  }, [faces])
+  }, [faces, scenes])
   useEffect(
     () => () => {
       block.dispose()
@@ -254,8 +266,9 @@ export function WorkCards({ layout, clock }: Props) {
       dust.dispose()
       screens.forEach((screen) => screen.dispose())
       faces.forEach((face) => face.dispose())
+      scenes.forEach((scene) => scene?.dispose())
     },
-    [block, plane, dust, screens, faces],
+    [block, plane, dust, screens, faces, scenes],
   )
 
   return (
@@ -272,6 +285,7 @@ export function WorkCards({ layout, clock }: Props) {
           dust={dust}
           screen={screens[i]}
           face={faces[i]}
+          live={scenes[i] ?? null}
         />
       ))}
     </group>
@@ -288,12 +302,24 @@ type CardProps = {
   dust: BufferGeometry
   screen: ShaderMaterial | undefined
   face: CardFace | undefined
+  /** The card's live scene, rendered into its screen while the card is in view. */
+  live: CardScene | null
+}
+
+/** Whether an object and all its parents are visible. */
+function shown(object: { visible: boolean; parent: unknown } | null): boolean {
+  let node = object as { visible: boolean; parent: unknown } | null
+  while (node) {
+    if (!node.visible) return false
+    node = node.parent as typeof node
+  }
+  return true
 }
 
 /** How far a card's own tilt goes (radians): a few degrees, never flat. */
 const TILT = { drift: 0.06, cursor: 0.07 }
 
-function Card({ job, index, layout, clock, block, plane, dust, screen, face }: CardProps) {
+function Card({ job, index, layout, clock, block, plane, dust, screen, face, live }: CardProps) {
   const group = useRef<Group>(null)
   const screenMesh = useRef<Mesh>(null)
   const blockMesh = useRef<Mesh>(null)
@@ -301,8 +327,8 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
   const chips = useRef<Group>(null)
   const blockGlass = useMemo(() => createBlockGlass(), [])
   const dustMaterial = useMemo(
-    () => (face ? createDustMaterial(face, index * 1.37) : null),
-    [face, index],
+    () => (face ? createDustMaterial(face, index * 1.37, live?.target.texture) : null),
+    [face, index, live],
   )
   useEffect(
     () => () => {
@@ -334,9 +360,14 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
     tilt: new Quaternion(),
     euler: new Euler(),
     up: new Vector3(0, 1, 0),
+    frustum: new Frustum(),
+    projection: new Matrix4(),
+    /** The card's bounds, for the visibility test. */
+    bounds: new Sphere(new Vector3(), 1.6),
+    frame: 0,
   })
 
-  useFrame(({ camera, pointer, size, viewport }, delta) => {
+  useFrame(({ camera, pointer, size, viewport, gl }, delta) => {
     const g = group.current
     const screenMaterial = screenMesh.current?.material as ShaderMaterial | undefined
     const glass = blockMesh.current?.material as MeshPhysicalMaterial | undefined
@@ -442,6 +473,21 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
     dustPoints.current!.visible = s.dissolve > 0
     // Open, the card's own chips step aside (they would sit on the details).
     if (chips.current) chips.current.visible = flown < 0.3
+
+    // The live scene renders only while its card can be seen (and not while another card
+    // is open, or once this one has broken away completely).
+    // At rest it updates every other frame (staggered between cards): inside the frost the
+    // difference doesn't show, and it halves the cost; focused or open, every frame.
+    s.frame++
+    const due = isFocused || isOpen || (s.frame + index) % 2 === 0
+    if (live && due && shown(g) && s.others < 0.95 && s.dissolve < 1.6) {
+      s.projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
+      s.frustum.setFromProjectionMatrix(s.projection)
+      g.getWorldPosition(s.bounds.center)
+      if (s.frustum.intersectsSphere(s.bounds)) {
+        live.render(gl, clock.time)
+      }
+    }
 
     // Scramble the title for its duration after the card gains focus.
     const elapsed = (performance.now() - since) / 1000
