@@ -122,16 +122,23 @@ export function DepthWorld({ clock, fog }: Props) {
           value: new Color()
             .copy(sceneColors.teal)
             .lerp(sceneColors.emerald, 0.4)
-            .multiplyScalar(0.55),
+            .lerp(sceneColors.glass, 0.3)
+            .multiplyScalar(0.24),
         },
-        uGlow: { value: sceneColors.glow },
+        // Caustic light: the glow colour, softened towards white so it isn't neon.
+        uGlow: {
+          value: new Color()
+            .copy(sceneColors.glow)
+            .lerp(sceneColors.glass, 0.45)
+            .multiplyScalar(0.7),
+        },
         uIntensity: { value: 1 },
         uFog: { value: fog },
       },
       shafts: SHAFTS.map(([, , , , , seed]) => ({
         uTime: { value: 0 },
         uSeed: { value: seed },
-        uOpacity: { value: 0.11 },
+        uOpacity: { value: 0.08 },
         uColor: { value: sceneColors.glow },
       })),
       plankton: createMotesUniforms([sceneColors.emerald, sceneColors.teal, sceneColors.glow]),

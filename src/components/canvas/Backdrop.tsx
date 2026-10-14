@@ -13,17 +13,29 @@ export function warmth(journey: JourneyState) {
 }
 
 /**
- * Fullscreen backdrop: teal bleeding in from the lower left, violet from the upper right.
- * The glows belong to the hero: they fade almost to black as the camera descends to the
- * statement, so the type and the glass stand out there; they return, warm, at Contact.
+ * The place's accent leaning the haze a little (MOTION.md: one accent per place): teal at
+ * Depth, violet at Work (already the haze's own), blue at System.
+ */
+function accentOf(journey: JourneyState) {
+  const ease = (x: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, x)))) / 2
+  const system = ease(journey.toSystem) * (1 - ease(journey.toDepth))
+  const depth = ease(journey.toDepth) * (1 - ease(journey.toContact))
+  if (depth > 0.01) return { color: sceneColors.emerald, amount: depth * 0.3 }
+  if (system > 0.01) return { color: sceneColors.blue, amount: system * 0.3 }
+  return null
+}
+
+/**
+ * Fullscreen backdrop: the world's haze, violet from the lower left and a cool haze from
+ * the upper right, the same in every place.
  */
 export function Backdrop({ journey }: { journey?: JourneyState }) {
   const material = useRef<ShaderMaterial>(null)
   const uniforms = useMemo(
     () => ({
       uBackground: { value: sceneColors.bg },
-      uLowerLeft: { value: new Color().copy(sceneColors.teal) },
-      uUpperRight: { value: new Color().copy(sceneColors.violet) },
+      uLowerLeft: { value: new Color().copy(sceneColors.violet) },
+      uUpperRight: { value: new Color().copy(sceneColors.teal) },
       uStrength: { value: 0 },
       uAspect: { value: 1 },
     }),
@@ -33,14 +45,19 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
   useFrame(({ size }) => {
     if (!material.current) return
     const u = material.current.uniforms
-    // Contact's warm accent: the glows rise again in ember and gold, then the loop turns
-    // them back into the hero's teal and violet.
+    // One world haze for every place (as in the reference): violet from the lower left, a
+    // cooler haze from the upper right, at a constant strength. A place may only lean it
+    // towards its accent; Contact's warm moment warms it.
     const warm = journey ? warmth(journey) : 0
-    const back = journey ? journey.loop : 0
-    const descent = (journey?.camera ?? 0) * (1 - Math.max(warm, back))
-    u.uStrength!.value = sceneConfig.light.corners * (1 - 0.88 * descent)
-    ;(u.uLowerLeft!.value as Color).copy(sceneColors.teal).lerp(sceneColors.ember, warm)
-    ;(u.uUpperRight!.value as Color).copy(sceneColors.violet).lerp(sceneColors.warm, warm)
+    const accent = journey ? accentOf(journey) : null
+    u.uStrength!.value = sceneConfig.light.corners
+    const lowerLeft = u.uLowerLeft!.value as Color
+    const upperRight = u.uUpperRight!.value as Color
+    lowerLeft.copy(sceneColors.violet)
+    upperRight.copy(sceneColors.teal).lerp(sceneColors.glass, 0.35)
+    if (accent) upperRight.lerp(accent.color, accent.amount)
+    lowerLeft.lerp(sceneColors.ember, warm * 0.25)
+    upperRight.lerp(sceneColors.warm, warm * 0.45)
     material.current.uniforms.uAspect!.value = size.width / size.height
   })
 

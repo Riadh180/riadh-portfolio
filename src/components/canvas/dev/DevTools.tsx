@@ -129,6 +129,10 @@ export default function DevTools() {
       contrast: [0.7, 1.5, 0.01],
       grain: [0, 0.3, 0.005],
       vignette: [0, 1.5, 0.01],
+      lift: [0, 2, 0.01],
+      shadowTint: [0, 3, 0.01],
+      saturation: [0, 1.5, 0.01],
+      saturationCeiling: [0.2, 3, 0.01],
     }),
   )
   useControls('Export', {

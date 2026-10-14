@@ -1,9 +1,19 @@
-// Final grade (postprocessing Effect). Neutral: no color is added to the shadows.
-// `resolution` and `time` are provided by the EffectPass.
+// The site's one grade (postprocessing Effect), applied to every place alike, so the whole
+// journey reads as one world. Measured against the reference recording: a lifted, cool
+// black; shadows leaning cool; mid-tones muted; nothing allowed to go neon; fine grain.
+// `resolution` and `time` are provided by the EffectPass. Works in linear light.
 
 uniform float uContrast;
 uniform float uGrain;
 uniform float uVignette;
+/** The black floor (linear): blacks lift to a cool charcoal, never to pure black. */
+uniform vec3 uLift;
+/** Tint pushed into the shadows (split-tone), and how strongly. */
+uniform vec3 uShadowTint;
+uniform float uShadowAmount;
+/** Global saturation, and the ceiling on how saturated any colour may get. */
+uniform float uSaturation;
+uniform float uSaturationCeiling;
 
 // Tone mapping with a shoulder only: darks stay exactly on the palette tokens,
 // HDR highlights (bloom cores) roll off softly instead of clipping.
@@ -29,8 +39,25 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
 
   float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
 
+  // Saturation: muted overall, and a soft ceiling so no place goes neon (Depth's teal,
+  // Contact's ember): colour beyond the ceiling is compressed, not clipped.
+  vec3 chroma = (color - luma) * uSaturation;
+  float amount = length(chroma) / max(luma, 1e-4);
+  chroma *= amount > uSaturationCeiling
+    ? (uSaturationCeiling + (amount - uSaturationCeiling) * 0.25) / amount
+    : 1.0;
+  color = max(luma + chroma, 0.0);
+
+  // Split-tone: the shadows lean cool teal-grey, the highlights stay neutral.
+  float shadow = 1.0 - smoothstep(0.0, 0.08, luma);
+  color += uShadowTint * shadow * uShadowAmount * 0.01;
+
   vec2 d = uv - 0.5;
   color *= 1.0 - dot(d, d) * uVignette;
+
+  // Lift, after the vignette, so the black floor is the same cool charcoal everywhere in
+  // the frame and in every place (the reference never shows pure black).
+  color = uLift + color * (1.0 - uLift);
 
   // Animated film grain, plus dithering that removes gradient banding.
   vec2 px = uv * resolution;

@@ -16,8 +16,8 @@ import vertexShader from '../shaders/depthBackdrop.vert'
 export const DEPTH_TOP = new Color()
   .copy(sceneColors.teal)
   .multiplyScalar(0.07)
-  .lerp(sceneColors.bg, 0.45)
-export const DEPTH_BOTTOM = new Color().copy(sceneColors.bg).multiplyScalar(0.35)
+  .lerp(sceneColors.bg, 0.8)
+export const DEPTH_BOTTOM = new Color().copy(sceneColors.bg).multiplyScalar(0.8)
 /** What the far water fades into (about the middle of the gradient). */
 export const DEPTH_FOG = new Color().copy(DEPTH_TOP).lerp(DEPTH_BOTTOM, 0.35)
 

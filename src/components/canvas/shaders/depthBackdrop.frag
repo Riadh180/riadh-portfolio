@@ -12,5 +12,5 @@ void main() {
   vec3 color = mix(uBottom, uTop, smoothstep(0.0, 1.0, vUv.y) * smoothstep(0.0, 0.9, vUv.y));
   vec2 d = (vUv - vec2(0.5, 0.6)) * vec2(uAspect, 1.0);
   float vignette = smoothstep(1.25, 0.25, length(d));
-  gl_FragColor = vec4(color * mix(0.25, 1.0, vignette), uOpacity);
+  gl_FragColor = vec4(color * mix(0.55, 1.0, vignette), uOpacity);
 }

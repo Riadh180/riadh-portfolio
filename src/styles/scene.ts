@@ -145,9 +145,17 @@ export const sceneConfig = {
     offset: 0.0003,
     modulationOffset: 0.22,
   },
+  /** The one grade for every place (measured against the reference recording). */
   grade: {
     contrast: 1.0,
-    grain: 0.03,
-    vignette: 0.45,
+    grain: 0.04,
+    vignette: 0.5,
+    /** Black floor as a share of the background colour (linear): a lifted, cool charcoal. */
+    lift: 0.22,
+    /** How much the cool teal-grey leans into the shadows. */
+    shadowTint: 0.18,
+    /** Muted overall; nothing more saturated than the ceiling (chroma / luma). */
+    saturation: 0.74,
+    saturationCeiling: 0.9,
   },
 }
