@@ -1,8 +1,10 @@
-// A card's screen seen through thick, frosted glass (noise.glsl is prepended in TS): the
-// image is blurred and bent by mottled frosting, with a milky haze that brightens where the
-// frost is thick and towards grazing angles; the title stays crisp on top. uBlur adds depth
-// of field for cards away from the focus. uDissolve clears the frost from the edges in
-// (dissolve.glsl and noise.glsl are prepended in TS).
+// A card's screen seen through thick, rippled glass (noise.glsl and dissolve.glsl are
+// prepended in TS). The glass is cast, not sanded: the image behind it breaks into smeared
+// streaks and shifted fragments, with small chromatic fringes where neighbouring
+// fragments bend the light differently, and a milky grey-green tint over everything, so
+// the card reads as a glass object first and an image second. The title stays crisp on
+// top. uBlur smears it further for cards out of focus; uDissolve clears the glass from the
+// edges in, leaving the sharp image.
 
 uniform sampler2D uImage;
 uniform sampler2D uTitle;
@@ -18,43 +20,61 @@ varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vView;
 
+float cellHash(vec2 cell) {
+  return fract(sin(dot(cell, vec2(127.1, 311.7)) + uSeed * 17.0) * 43758.5453);
+}
+
 void main() {
-  // Defrost: the frost clears from the edges inward behind a fine front; past it the image
+  // Defrost: the glass clears from the edges inward behind a fine front; past it the image
   // is sharp and clear. A faint bright seam marks the front.
   float threshold = dissolveThreshold(vUv, uSeed);
   float clear = clamp((uDissolve - threshold) / 0.06, 0.0, 1.0);
   float seam = uDissolve > 0.0 ? (1.0 - smoothstep(0.0, 0.03, abs(threshold - uDissolve))) : 0.0;
+  float glass = 1.0 - clear;
 
-  // Mottled frost: how thick the frosting is here.
-  vec2 p = vUv * vec2(3.2, 2.0) + uSeed * 7.0;
-  float frost = snoise(vec3(p, uSeed)) * 0.6 + snoise(vec3(p * 3.1, uSeed + 4.0)) * 0.4;
-  frost = smoothstep(-0.6, 0.8, frost) * (1.0 - clear);
+  // Ripples: noise stretched along a slanted axis, so the image smears into streaks.
+  vec2 p = vUv * vec2(2.6, 1.6) + uSeed * 7.0;
+  vec2 slant = vec2(vUv.x * 0.8 + vUv.y * 0.35, vUv.y);
+  float ripple = snoise(vec3(slant * vec2(9.0, 2.2) + uSeed, uSeed));
+  float swell = snoise(vec3(p, uSeed + 3.0));
 
-  // The glass bends the image a little where the frost is uneven.
-  vec2 bend = vec2(snoise(vec3(p * 1.7, 2.0)), snoise(vec3(p * 1.7, 9.0))) * 0.012;
-  vec2 uv = vUv + bend * (1.0 - clear);
+  // Fragments: the glass is cast in small, uneven cells (warped twice, so no grid shows),
+  // each one shifting the image by its own amount, like crinkled glass (at_05).
+  vec2 warp = vec2(snoise(vec3(p * 2.2, 5.0)), snoise(vec3(p * 2.2, 8.0))) * 0.9;
+  warp += vec2(snoise(vec3(p * 7.0, 2.0)), snoise(vec3(p * 7.0, 6.0))) * 0.35;
+  vec2 cell = floor(vUv * vec2(20.0, 13.0) + warp);
+  vec2 shard = vec2(cellHash(cell), cellHash(cell + 19.3)) - 0.5;
+  // Fine crinkle on top: the cells' edges are ragged, never straight.
+  vec2 crinkle = vec2(snoise(vec3(vUv * vec2(26.0, 18.0), uSeed + 1.0)), snoise(vec3(vUv * vec2(26.0, 18.0), uSeed + 4.0)));
 
-  // Blur: a small disc of taps, wider where the frost is thicker or the card is out of focus.
-  float radius = (0.004 + frost * 0.01 + uBlur * 0.02) * (1.0 - clear);
+  vec2 shift = (vec2(ripple * 0.6, swell * 0.4) * 0.022 + shard * 0.03 + crinkle * 0.006) * glass;
+  vec2 uv = vUv + shift;
+
+  // Smear along the streaks: a few taps along the slant, longer out of focus. Each channel
+  // bends by a slightly different amount (dispersion), so fringes appear wherever the
+  // shift jumps, at the fragments' edges.
+  vec2 along = normalize(vec2(0.35, 1.0)) * (0.012 + abs(ripple) * 0.02 + uBlur * 0.05) * glass;
   vec3 color = vec3(0.0);
-  for (int i = 0; i < 12; i++) {
-    float a = float(i) * 2.39996;
-    float r = sqrt(float(i) / 12.0) * radius;
-    color += texture2D(uImage, uv + vec2(cos(a), sin(a) * 1.6) * r).rgb;
+  for (int i = 0; i < 5; i++) {
+    vec2 tap = uv + along * (float(i) / 4.0 - 0.5);
+    color.r += texture2D(uImage, tap + shift * 0.22).r;
+    color.g += texture2D(uImage, tap).g;
+    color.b += texture2D(uImage, tap - shift * 0.22).b;
   }
-  color /= 12.0;
+  color /= 5.0;
 
-  // Milky haze over the frost, stronger at grazing angles (thick glass seen edge-on).
-  float grazing = 1.0 - abs(dot(normalize(vNormal), normalize(vView)));
-  // Milky, thick glass: a base haze everywhere (the media sits inside the slab), more where
-  // the frost is thick and towards grazing angles, a little more towards the top (lit
+  // Milky grey-green body: a base tint everywhere (the image sits inside the glass), thicker
+  // where the glass swells and at grazing angles, a little brighter towards the top (lit
   // from above).
-  float milk = 0.16 + frost * 0.3 + grazing * 0.3 + (vUv.y - 0.5) * 0.08;
-  color = mix(color, uHaze, clamp(milk, 0.0, 0.8) * (1.0 - clear));
+  float grazing = 1.0 - abs(dot(normalize(vNormal), normalize(vView)));
+  float milk = 0.38 + swell * 0.08 + grazing * 0.3 + (vUv.y - 0.5) * 0.1;
+  color = mix(color, uHaze, clamp(milk, 0.0, 0.85) * glass);
+  // The cast glass catches a little light along each ripple crest.
+  color += uEdgeGlow * smoothstep(0.55, 0.95, ripple) * 0.035 * glass;
 
   vec4 title = texture2D(uTitle, vUv);
-  // Open, the title moves to the details beside the image: it clears with the frost.
-  color = mix(color, title.rgb, title.a * (1.0 - uBlur * 0.6) * (1.0 - clear));
+  // Open, the title moves to the details beside the image: it clears with the glass.
+  color = mix(color, title.rgb, title.a * (1.0 - uBlur * 0.6) * glass);
   // The seam takes the image's own colour, lifted: the card burns away into its dust.
   color = color * mix(uBrightness, 1.05, clear) * (1.0 + seam * 0.8);
   gl_FragColor = vec4(color, 1.0);

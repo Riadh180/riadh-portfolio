@@ -49,12 +49,13 @@ export type CardLayout = 'orbit' | 'column'
 /** Phones: smaller cards, so one fits the narrow screen with margin. */
 const COLUMN_SCALE = 0.62
 
-type Home = { position: Vector3; turn: number; pitch: number; roll: number }
+type Home = { position: Vector3; turn: number; pitch: number; roll: number; face: number }
 
 function home(i: number, layout: CardLayout, target: Home) {
   if (layout === 'column') {
     target.position.set(0, -i * COLUMN_SPACING, 1.25)
     target.turn = target.pitch = target.roll = 0
+    target.face = 1
     return
   }
   // Down the spiral: each card near the camera's line of sight at its own stop, in its own
@@ -68,6 +69,7 @@ function home(i: number, layout: CardLayout, target: Home) {
   target.turn = pose.angle
   target.pitch = pose.pitch
   target.roll = pose.roll
+  target.face = pose.face
 }
 
 /** The card body: one thick rounded glass block with a wide, smooth bevel all round. */
@@ -158,7 +160,12 @@ export function createScreenMaterial(face: CardFace, seed: number) {
       uBlur: { value: 0 },
       uSeed: { value: seed },
       uHaze: {
-        value: new Color().copy(sceneColors.glass).lerp(sceneColors.teal, 0.15).multiplyScalar(0.5),
+        // Milky grey-green: the cast glass's own body colour (at_05).
+        value: new Color()
+          .copy(sceneColors.glass)
+          .lerp(sceneColors.emerald, 0.2)
+          .lerp(sceneColors.bg, 0.68)
+          .multiplyScalar(0.6),
       },
       uDissolve: { value: 0 },
       uEdgeGlow: { value: sceneColors.glow },
@@ -313,7 +320,7 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
     dissolve: 0,
     scrambling: false,
     pointer: { x: 0, y: 0 },
-    target: { position: new Vector3(), turn: 0, pitch: 0, roll: 0 } as Home,
+    target: { position: new Vector3(), turn: 0, pitch: 0, roll: 0, face: 1 } as Home,
     open: new Vector3(),
     /** The camera, in the cards' own space (they live inside the Work place's group). */
     eye: new Vector3(),
@@ -393,9 +400,9 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
     s.rest.setFromAxisAngle(s.up, target.turn)
     g.lookAt(camera.position)
     s.look.copy(g.quaternion)
-    // At rest a card leans most of the way towards the viewer (its face always reads, even
-    // round the far side of the spine); focused or open, it turns fully to face them.
-    const facing = layout === 'column' ? 1 : 0.65 + 0.35 * Math.max(s.focus, flown)
+    // At rest a card leans its own way towards the viewer (some most of the way, some kept
+    // turned along the spiral so their side walls show); focused or open, it turns fully.
+    const facing = target.face + (1 - target.face) * Math.max(s.focus, flown)
     g.quaternion.copy(s.rest).slerp(s.look, facing)
     // Never perfectly flat: a few degrees of slow drift, and a little pull towards the
     // cursor, so the glass thickness and its lit edges always show.

@@ -69,3 +69,8 @@ export function isShown(progress: number, place: keyof typeof SHOWN) {
   const [from, to] = SHOWN[place]
   return progress >= from && progress < to
 }
+
+// Development only: lets capture scripts fly to any point of the journey.
+if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+  ;(window as unknown as { __journey?: typeof useJourney }).__journey = useJourney
+}

@@ -37,6 +37,7 @@ export class CardFace {
   private context: CanvasRenderingContext2D
   private background = document.createElement('canvas')
   private family: string
+  private hasCover = false
 
   constructor(
     private job: Job,
@@ -59,13 +60,18 @@ export class CardFace {
     this.image = new CanvasTexture(this.background)
     this.image.colorSpace = SRGBColorSpace
     this.drawPlaceholder()
-    void document.fonts.load(`64px ${this.family}`).then(() => this.draw(Infinity))
+    // The mock screen's labels use the font too: redraw it once loaded (unless a cover came).
+    void document.fonts.load(`64px ${this.family}`).then(() => {
+      if (this.hasCover) this.draw(Infinity)
+      else this.drawPlaceholder()
+    })
   }
 
   /** Uses the real cover once it has loaded. */
   setCover(url: string) {
     const image = new Image()
     image.onload = () => {
+      this.hasCover = true
       const context = this.background.getContext('2d')
       if (!context) return
       // Cover-fit, then darken so the title always reads.
@@ -121,13 +127,15 @@ export class CardFace {
   }
 
   /**
-   * Until there is a cover: a moody generated screen per job. Muted palette colours,
-   * dark mottled patches, a few UI-like blocks and film noise, so the cards differ and
-   * read as real, textured images without pretending to be real work.
+   * Until there is a cover: a generated mock app screen per job (status bar, header, a
+   * vivid media tile, cards, a button, a small chart, list rows). Detailed and colourful,
+   * like a real screenshot, so the frost has something to break up, without pretending to
+   * be real work: no real names or numbers, only generic UI labels.
    */
   private drawPlaceholder() {
     const c = this.background.getContext('2d')
     if (!c) return
+    const i = this.index
     const tones = [
       palette.violet,
       palette.teal,
@@ -136,56 +144,101 @@ export class CardFace {
       palette.emerald,
       palette.warm,
     ]
-    // Rich colour (the card media are a material, not the environment), still dark enough
-    // for the title to read.
-    const muted = (hex: string) => mix(hex, palette.bg, 0.3)
-    const from = muted(tones[this.index % tones.length] ?? palette.violet)
-    const to = muted(tones[(this.index + 2) % tones.length] ?? palette.teal)
-    const gradient = c.createLinearGradient(0, 0, WIDTH, HEIGHT)
-    gradient.addColorStop(0, from)
-    gradient.addColorStop(1, to)
-    c.fillStyle = gradient
+    const tone = (k: number) => tones[(i + k) % tones.length] ?? palette.violet
+    const r = (k: number) => hash(k, i, 11)
+
+    // Screen background: dark elevated charcoal with a wash of the job's tone.
+    const back = c.createLinearGradient(0, 0, WIDTH, HEIGHT)
+    back.addColorStop(0, mix(palette.bgElevated, tone(0), 0.28))
+    back.addColorStop(1, mix(palette.bg, tone(3), 0.18))
+    c.fillStyle = back
     c.fillRect(0, 0, WIDTH, HEIGHT)
 
-    // Mottling: overlapping soft dark and light patches.
-    for (let i = 0; i < 26; i++) {
-      const x = hash(i, this.index, 5) * WIDTH
-      const y = hash(i, this.index, 6) * HEIGHT
-      const r = 60 + hash(i, this.index, 7) * 240
-      const light = hash(i, this.index, 8) > 0.6
-      const blob = c.createRadialGradient(x, y, 0, x, y, r)
-      blob.addColorStop(0, light ? rgba(palette.glow, 0.18) : rgba(palette.bg, 0.45))
-      blob.addColorStop(1, rgba(palette.bg, 0))
-      c.fillStyle = blob
-      c.fillRect(0, 0, WIDTH, HEIGHT)
-    }
-
-    // A few UI-like blocks, so it reads as a screen.
-    c.fillStyle = rgba(palette.text, 0.1)
-    for (let i = 0; i < 7; i++) {
-      const x = hash(i, this.index, 1) * WIDTH * 0.8
-      const y = hash(i, this.index, 2) * HEIGHT * 0.6
-      const w = 80 + hash(i, this.index, 3) * 260
-      const h = 18 + hash(i, this.index, 4) * 90
+    const block = (
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      radius: number,
+      fill: string | CanvasGradient,
+    ) => {
+      c.fillStyle = fill
       c.beginPath()
-      c.roundRect(x, y, w, h, 12)
+      c.roundRect(x, y, w, h, radius)
       c.fill()
     }
-
-    // Film noise.
-    const pixels = c.getImageData(0, 0, WIDTH, HEIGHT)
-    let seed = 0x9e3779b9 ^ (this.index + 1)
-    for (let i = 0; i < pixels.data.length; i += 4) {
-      // xorshift: cheap and plenty random for grain.
-      seed ^= seed << 13
-      seed ^= seed >>> 17
-      seed ^= seed << 5
-      const n = ((seed >>> 0) / 4294967296 - 0.5) * 34
-      pixels.data[i] = (pixels.data[i] ?? 0) + n
-      pixels.data[i + 1] = (pixels.data[i + 1] ?? 0) + n
-      pixels.data[i + 2] = (pixels.data[i + 2] ?? 0) + n
+    const label = (text: string, x: number, y: number, size: number, color: string) => {
+      c.font = `${size}px ${this.family}`
+      c.fillStyle = color
+      c.fillText(text, x, y)
     }
-    c.putImageData(pixels, 0, 0)
+
+    // Status bar and header.
+    label('9:41', 40, 42, 22, rgba(palette.text, 0.8))
+    block(WIDTH - 120, 26, 70, 18, 9, rgba(palette.text, 0.5))
+    const titles = ['Overview', 'Dashboard', 'Activity', 'Shipments', 'Campaigns', 'Studio']
+    label(titles[i % titles.length] ?? 'Overview', 40, 110, 44, palette.text)
+    block(WIDTH - 104, 74, 56, 56, 28, mix(tone(1), palette.text, 0.2))
+
+    // The media tile: a vivid gradient with soft shapes, the brightest part of the screen.
+    const tileX = 40
+    const tileY = 146
+    const tileW = WIDTH * 0.56
+    const tileH = 250
+    const media = c.createLinearGradient(tileX, tileY, tileX + tileW, tileY + tileH)
+    media.addColorStop(0, tone(0))
+    media.addColorStop(0.55, tone(2))
+    media.addColorStop(1, tone(4))
+    block(tileX, tileY, tileW, tileH, 26, media)
+    c.save()
+    c.beginPath()
+    c.roundRect(tileX, tileY, tileW, tileH, 26)
+    c.clip()
+    for (let k = 0; k < 18; k++) {
+      const x = tileX + r(k) * tileW
+      const y = tileY + r(k + 60) * tileH
+      const radius = 14 + r(k + 80) * 70
+      const blob = c.createRadialGradient(x, y, 0, x, y, radius)
+      blob.addColorStop(0, rgba(k % 2 ? palette.glow : palette.bg, k % 2 ? 0.55 : 0.5))
+      blob.addColorStop(1, rgba(palette.bg, 0))
+      c.fillStyle = blob
+      c.fillRect(tileX, tileY, tileW, tileH)
+    }
+    c.restore()
+    label('Featured', tileX + 28, tileY + tileH - 34, 30, palette.text)
+
+    // A column of cards beside it: icon, two text lines.
+    const colX = tileX + tileW + 28
+    const colW = WIDTH - colX - 40
+    for (let k = 0; k < 3; k++) {
+      const y = tileY + k * 86
+      block(colX, y, colW, 72, 16, rgba(palette.text, 0.1))
+      block(colX + 14, y + 14, 44, 44, 12, tone(k + 1))
+      block(colX + 72, y + 18, colW * (0.4 + r(k + 30) * 0.4), 12, 6, rgba(palette.text, 0.65))
+      block(colX + 72, y + 42, colW * (0.3 + r(k + 40) * 0.3), 10, 5, rgba(palette.text, 0.3))
+    }
+
+    // A button and a small bar chart.
+    block(40, tileY + tileH + 28, 220, 58, 29, palette.emerald)
+    label('Continue', 76, tileY + tileH + 66, 26, palette.bg)
+    for (let k = 0; k < 9; k++) {
+      const h = 30 + r(k + 50) * 90
+      block(
+        300 + k * 30,
+        tileY + tileH + 86 - h,
+        18,
+        h,
+        5,
+        rgba(k % 3 ? palette.glow : tone(2), 0.75),
+      )
+    }
+
+    // List rows towards the bottom (under the title's shade).
+    for (let k = 0; k < 3; k++) {
+      const y = HEIGHT - 150 + k * 46
+      block(620, y, 300, 12, 6, rgba(palette.text, 0.4))
+      block(620, y + 20, 200, 9, 5, rgba(palette.text, 0.2))
+    }
 
     this.shade(c)
     this.image.needsUpdate = true

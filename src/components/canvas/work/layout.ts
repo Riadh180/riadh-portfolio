@@ -14,15 +14,17 @@ export const COLUMN_SPACING = 1.9
 /**
  * Each card's own pose, so six don't repeat: angle offset from the camera's line of sight
  * at its stop (positive = to the right), distance from the axis, a nudge in height, and a
- * little pitch and roll. Nothing goes far left (the list and details live there).
+ * little pitch and roll, and how far it leans towards the viewer at rest (`face`, 0..1):
+ * some stay turned along the spiral, so their thick lit side walls show (at_05). Nothing
+ * goes far left (the list and details live there).
  */
 const POSES = [
-  { angle: 0.0, radius: 3.0, dy: 0.0, pitch: 0.04, roll: -0.03 },
-  { angle: 0.34, radius: 2.65, dy: 0.25, pitch: -0.08, roll: 0.07 },
-  { angle: -0.1, radius: 3.35, dy: -0.15, pitch: 0.08, roll: -0.08 },
-  { angle: 0.42, radius: 2.85, dy: 0.3, pitch: -0.05, roll: 0.1 },
-  { angle: 0.06, radius: 3.15, dy: -0.25, pitch: 0.09, roll: -0.05 },
-  { angle: 0.26, radius: 2.6, dy: 0.12, pitch: -0.07, roll: 0.06 },
+  { angle: 0.0, radius: 3.0, dy: 0.0, pitch: 0.04, roll: -0.03, face: 0.7 },
+  { angle: 0.34, radius: 2.65, dy: 0.25, pitch: -0.08, roll: 0.07, face: 0.15 },
+  { angle: -0.1, radius: 3.35, dy: -0.15, pitch: 0.08, roll: -0.08, face: 0.6 },
+  { angle: 0.42, radius: 2.85, dy: 0.3, pitch: -0.05, roll: 0.1, face: 0.1 },
+  { angle: 0.06, radius: 3.15, dy: -0.25, pitch: 0.09, roll: -0.05, face: 0.55 },
+  { angle: 0.26, radius: 2.6, dy: 0.12, pitch: -0.07, roll: 0.06, face: 0.2 },
 ]
 
 export function orbitPose(index: number, count: number) {
@@ -34,5 +36,6 @@ export function orbitPose(index: number, count: number) {
     y: ORBIT_FIRST - index * ORBIT_SPACING + pose.dy,
     pitch: pose.pitch,
     roll: pose.roll,
+    face: pose.face,
   }
 }
