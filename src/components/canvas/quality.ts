@@ -1,3 +1,5 @@
+import type { Place } from '@/stores/journey'
+
 export type Quality = {
   /** Simulation texture size: simSize² particles. */
   simSize: number
@@ -19,10 +21,15 @@ export function detectQuality(): Quality {
 }
 
 /**
- * Per-place DPR ceilings. The Work spine fills the screen with heavy per-pixel shading,
- * so the Work place renders at most at 1.5× (keeps 50+ fps on an integrated GPU at
- * Retina). Applied on top of the device / measured DPR.
+ * Per-place DPR ceilings, from production measurements on the reference machine (Intel HD
+ * 630 at Retina): a place that falls below 55 fps at full DPR renders at most at 1.5×.
+ * Applied on top of the device / measured DPR.
  */
-export const PLACE_MAX_DPR = {
+export const PLACE_MAX_DPR: Record<Place, number> = {
+  hero: 1.5,
+  statement: 1.25,
   work: 1.5,
-} as const
+  system: 2,
+  depth: 1.5,
+  contact: 2,
+}

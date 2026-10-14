@@ -4,6 +4,7 @@ import type { Group } from 'three'
 import type { GlassLook } from '../hero/glassLook'
 import { type JourneyState, PLACES, SYSTEM } from '../journey/path'
 import type { Pointer } from '../usePointer'
+import { Drift } from '../motion/Drift'
 import type { SceneClock } from '../useSceneClock'
 import { SkillGraph } from './SkillGraph'
 
@@ -32,7 +33,9 @@ export function SystemPlace({ journey, clock, look, pointer, reducedMotion }: Pr
 
   return (
     <group ref={group} visible={false}>
-      <SkillGraph clock={clock} look={look} pointer={pointer} reducedMotion={reducedMotion} />
+      <Drift journey={journey} seed={23} weight={1}>
+        <SkillGraph clock={clock} look={look} pointer={pointer} reducedMotion={reducedMotion} />
+      </Drift>
     </group>
   )
 }

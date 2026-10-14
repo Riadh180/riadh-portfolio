@@ -2,6 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useRef } from 'react'
 import type { Group } from 'three'
 import { PLACES, WORK, type JourneyState } from '../journey/path'
+import { Drift } from '../motion/Drift'
 import type { SceneClock } from '../useSceneClock'
 import { Pebbles } from './Pebbles'
 import { Spine } from './Spine'
@@ -27,9 +28,11 @@ export function WorkPlace({ journey, clock }: Props) {
 
   return (
     <group ref={group} visible={false}>
-      <Spine clock={clock} />
-      <Pebbles clock={clock} focusDistance={column ? 6 : WORK.distance} />
-      <WorkCards layout={column ? 'column' : 'orbit'} clock={clock} />
+      <Drift journey={journey} seed={11} weight={1.4}>
+        <Spine clock={clock} />
+        <Pebbles clock={clock} focusDistance={column ? 6 : WORK.distance} />
+        <WorkCards layout={column ? 'column' : 'orbit'} clock={clock} />
+      </Drift>
     </group>
   )
 }

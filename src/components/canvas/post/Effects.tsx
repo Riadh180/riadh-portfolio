@@ -23,9 +23,10 @@ export function Effects({ reducedMotion, antialias = true }: Props) {
   const bloom = useRef<BloomEffect>(null)
   const chromatic = useRef<ChromaticAberrationEffect>(null)
   const grade = useMemo(() => new GradeEffect(), [])
-  // Thin glass edges alias at 1–1.5 DPR; at ~2 DPR the pixels already supersample.
   const dpr = useThree((state) => state.viewport.dpr)
-  const multisampling = antialias && dpr < 1.75 ? 2 : 0
+  // Only on coarse (~1×) screens: at a capped 1.5× Retina the pixels are fine enough, and
+  // multisampling there would cost the frames the cap was meant to win back.
+  const multisampling = antialias && dpr < 1.25 ? 2 : 0
   useEffect(() => () => grade.dispose(), [grade])
 
   useFrame(() => {

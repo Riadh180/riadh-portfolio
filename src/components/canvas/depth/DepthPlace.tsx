@@ -2,6 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useRef } from 'react'
 import type { Group } from 'three'
 import { DEPTH, type JourneyState, PLACES } from '../journey/path'
+import { Drift } from '../motion/Drift'
 import type { SceneClock } from '../useSceneClock'
 import { DEPTH_FOG } from './DepthBackdrop'
 import { DepthWorld } from './DepthWorld'
@@ -26,7 +27,9 @@ export function DepthPlace({ journey, clock }: Props) {
 
   return (
     <group ref={group} visible={false}>
-      <DepthWorld clock={clock} fog={DEPTH_FOG} />
+      <Drift journey={journey} seed={37} weight={1.2}>
+        <DepthWorld clock={clock} fog={DEPTH_FOG} />
+      </Drift>
     </group>
   )
 }

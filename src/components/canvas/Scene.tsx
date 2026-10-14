@@ -8,6 +8,7 @@ import { DepthBackdrop } from './depth/DepthBackdrop'
 import { DepthPlace } from './depth/DepthPlace'
 import { CameraRig } from './CameraRig'
 import { Emblem } from './hero/Emblem'
+import { Drift } from './motion/Drift'
 import { DustSheet } from './journey/DustSheet'
 import { FormMoment } from './journey/FormMoment'
 import { GoldCloud } from './journey/GoldCloud'
@@ -79,16 +80,20 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
           return ease(journey.toDepth) * (1 - ease(journey.toContact))
         }}
       />
-      <Emblem
-        look={look}
-        pointer={pointer}
-        clock={clock}
-        reducedMotion={reducedMotion}
-        journey={journey}
-      />
+      <Drift journey={journey} seed={3} weight={1.3}>
+        <Emblem
+          look={look}
+          pointer={pointer}
+          clock={clock}
+          reducedMotion={reducedMotion}
+          journey={journey}
+        />
+      </Drift>
       <GoldCloud journey={journey} clock={clock} reducedMotion={reducedMotion} />
       <DustSheet clock={clock} journey={journey} />
-      <Tagline clock={clock} reducedMotion={reducedMotion} journey={journey} />
+      <Drift journey={journey} seed={7} weight={2}>
+        <Tagline clock={clock} reducedMotion={reducedMotion} journey={journey} />
+      </Drift>
       <FormMoment journey={journey} simSize={simSize} clock={clock} />
       <Trails journey={journey} />
       <WorkPlace journey={journey} clock={clock} />

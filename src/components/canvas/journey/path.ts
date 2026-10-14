@@ -77,6 +77,8 @@ export class JourneyState {
   toContact = 0
   /** 0 (Contact) → 1 (the view has become the hero's again). */
   loop = 0
+  /** The camera's vertical speed (world units / s), from the camera rig's spring. */
+  velocity = 0
   /** How far above its focus the camera looks (Depth looks up at the surface). */
   lookUp = 0
   /**
@@ -95,6 +97,11 @@ export class JourneyState {
   /** Camera orbit round the path's axis: angle (radians) and distance. */
   angle = 0
   distance = 10
+
+  /** Set by the camera rig each frame (its spring's vertical speed). */
+  setVelocity(velocity: number) {
+    this.velocity = velocity
+  }
 
   update(delta: number, reducedMotion: boolean, column: boolean) {
     const progress = useJourney.getState().progress
