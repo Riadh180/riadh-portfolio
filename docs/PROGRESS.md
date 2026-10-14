@@ -359,3 +359,16 @@ System 59, Depth 47, Contact 47.
   `app/impressum/page.tsx`; verified absent from /, /cv, /datenschutz, /work/* and the PDF.
 - `/datenschutz`: "Verantwortlich" with the same name and address
   (`content/legal.ts`, no phone).
+
+## Round 3 wrap-up
+- Load: the atmosphere layers now mount in the first idle moment after the canvas starts
+  (`Soon` in `Deferred.tsx`), splitting the hero's mount task. Lighthouse (desktop, prod):
+  Performance 91–92, Accessibility 100, Best Practices 100, SEO 100.
+- FPS (prod, Retina): AMD full — hero 59.4, statement 60.2, Work 60.2 (60.3 every card),
+  System/Depth/Contact 60.2. HD 630 lite — hero 56.6, statement 56.8, Work 60.2,
+  System/Depth/Contact 60.2.
+
+## Next session
+- Lens shards still read faintly in captures; the spine is still darker than the concept.
+- A real spine model would help most (`public/models/spine-raw.glb`).
+- Bliggit's cover.png / login.png were swapped to match their contents: check.

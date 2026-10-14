@@ -72,3 +72,22 @@ export function Deferred({ children }: { children: ReactNode }) {
 
   return ready ? children : null
 }
+
+/**
+ * Mounts its children in the first idle moment after the canvas starts (no engagement
+ * needed): for parts of the hero that can arrive a beat later, so the hero's own mount is
+ * not one long task.
+ */
+export function Soon({ children }: { children: ReactNode }) {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    let done = false
+    idle(() => {
+      if (!done) setReady(true)
+    })
+    return () => {
+      done = true
+    }
+  }, [])
+  return ready ? children : null
+}

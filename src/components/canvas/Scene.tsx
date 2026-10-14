@@ -6,7 +6,7 @@ import { sceneColors, sceneConfig } from '@/styles/scene'
 import { Backdrop, warmth } from './Backdrop'
 import { DepthBackdrop } from './depth/DepthBackdrop'
 import { DepthPlace } from './depth/DepthPlace'
-import { Deferred } from './Deferred'
+import { Deferred, Soon } from './Deferred'
 import { CameraRig } from './CameraRig'
 import { Emblem } from './hero/Emblem'
 import { Drift } from './motion/Drift'
@@ -128,7 +128,9 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
         <DepthPlace journey={journey} clock={clock} />
         <ContactGlow journey={journey} />
       </Deferred>
-      <Atmosphere journey={journey} clock={clock} />
+      <Soon>
+        <Atmosphere journey={journey} clock={clock} />
+      </Soon>
       <ParticleField
         simSize={simSize}
         clock={clock}
