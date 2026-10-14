@@ -19,6 +19,7 @@ import {
   type Sprite,
   SRGBColorSpace,
 } from 'three'
+import { useCursor } from '@/stores/cursor'
 import { useSystem } from '@/stores/system'
 import { sceneColors } from '@/styles/scene'
 import { palette } from '@/styles/tokens'
@@ -366,10 +367,12 @@ export function SkillGraph({ clock, look, pointer, reducedMotion }: Props) {
                 event.stopPropagation()
                 focus(node.id)
                 document.body.style.cursor = 'pointer'
+                useCursor.getState().setScene('node')
               }}
               onPointerOut={() => {
                 if (useSystem.getState().focused === node.id) focus(null)
                 document.body.style.cursor = ''
+                useCursor.getState().leave('node')
               }}
             />
           </group>

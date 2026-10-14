@@ -64,3 +64,22 @@ materials, Contact warm moment), 3 (light on glass, `5c13529`).
 - FPS (prod, Retina): hero 58.4, statement 59.6, Work 59.0, System 60.2, Depth 60.2,
   Contact 60.2.
 - Sheet: `docs/screens/polish-7-typography.jpg`.
+
+## Step 5 — Micro-interactions
+- `ui/Cursor.tsx` + `stores/cursor.ts` + CSS in `globals.css`: a ring that follows the
+  pointer on the shared UI spring (`MOTION.ui`), around the native cursor (kept for
+  accessibility). Modes: card → 72px ring reading "OPEN"; skill node → glow ring; link /
+  button → violet dot + arrow; The Core's glass → wobbling ring. HTML targets decide
+  first (`data-cursor` overrides), then the 3D scene (cards, nodes, Emblem set the store).
+  Fine pointers that can hover only; no lag / wobble with reduced motion.
+- `ui/Scramble.tsx`: the one text reveal, built on `useScramble` (now takes a `run` key):
+  scrambles on mount, on text change and on hover/focus of its link or button. Used in the
+  top bar (name, nav, email), the section indicator, the filter row, Contact links/email.
+- The work filter is now real: buttons with `aria-pressed`; jobs outside it dim in the
+  list and their 3D cards recede (dimmer, softer) — `work` store `filter`.
+- `Magnetic` now uses the shared UI spring; the nav pill is magnetic too.
+- Dev note: Turbopack once kept serving a stale error and stale CSS, causing a reload
+  loop; `rm -rf .next/dev` and restart fixed it.
+- FPS (prod, Retina): hero 58.2, statement 59.6, Work 60.2, System 60.2, Depth 60.2,
+  Contact 60.2.
+- Sheet: `docs/screens/polish-8-cursor.jpg`.

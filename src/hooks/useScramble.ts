@@ -3,8 +3,11 @@
 import { useEffect, useState } from 'react'
 import { SCRAMBLE_DURATION, scrambleText } from '@/lib/scramble'
 
-/** The text, scrambling for ~1.2s each time `active` turns on (same timing as the 3D card). */
-export function useScramble(text: string, active: boolean) {
+/**
+ * The text, scrambling for ~1.2s each time `active` turns on, the text changes or `run`
+ * changes (same timing as the 3D card).
+ */
+export function useScramble(text: string, active: boolean, run = 0) {
   // Only set from animation frames; null means "show the clean text".
   const [scrambled, setScrambled] = useState<string | null>(null)
 
@@ -21,7 +24,7 @@ export function useScramble(text: string, active: boolean) {
       cancelAnimationFrame(frame)
       setScrambled(null)
     }
-  }, [text, active])
+  }, [text, active, run])
 
   return active && scrambled !== null ? scrambled : text
 }

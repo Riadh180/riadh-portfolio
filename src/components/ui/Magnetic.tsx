@@ -1,10 +1,11 @@
 'use client'
 
 import { type ReactNode, useEffect, useRef } from 'react'
+import { MOTION, Spring } from '@/components/canvas/motion/motion'
 
 /**
  * Pulls its child towards the cursor while the cursor is near (a soft magnet), and
- * springs back when it leaves. Off for touch and reduced motion.
+ * springs back when it leaves (the shared UI spring). Off for touch and reduced motion.
  */
 export function Magnetic({
   children,
@@ -22,15 +23,20 @@ export function Magnetic({
     const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (!fine || calm) return
     let frame = 0
+    let last = 0
     const target = { x: 0, y: 0 }
-    const current = { x: 0, y: 0 }
-    const tick = () => {
-      current.x += (target.x - current.x) * 0.15
-      current.y += (target.y - current.y) * 0.15
-      element.style.transform = `translate3d(${current.x}px, ${current.y}px, 0)`
-      if (Math.abs(target.x - current.x) + Math.abs(target.y - current.y) > 0.1) {
+    const x = new Spring(0, MOTION.ui)
+    const y = new Spring(0, MOTION.ui)
+    const tick = (now: number) => {
+      const delta = last ? Math.min((now - last) / 1000, 1 / 20) : 1 / 60
+      last = now
+      x.step(target.x, delta)
+      y.step(target.y, delta)
+      element.style.transform = `translate3d(${x.value}px, ${y.value}px, 0)`
+      const moving = Math.abs(x.velocity) + Math.abs(y.velocity) > 0.05
+      if (moving || Math.abs(target.x - x.value) + Math.abs(target.y - y.value) > 0.1) {
         frame = requestAnimationFrame(tick)
-      }
+      } else last = 0
     }
     const onMove = (event: PointerEvent) => {
       const box = element.getBoundingClientRect()

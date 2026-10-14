@@ -171,3 +171,101 @@
   clip-path: inset(var(--top) 0 var(--bottom) 0);
   transform: translateX(var(--shift));
 }
+
+/* The custom cursor (ui/Cursor.tsx): a ring round the native cursor that reacts to what
+   it is over. Positioned by transform from script; sizes ease with the UI timing. */
+.cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s var(--motion-ease);
+}
+.cursor[data-visible='true'] {
+  opacity: 1;
+}
+.cursor-ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  border: 1px solid color-mix(in oklab, var(--color-text) 45%, transparent);
+  border-radius: 999px;
+  transition:
+    width 0.45s var(--motion-ease),
+    height 0.45s var(--motion-ease),
+    margin 0.45s var(--motion-ease),
+    border-color 0.45s var(--motion-ease),
+    background-color 0.45s var(--motion-ease);
+}
+.cursor-label,
+.cursor-arrow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  opacity: 0;
+  white-space: nowrap;
+  transition: opacity 0.3s var(--motion-ease);
+}
+.cursor-label {
+  transform: translate(-50%, -50%);
+}
+.cursor-arrow {
+  transform: translate(10px, -50%);
+}
+.cursor[data-mode='link'] .cursor-ring {
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-color: var(--color-violet);
+  background-color: var(--color-violet);
+}
+.cursor[data-mode='link'] .cursor-arrow {
+  opacity: 1;
+  color: var(--color-violet);
+}
+.cursor[data-mode='open'] .cursor-ring {
+  width: 72px;
+  height: 72px;
+  margin: -36px 0 0 -36px;
+  border-color: color-mix(in oklab, var(--color-text) 70%, transparent);
+  background-color: color-mix(in oklab, var(--color-bg) 35%, transparent);
+}
+.cursor[data-mode='open'] .cursor-label {
+  opacity: 1;
+}
+.cursor[data-mode='node'] .cursor-ring {
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border-color: var(--color-glow);
+}
+.cursor[data-mode='glass'] .cursor-ring {
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  border-color: color-mix(in oklab, var(--color-glow) 60%, transparent);
+  animation: cursor-glass 1.8s var(--motion-ease) infinite alternate;
+}
+@keyframes cursor-glass {
+  from {
+    transform: scale(1.12, 0.9) rotate(-8deg);
+  }
+  to {
+    transform: scale(0.9, 1.1) rotate(8deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cursor-ring {
+    animation: none !important;
+  }
+}

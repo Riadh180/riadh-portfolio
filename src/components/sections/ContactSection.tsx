@@ -2,6 +2,7 @@
 
 import { GlitchText } from '@/components/ui/GlitchText'
 import { Magnetic } from '@/components/ui/Magnetic'
+import { Scramble } from '@/components/ui/Scramble'
 import { profile, sections } from '@/content/site'
 import { isShown, useJourney } from '@/stores/journey'
 
@@ -39,23 +40,23 @@ export function ContactSection() {
                 href={`mailto:${profile.email}`}
                 className="inline-flex items-center gap-3 rounded-full border border-warm/60 bg-warm/10 px-6 py-3.5 ui-lg text-text transition-colors duration-(--motion-duration-ui) hover:border-warm hover:bg-warm/20"
               >
-                <span aria-hidden>→</span> {profile.email}
+                <span aria-hidden>→</span> <Scramble text={profile.email} />
               </a>
             </Magnetic>
             <ul className="flex flex-wrap gap-x-6 gap-y-2">
               <li>
                 <a href={profile.linkedin} className={link} rel="me noopener" target="_blank">
-                  LinkedIn ↗
+                  <Scramble text="LinkedIn" /> <span aria-hidden>↗</span>
                 </a>
               </li>
               <li>
                 <a href={profile.github} className={link} rel="me noopener" target="_blank">
-                  GitHub ↗
+                  <Scramble text="GitHub" /> <span aria-hidden>↗</span>
                 </a>
               </li>
               <li>
                 <a href={profile.cvHref} className={link}>
-                  CV ↓
+                  <Scramble text="CV" /> <span aria-hidden>↓</span>
                 </a>
               </li>
             </ul>

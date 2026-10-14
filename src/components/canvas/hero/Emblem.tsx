@@ -9,6 +9,7 @@ import { createBandGeometry, roundedSquareCurve } from './bandGeometry'
 import type { GlassLook } from './glassLook'
 import { applyGlassLook, createGlassMaterial, disposeGlassMaterial } from './glassMaterial'
 import { idleSpin } from './motion'
+import { useCursor } from '@/stores/cursor'
 
 type Props = {
   look: GlassLook
@@ -207,7 +208,12 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
   })
 
   return (
-    <group ref={group}>
+    // Over the glass, the custom cursor wobbles (the native cursor is untouched).
+    <group
+      ref={group}
+      onPointerOver={() => useCursor.getState().setScene('glass')}
+      onPointerOut={() => useCursor.getState().leave('glass')}
+    >
       <mesh geometry={frame} material={glass} />
       <mesh ref={inner} geometry={innerShape} material={glass} position-z={-0.16} />
     </group>

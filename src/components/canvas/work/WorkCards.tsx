@@ -18,6 +18,7 @@ import {
 } from 'three'
 import { type Job, jobs } from '@/content/site'
 import { SCRAMBLE_DURATION } from '@/lib/scramble'
+import { useCursor } from '@/stores/cursor'
 import { useWork } from '@/stores/work'
 import { sceneColors } from '@/styles/scene'
 import { loadAssets } from '../assets'
@@ -314,6 +315,7 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
   const state = useRef({
     focus: 0,
     others: 0,
+    outside: 0,
     /** 0 at home → 1 flown in front of the camera. */
     fly: 0,
     /** 0 whole → 1 dissolved → 2 dust drifted away. */
@@ -340,7 +342,7 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
     const glass = blockMesh.current?.material as MeshPhysicalMaterial | undefined
     const dustShader = dustPoints.current?.material as ShaderMaterial | undefined
     if (!g || !face || !screenMaterial || !glass || !dustShader) return
-    const { focused, since, opened } = useWork.getState()
+    const { focused, since, opened, filter } = useWork.getState()
     const isFocused = focused === job.slug
     const isOpen = opened === job.slug
     const s = state.current
@@ -349,6 +351,9 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
     const ease = 1 - Math.exp(-dt * 5)
     s.focus += ((isFocused || isOpen ? 1 : 0) - s.focus) * ease
     s.others += ((opened && !isOpen ? 1 : 0) - s.others) * ease
+    // Outside the active filter: the card recedes (dimmer, softer) until the filter clears.
+    const outside = filter !== null && !job.filters.includes(filter) && !isFocused && !isOpen
+    s.outside += ((outside ? 1 : 0) - s.outside) * ease
     // The cursor's pull is heavily damped (~0.8s), as everywhere else.
     s.pointer.x += (pointer.x - s.pointer.x) * (1 - Math.exp(-dt * 1.3))
     s.pointer.y += (pointer.y - s.pointer.y) * (1 - Math.exp(-dt * 1.3))
@@ -425,8 +430,9 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
         ? Math.min(1, Math.max(0, Math.abs(target.position.y - s.eye.y) / ORBIT_SPACING - 0.35))
         : 0
     const u = screenMaterial.uniforms
-    u.uBlur!.value = Math.max(side * (1 - s.focus), s.others * 0.8)
-    u.uBrightness!.value = (0.8 - side * 0.2 + 0.25 * s.focus) * (1 - s.others * 0.65)
+    u.uBlur!.value = Math.max(side * (1 - s.focus), s.others * 0.8, s.outside * 0.6)
+    u.uBrightness!.value =
+      (0.8 - side * 0.2 + 0.25 * s.focus) * (1 - s.others * 0.65) * (1 - s.outside * 0.6)
     u.uDissolve!.value = Math.min(1, s.dissolve)
     // The thick glass block breaks away with the frost.
     glass.opacity = 1 - Math.min(1, s.dissolve * 1.2)
@@ -460,10 +466,12 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face }: C
         if (useWork.getState().opened) return
         focus(job.slug)
         document.body.style.cursor = 'pointer'
+        useCursor.getState().setScene('open')
       }}
       onPointerOut={() => {
         if (useWork.getState().focused === job.slug && !useWork.getState().opened) focus(null)
         document.body.style.cursor = ''
+        useCursor.getState().leave('open')
       }}
       onClick={(event) => {
         event.stopPropagation()
