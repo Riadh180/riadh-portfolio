@@ -21,3 +21,15 @@ materials, Contact warm moment), 3 (light on glass, `5c13529`).
   lit side walls show.
 - FPS (prod, Retina): Work 60.1, Depth 60.1.
 - Sheet: `docs/screens/polish-4-frost.jpg`.
+
+## Step 2 — Atmosphere layers
+- `journey/Atmosphere.tsx` + `shaders/atmosphere.vert/.frag`: three point layers wrapped in
+  boxes that travel with the camera (each mote anchored in the world, so the camera moves
+  past them with parallax). Foreground: ~200 large out-of-focus discs near the lens. Mid:
+  1800 small vivid bokeh in 22 loose clouds between camera and subject. Background: 2600
+  tiny distant motes. Focus follows the camera's orbit distance; hue ramp from the palette
+  pulled to each place's accent (teal → violet → blue → emerald → warm). Thinned over the
+  HTML text zones (desktop left column, phone bottom). Hero stays sparse (35% presence).
+- FPS (prod, Retina): hero 58.4, statement 59.6, Work 60.2, System 60.2, Depth 60.2,
+  Contact 60.2.
+- Sheet: `docs/screens/polish-5-atmosphere.jpg`.
