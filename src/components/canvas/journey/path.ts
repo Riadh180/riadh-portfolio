@@ -37,7 +37,7 @@ export const WORK = {
   /** Shifted right of centre, leaving the left column to the list and details. */
   x: 1.1,
   /** Camera distance from the spine, and how far it turns round it on the way down. */
-  distance: 7.8,
+  distance: 6.6,
 }
 
 /**
@@ -213,7 +213,12 @@ export class JourneyState {
     const below = Math.floor(index)
     const above = Math.min(WORK.cards - 1, below + 1)
     const t = index - below
-    const y = (i: number) => orbitPose(i, WORK.cards).y + 0.15
+    // Left cards: the camera aims a little below them, so they hang high in the frame,
+    // clear of the HTML list at the bottom left.
+    const y = (i: number) => {
+      const pose = orbitPose(i, WORK.cards)
+      return pose.y + 0.15 - (pose.left ? 0.5 : 0)
+    }
     return y(below) + (y(above) - y(below)) * t
   }
 }

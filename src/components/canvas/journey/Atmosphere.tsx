@@ -22,14 +22,14 @@ import type { JourneyState } from './path'
  */
 const LAYERS = {
   fore: {
-    count: 200,
+    count: 420,
     box: 7,
     near: 0.9,
     far: 3.6,
-    size: 0.02,
-    aperture: 9,
-    maxSize: 110,
-    opacity: 0.8,
+    size: 0.012,
+    aperture: 1.2,
+    maxSize: 9,
+    opacity: 1.2,
     drift: 1,
     clusters: 0,
   },

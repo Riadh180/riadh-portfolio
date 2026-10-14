@@ -63,7 +63,9 @@ void main() {
   // where the glass swells and at grazing angles, a little brighter towards the top (lit
   // from above).
   float grazing = 1.0 - abs(dot(normalize(vNormal), normalize(vView)));
-  float milk = 0.38 + swell * 0.08 + grazing * 0.3 + (vUv.y - 0.5) * 0.1;
+  // Saturated media under the glass (the reference's cards pop), then the milky body.
+  color = mix(vec3(dot(color, vec3(0.299, 0.587, 0.114))), color, 1.35);
+  float milk = 0.27 + swell * 0.08 + grazing * 0.3 + (vUv.y - 0.5) * 0.1;
   color = mix(color, uHaze, clamp(milk, 0.0, 0.85) * glass);
   // The cast glass catches a little light along each ripple crest.
   color += uEdgeGlow * smoothstep(0.55, 0.95, ripple) * 0.035 * glass;

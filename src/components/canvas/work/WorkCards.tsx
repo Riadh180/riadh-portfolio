@@ -262,8 +262,10 @@ export function WorkCards({ layout, clock }: Props) {
   const gl = useThree((state) => state.gl)
   useEffect(() => {
     scenes.forEach((scene) => void scene?.precompile(gl))
-    fields.forEach((field) => field.bake(gl))
-  }, [scenes, fields, gl])
+  }, [scenes, gl])
+  // The reliefs bake inside the render loop (once each), where the renderer's state is
+  // settled; baked from a mount effect the first card could come out blank.
+  useFrame(() => fields.forEach((field) => field.bake(gl)), -1)
   useEffect(() => {
     void loadAssets().then(({ work }) => {
       jobs.forEach((job, i) => {
@@ -477,7 +479,7 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     const u = screenMaterial.uniforms
     u.uBlur!.value = Math.max(side * (1 - s.focus), s.others * 0.8, s.outside * 0.6)
     u.uBrightness!.value =
-      (0.8 - side * 0.2 + 0.25 * s.focus) * (1 - s.others * 0.65) * (1 - s.outside * 0.6)
+      (1 - side * 0.2 + 0.2 * s.focus) * (1 - s.others * 0.65) * (1 - s.outside * 0.6)
     u.uDissolve!.value = Math.min(1, s.dissolve)
     // The thick glass block breaks away with the frost.
     glass.opacity = 1 - Math.min(1, s.dissolve * 1.2)
@@ -556,7 +558,7 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
         <group ref={chips}>
           <ChipCluster
             clusters={EDGE_CHIPS}
-            count={560}
+            count={900}
             size={2}
             clock={clock}
             focusDistance={4.8}

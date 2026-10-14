@@ -26,6 +26,7 @@ import { Effects } from './post/Effects'
 import type { Pointer } from './usePointer'
 import { useSceneClock } from './useSceneClock'
 import { SystemPlace } from './system/SystemPlace'
+import { LensShards } from './work/LensShards'
 import { WorkPlace } from './work/WorkPlace'
 
 type Props = {
@@ -106,6 +107,7 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
       </Deferred>
       <Deferred>
         <WorkPlace journey={journey} clock={clock} />
+        <LensShards journey={journey} />
       </Deferred>
       <Deferred>
         <SystemPlace

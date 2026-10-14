@@ -9,6 +9,7 @@ import { Drift } from '../motion/Drift'
 import type { SceneClock } from '../useSceneClock'
 import { Pebbles } from './Pebbles'
 import { Spine } from './Spine'
+import { WorkHaze } from './WorkHaze'
 import { WorkCards } from './WorkCards'
 
 type Props = { journey: JourneyState; clock: SceneClock }
@@ -47,6 +48,7 @@ export function WorkPlace({ journey, clock }: Props) {
         reducedMotion={reducedMotion}
         amount={() => ease((journey.toWork - 0.55) / 0.45) * (1 - ease(journey.inWork / 0.12))}
       />
+      <WorkHaze journey={journey} />
       <Drift journey={journey} seed={11} weight={1.4}>
         <Spine clock={clock} />
         <Pebbles clock={clock} focusDistance={column ? 6 : WORK.distance} />

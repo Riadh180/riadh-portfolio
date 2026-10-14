@@ -249,3 +249,24 @@ System 59, Depth 47, Contact 47.
 - FPS (prod, Retina) down the Work cards: AMD full 60.3 at every card; HD 630 lite 60.3.
 - Sheet: `docs/screens/round2-spine.jpg` (concept, reference column, ours, lite).
 - Open: the column reads darker than the studio-lit concept (part 2's mid-tone lift).
+
+## Part "Work composition"
+- Camera closer: `WORK.distance` 7.8 → 6.6, so the focused card fills ~45–55% of the frame.
+- `layout.ts`: cards 2, 4, 6 hang left and high (`left` flag), overlapping the right
+  cards behind the column; `path.cardY` aims the camera 0.5 below them so they clear the
+  HTML list at the bottom left.
+- `work/WorkHaze.tsx`: a tall violet haze behind the column following the camera (glow
+  shader, additive, opacity 0.22): the mid-tone lift, without touching the shared grade.
+- `work/LensShards.tsx` + `shaders/lensShard.frag`: out-of-focus glass panels just in
+  front of each card stop, cut by the frame (desktop). **Open:** they read too faintly in
+  the captures; raise opacity / size or move closer next time.
+- Card media: saturation ×1.35 under the frost, milk 0.38 → 0.27, rest brightness 0.8 → 1.0
+  (both tiers). Edge chip clouds per card 560 → 900.
+- Atmosphere foreground: big bokeh discs → 420 small sharp coloured particles
+  (size 0.012, max 9px).
+- Fix: the frost reliefs bake inside the render loop (baked from a mount effect, the first
+  card's came out blank, i.e. no frost).
+- FPS (prod, Retina): AMD full — hero 60.2, statement 57.4, Work 60.3 at every card,
+  System/Depth/Contact 60.2. HD 630 lite — hero 57.4, statement 57.0, Work 60.0–60.3,
+  System/Depth/Contact 60.2.
+- Sheet: `docs/screens/round2-work-composition.jpg` (reference, before, after, lite).
