@@ -2,9 +2,11 @@ import { type ReactNode, useEffect, useState } from 'react'
 import { useJourney } from '@/stores/journey'
 
 /**
- * Staged mounting: the hero renders first; the places further down the path mount one per
- * idle moment afterwards, in path order, so building the world never blocks the page in
- * one long task. Everything mounts at once as soon as the visitor leaves the hero.
+ * Lazy places: the hero renders at load; the places further down the path are built only
+ * once the visitor engages (first scroll, key, touch or pointer move), one per idle moment
+ * in path order, so a visitor who only reads the hero never pays for them and building
+ * never blocks the page in one long task. Everything mounts at once as soon as the
+ * visitor leaves the hero (a scroll or a nav flight).
  */
 const queue: (() => void)[] = []
 let scheduled = false
@@ -27,6 +29,19 @@ function pump() {
   })
 }
 
+/** Resolves on the visitor's first sign of engagement. */
+const engaged =
+  typeof window === 'undefined'
+    ? Promise.resolve()
+    : new Promise<void>((resolve) => {
+        const events = ['wheel', 'keydown', 'touchstart', 'pointermove', 'scroll'] as const
+        const go = () => {
+          events.forEach((name) => window.removeEventListener(name, go))
+          resolve()
+        }
+        events.forEach((name) => window.addEventListener(name, go, { passive: true }))
+      })
+
 function flush() {
   while (queue.length) queue.shift()?.()
 }
@@ -42,7 +57,7 @@ export function Deferred({ children }: { children: ReactNode }) {
       setReady(true)
     }
     queue.push(mount)
-    pump()
+    engaged.then(pump)
     // Moving down the path: no more waiting.
     const off = useJourney.subscribe((state) => {
       if (state.progress > 0.15) flush()

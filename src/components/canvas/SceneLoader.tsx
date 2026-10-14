@@ -50,16 +50,57 @@ class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean
   }
 }
 
+/**
+ * Wakes the GPU in a worker first (see gpuWarm.worker.ts), so creating the canvas doesn't
+ * block the page; resolves at once where workers can't hold a WebGL context.
+ */
+function warmGpu(): Promise<Worker | null> {
+  if (typeof OffscreenCanvas === 'undefined') return Promise.resolve(null)
+  return new Promise((resolve) => {
+    let worker: Worker
+    try {
+      worker = new Worker(new URL('./gpuWarm.worker.ts', import.meta.url), { type: 'module' })
+    } catch {
+      resolve(null)
+      return
+    }
+    const timeout = window.setTimeout(() => resolve(worker), 2000)
+    worker.onmessage = () => {
+      window.clearTimeout(timeout)
+      resolve(worker)
+    }
+    worker.postMessage('warm')
+  })
+}
+
 export function SceneLoader() {
   // Decided after mount (the server can't know), so hydration matches.
   const [webgl, setWebgl] = useState<boolean | null>(null)
 
   useEffect(() => {
     const supported = hasWebGL()
-    if (!supported) settle()
-    // Reading a browser capability once on mount.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setWebgl(supported)
+    if (!supported) {
+      settle()
+      // Reading a browser capability once on mount.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setWebgl(false)
+      return
+    }
+    let cancelled = false
+    let warm: Worker | null = null
+    void warmGpu().then((worker) => {
+      warm = worker
+      if (!cancelled) setWebgl(true)
+      // Our own context exists by now: let the worker's go.
+      window.setTimeout(() => {
+        warm?.postMessage('release')
+        warm?.terminate()
+      }, 5000)
+    })
+    return () => {
+      cancelled = true
+      warm?.terminate()
+    }
   }, [])
 
   if (webgl === null) return null

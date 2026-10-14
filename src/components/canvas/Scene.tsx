@@ -90,9 +90,9 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
       </Drift>
       <IntroBurst reducedMotion={reducedMotion} />
       <Warmup />
-      <GoldCloud journey={journey} clock={clock} reducedMotion={reducedMotion} />
-      {/* Further down the path: mounted in stages after the hero (see Deferred). */}
+      {/* Further down the path: built lazily, on engagement (see Deferred). */}
       <Deferred>
+        <GoldCloud journey={journey} clock={clock} reducedMotion={reducedMotion} />
         <DustSheet clock={clock} journey={journey} />
         <Drift journey={journey} seed={7} weight={2}>
           <Tagline clock={clock} reducedMotion={reducedMotion} journey={journey} />

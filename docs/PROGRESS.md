@@ -215,3 +215,18 @@ System 59, Depth 47, Contact 47.
   og:image on `/`, `/cv`, `/work/<slug>`; sitemap `<loc>`s; robots `Sitemap:` line.
 - `lib/ogImage.ts`: pages with their own `openGraph` (cv, work) list the shared image
   (a page-level openGraph replaces the inherited one, dropping og:image).
+
+## Part 2 — Load performance
+- Still `powerPreference: 'high-performance'`. The ~0.6s GPU wake now happens in a Web
+  Worker (`canvas/gpuWarm.worker.ts`, OffscreenCanvas context on the discrete GPU); the
+  page's own context then takes ~7ms. `SceneLoader` waits for the worker (max 2s), mounts
+  the canvas, releases the worker's context 5s later.
+- The HTML hero (name, role, tagline, email) paints first (FCP 0.3s); the 3D builds behind
+  it and fades in (preloader counter → reveal).
+- `Deferred` is now lazy: Work, System, Depth/Contact, the transitions and the gold cloud are
+  built only after the visitor's first scroll / key / touch / pointer move (one per idle
+  moment), or at once when they leave the hero.
+- Lighthouse (desktop, prod, AMD/high-performance): **Performance 92** (was 67),
+  Accessibility 100, Best Practices 100, SEO 100. TBT 180–190 ms, LCP 0.5s, CLS 0.
+- FPS (prod, Retina): AMD full — hero 58.2, statement 60.2, Work/System/Depth/Contact 60.2.
+  HD 630 lite — hero 57.0, statement 56.0, Work 60.2, System 60.2, Depth 59.4, Contact 60.2.
