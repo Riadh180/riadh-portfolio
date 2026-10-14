@@ -2,7 +2,7 @@
 
 import { type Job, jobs, workFilters } from '@/content/site'
 import { useWork } from '@/stores/work'
-import { useScramble } from './useScramble'
+import { useScramble } from '@/hooks/useScramble'
 
 /**
  * The Work place as real HTML: the filter row and one button per job card. Tab reaches

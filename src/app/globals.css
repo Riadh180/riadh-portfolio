@@ -162,3 +162,12 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/* GlitchText: a slice of display text slipping sideways for a moment. */
+.glitch-slice {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  clip-path: inset(var(--top) 0 var(--bottom) 0);
+  transform: translateX(var(--shift));
+}

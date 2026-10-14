@@ -1,5 +1,6 @@
 'use client'
 
+import { GlitchText } from '@/components/ui/GlitchText'
 import { Magnetic } from '@/components/ui/Magnetic'
 import { profile, sections } from '@/content/site'
 import { isShown, useJourney } from '@/stores/journey'
@@ -30,7 +31,7 @@ export function ContactSection() {
             id="contact-title"
             className="font-ui text-[clamp(3.5rem,13vw,11rem)] leading-[0.85] tracking-tight text-text uppercase"
           >
-            Let’s talk
+            <GlitchText text="Let’s talk" active={here} />
           </h2>
           <div className="flex flex-wrap items-center gap-x-8 gap-y-5">
             <Magnetic>

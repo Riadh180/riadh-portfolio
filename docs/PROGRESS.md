@@ -47,3 +47,20 @@ materials, Contact warm moment), 3 (light on glass, `5c13529`).
   fps. **Open:** the dips arriving at Statement and Work predate this run (likely first-use
   shader compiles and Work's mass); see the performance pass.
 - Sheet: `docs/screens/polish-6-transitions.jpg`.
+
+## Step 4 — Typography in the scene
+- `journey/SceneWord.tsx` + `shaders/sceneWord.frag`: one shared in-world display word
+  (texture from `taglineTexture`, additive in the opaque pass so glass refracts it and
+  solid forms break it), rising in line by line, with the rare one-line glitch, optional
+  water ripple + caustic shimmer, and fit-to-width for phones.
+  - Work: "SELECTED WORK" behind the spine on arrival (broken by spine and chips), fades
+    by the second card.
+  - System: "SYSTEM", huge and dim behind the graph; The Core's glass bends it.
+  - Depth: "BENEATH THE INTERFACE" under the surface, wavering; phones: under the panel.
+- Contact: `ui/GlitchText.tsx` — "Let's talk" scrambles in on arrival, then every
+  2.5–4.5s two slices slip sideways for 0.3s (own colour, no chromatic split on HTML).
+  Screen readers get the clean text.
+- `useScramble` moved to `src/hooks/` (one scramble implementation for the site).
+- FPS (prod, Retina): hero 58.4, statement 59.6, Work 59.0, System 60.2, Depth 60.2,
+  Contact 60.2.
+- Sheet: `docs/screens/polish-7-typography.jpg`.
