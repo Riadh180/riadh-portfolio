@@ -16,7 +16,9 @@ const mix = (a: string, b: string, amount: number) => {
   const y = Number.parseInt(b.slice(1), 16)
   const channel = (shift: number) =>
     Math.round(((x >> shift) & 255) * (1 - amount) + ((y >> shift) & 255) * amount)
-  return `rgb(${channel(16)}, ${channel(8)}, ${channel(0)})`
+  // Hex, so mixes can be mixed again (and fed to rgba()).
+  const hex = (shift: number) => channel(shift).toString(16).padStart(2, '0')
+  return `#${hex(16)}${hex(8)}${hex(0)}`
 }
 
 const WIDTH = 1024
@@ -170,7 +172,9 @@ export class CardFace {
       palette.emerald,
       palette.warm,
     ]
-    const tone = (k: number) => tones[(i + k) % tones.length] ?? palette.violet
+    // Muted: the mock is a quiet stand-in, never louder than real media.
+    const tone = (k: number) =>
+      mix(tones[(i + k) % tones.length] ?? palette.violet, palette.bg, 0.45)
     const r = (k: number) => hash(k, i, 11)
 
     // Screen background: dark elevated charcoal with a wash of the job's tone.
@@ -220,12 +224,12 @@ export class CardFace {
     c.beginPath()
     c.roundRect(tileX, tileY, tileW, tileH, 26)
     c.clip()
-    for (let k = 0; k < 18; k++) {
+    for (let k = 0; k < 5; k++) {
       const x = tileX + r(k) * tileW
       const y = tileY + r(k + 60) * tileH
       const radius = 14 + r(k + 80) * 70
       const blob = c.createRadialGradient(x, y, 0, x, y, radius)
-      blob.addColorStop(0, rgba(k % 2 ? palette.glow : palette.bg, k % 2 ? 0.55 : 0.5))
+      blob.addColorStop(0, rgba(k % 2 ? palette.glow : palette.bg, k % 2 ? 0.25 : 0.4))
       blob.addColorStop(1, rgba(palette.bg, 0))
       c.fillStyle = blob
       c.fillRect(tileX, tileY, tileW, tileH)

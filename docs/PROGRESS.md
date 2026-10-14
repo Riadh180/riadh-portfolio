@@ -341,3 +341,8 @@ System 59, Depth 47, Contact 47.
 - Depth HTML panel: capstone name, one-liner, stack and "Repository on GitHub"; on phones
   the two stack lines are screen-reader-only so the 3D panel stays clear.
 - Sheet: `docs/screens/round3-capstone.jpg`.
+
+## Part D — Mock screens
+- `cardFace.drawPlaceholder`: tones mixed 45% towards the background, 5 soft blobs (was 18),
+  softer highlights. Only a fallback now (Bliggit and the capstone have real media, the
+  other jobs live scenes). `mix()` returns hex so mixes chain.
