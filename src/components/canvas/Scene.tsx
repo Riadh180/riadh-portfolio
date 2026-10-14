@@ -97,7 +97,7 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
         <Tagline clock={clock} reducedMotion={reducedMotion} journey={journey} />
       </Drift>
       <FormMoment journey={journey} simSize={simSize} clock={clock} />
-      <Trails journey={journey} />
+      <Trails journey={journey} clock={clock} />
       <WorkPlace journey={journey} clock={clock} />
       <SystemPlace
         journey={journey}

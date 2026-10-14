@@ -33,3 +33,17 @@ materials, Contact warm moment), 3 (light on glass, `5c13529`).
 - FPS (prod, Retina): hero 58.4, statement 59.6, Work 60.2, System 60.2, Depth 60.2,
   Contact 60.2.
 - Sheet: `docs/screens/polish-5-atmosphere.jpg`.
+
+## Step 3 — Transitions as events
+- `journey/ParticleWall.tsx`: a dense, clumpy, tilted disc of dust (18k motes, rejection-
+  sampled against cloudy noise) across the path at each transition; it builds as the
+  camera nears, peaks as it flies through, and sweeps across the frame as a diagonal.
+  One colour per transition: violet (→ Work, y −26), blue (→ System, −47.5), emerald
+  (→ Depth, −65), ember/warm (→ Contact, −94). The statement keeps its slab.
+- The chip trail after the last card toned down (4200 → 1500 motes, brightness 2.2 → 1.1).
+- FPS (prod, Retina) at places: hero 58.4, statement 59.6, Work 59.2, System 60.2, Depth
+  60.2, Contact 60.2. During nav flights (1.5s windows): approach 51, Work 48, System 54,
+  Depth 60, Contact 58; the same without the walls (51/49/55/60/59), so the walls cost < 1
+  fps. **Open:** the dips arriving at Statement and Work predate this run (likely first-use
+  shader compiles and Work's mass); see the performance pass.
+- Sheet: `docs/screens/polish-6-transitions.jpg`.

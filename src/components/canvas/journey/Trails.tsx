@@ -1,8 +1,11 @@
 import { useMemo } from 'react'
+import type { Color } from 'three'
 import { sceneColors } from '@/styles/scene'
 import { SURFACE } from '../depth/DepthWorld'
 import { DESCENT } from './descent'
 import { DustTrail } from './DustTrail'
+import { ParticleWall } from './ParticleWall'
+import type { SceneClock } from '../useSceneClock'
 import { DEPTH, type JourneyState, PLACES, SYSTEM, WORK } from './path'
 
 /** 0..1 inside [from, to] of a leg, with soft ends. */
@@ -17,11 +20,17 @@ function band(value: number, from: number, to: number, soft = 0.1) {
  * the wireframe down to the spine; the spine's chips down to the skills graph; the data
  * branch down to the water; embers down into Contact's warm light.
  */
-export function Trails({ journey }: { journey: JourneyState }) {
+export function Trails({ journey, clock }: { journey: JourneyState; clock: SceneClock }) {
   const colors = useMemo(
     () => ({
       descent: [sceneColors.teal, sceneColors.violet, sceneColors.glow] as const,
       chips: [sceneColors.pink, sceneColors.violet, sceneColors.teal] as const,
+      walls: {
+        work: [sceneColors.violet, sceneColors.pink, sceneColors.glow],
+        system: [sceneColors.blue, sceneColors.violet, sceneColors.teal],
+        depth: [sceneColors.emerald, sceneColors.teal, sceneColors.glow],
+        contact: [sceneColors.ember, sceneColors.warm, sceneColors.pink],
+      } satisfies Record<string, [Color, Color, Color]>,
       data: [sceneColors.emerald, sceneColors.teal, sceneColors.glow] as const,
       embers: [sceneColors.ember, sceneColors.warm, sceneColors.pink] as const,
     }),
@@ -30,6 +39,29 @@ export function Trails({ journey }: { journey: JourneyState }) {
   const workBottom = PLACES.work - 12
   return (
     <>
+      {/* The walls: one per transition, each in its own colour (the statement has its slab). */}
+      <ParticleWall clock={clock} y={-26} tilt={[0.06, 0.2]} colors={colors.walls.work} seed={1} />
+      <ParticleWall
+        clock={clock}
+        y={-47.5}
+        tilt={[-0.05, -0.22]}
+        colors={colors.walls.system}
+        seed={2}
+      />
+      <ParticleWall
+        clock={clock}
+        y={-65}
+        tilt={[0.05, 0.18]}
+        colors={colors.walls.depth}
+        seed={3}
+      />
+      <ParticleWall
+        clock={clock}
+        y={-94}
+        tilt={[-0.06, -0.2]}
+        colors={colors.walls.contact}
+        seed={4}
+      />
       <DustTrail
         top={(PLACES.statement + PLACES.work) / 2}
         bottom={PLACES.work + 2.5}
@@ -48,9 +80,9 @@ export function Trails({ journey }: { journey: JourneyState }) {
         toX={SYSTEM.x}
         width={1.1}
         depth={1.6}
-        count={4200}
+        count={1500}
         colors={[...colors.chips]}
-        brightness={2.2}
+        brightness={1.1}
         amount={() => band(journey.toSystem, 0.02, 0.95, 0.12)}
       />
       <DustTrail
