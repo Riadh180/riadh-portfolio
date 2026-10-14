@@ -1,11 +1,11 @@
 import { create } from 'zustand'
 
-export type Place = 'hero' | 'statement' | 'work' | 'system'
+export type Place = 'hero' | 'statement' | 'work' | 'system' | 'depth' | 'contact'
 
 /**
  * Where the visitor is on the camera path, shared by the page (HTML) and the 3D scene.
  * `progress` runs 0 (hero) → 1 (statement) → 2 (arriving at Work) → 3 (end of Work) → 4
- * (System), from
+ * (System) → 5 (Depth) → 6 (Contact) → 7 (looped back to the hero's view), from
  * the smoothed scroll position. The scene reads it every frame without re-rendering; the
  * HTML subscribes to `place`, which flips with some hysteresis so a small scroll back
  * doesn't flicker. `jump` (registered by the smooth scroll) moves the page to a progress.
@@ -21,13 +21,18 @@ type Journey = {
 }
 
 /** Where each place begins on the way down (and, minus HYSTERESIS, ends on the way up). */
-const ENTER = { statement: 0.6, work: 1.7, system: 3.6 }
+const ENTER = { statement: 0.6, work: 1.7, system: 3.6, depth: 4.6, contact: 5.6 }
+/** Past this, the loop has turned the view back into the hero's. */
+const LOOPED = 6.6
 const HYSTERESIS = 0.2
 
 function placeAt(progress: number, current: Place): Place {
   const down = (from: number) => progress >= from
   const up = (from: number) => progress >= from - HYSTERESIS
   const keep = (place: Place, enter: number) => (current === place ? up(enter) : down(enter))
+  if (progress >= LOOPED) return 'hero'
+  if (keep('contact', ENTER.contact)) return 'contact'
+  if (keep('depth', ENTER.depth)) return 'depth'
   if (keep('system', ENTER.system)) return 'system'
   if (keep('work', ENTER.work)) return 'work'
   if (keep('statement', ENTER.statement)) return 'statement'
@@ -48,3 +53,19 @@ export const useJourney = create<Journey>()((set, get) => ({
   jump: () => {},
   setJump: (jump) => set({ jump }),
 }))
+
+/**
+ * Whether a place's HTML shows: by progress, a little inside its arrival and before the
+ * camera leaves, so nothing lingers over the transitions between places.
+ */
+export const SHOWN: Record<'work' | 'system' | 'depth' | 'contact', [number, number]> = {
+  work: [1.75, 3.12],
+  system: [3.75, 4.2],
+  depth: [4.75, 5.2],
+  contact: [5.75, 6.35],
+}
+
+export function isShown(progress: number, place: keyof typeof SHOWN) {
+  const [from, to] = SHOWN[place]
+  return progress >= from && progress < to
+}

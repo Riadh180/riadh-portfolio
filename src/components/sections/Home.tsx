@@ -1,9 +1,9 @@
 import { Approach } from '@/components/sections/Approach'
+import { ContactSection } from '@/components/sections/ContactSection'
+import { DepthSection } from '@/components/sections/DepthSection'
 import { Hero } from '@/components/sections/Hero'
-import { SectionShell } from '@/components/sections/SectionShell'
 import { SystemSection } from '@/components/sections/SystemSection'
 import { WorkSection } from '@/components/work/WorkSection'
-import { profile } from '@/content/site'
 
 /** The whole page, one place after another down the camera path. */
 export function Home({ work = null }: { work?: string | null }) {
@@ -16,12 +16,11 @@ export function Home({ work = null }: { work?: string | null }) {
       <div aria-hidden className="h-[150svh]" />
       <WorkSection initial={work} />
       <SystemSection />
-      <SectionShell id="depth" title="Depth" />
-      <SectionShell id="contact" title="Let’s talk">
-        <a href={`mailto:${profile.email}`} className="self-start ui text-violet hover:text-text">
-          → {profile.email}
-        </a>
-      </SectionShell>
+      <DepthSection />
+      <ContactSection />
+      {/* The visual loop: scroll room for the camera to pull back until the view is the
+          hero's, then the page returns to the top. Not part of the page's content. */}
+      <div id="loop" aria-hidden className="h-[110svh]" />
     </main>
   )
 }

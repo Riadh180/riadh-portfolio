@@ -3,7 +3,9 @@ import { useState } from 'react'
 import { useJourney } from '@/stores/journey'
 import type { GlassLook } from './hero/glassLook'
 import { sceneColors, sceneConfig } from '@/styles/scene'
-import { Backdrop } from './Backdrop'
+import { Backdrop, warmth } from './Backdrop'
+import { DepthBackdrop } from './depth/DepthBackdrop'
+import { DepthPlace } from './depth/DepthPlace'
 import { CameraRig } from './CameraRig'
 import { Emblem } from './hero/Emblem'
 import { DustSheet } from './journey/DustSheet'
@@ -63,9 +65,20 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
     <>
       <primitive attach="background" object={sceneColors.bg} />
       {/* The warm moment is the hero's: gone within the first third of the descent. */}
-      <HeroLighting look={look} clock={clock} calm={() => Math.min(1, journey.toWork * 3)} />
+      <HeroLighting
+        look={look}
+        clock={clock}
+        calm={() => Math.min(1, journey.toWork * 3)}
+        warmHold={() => warmth(journey)}
+      />
       <CameraRig pointer={pointer} journey={journey} enabled={!reducedMotion} />
       <Backdrop journey={journey} />
+      <DepthBackdrop
+        opacity={() => {
+          const ease = (x: number) => (1 - Math.cos(Math.PI * x)) / 2
+          return ease(journey.toDepth) * (1 - ease(journey.toContact))
+        }}
+      />
       <Emblem
         look={look}
         pointer={pointer}
@@ -86,13 +99,15 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
         pointer={pointer}
         reducedMotion={reducedMotion}
       />
+      <DepthPlace journey={journey} clock={clock} />
       <ParticleField
         simSize={simSize}
         clock={clock}
         pointer={pointer}
         timeScale={timeScale}
         cursorStrength={reducedMotion ? 0 : 1}
-        resting={() => journey.toWork > 0.95}
+        // Paused below the hero's world; back for the loop, which becomes the hero again.
+        resting={() => journey.toWork > 0.95 && journey.loop < 0.4}
       />
       {/* At Work: no multisampling (heavy mass, capped DPR; see quality.ts). */}
       <Effects reducedMotion={reducedMotion} antialias={!atWork} />

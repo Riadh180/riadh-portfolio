@@ -30,5 +30,6 @@ void main() {
   color += uGlow * web * (0.06 + window * 0.85);
   // Distance haze: far parts of the surface sink into the deep colour.
   float far = smoothstep(5.0, 24.0, length(vWorld.xz - uCameraPosition.xz));
-  gl_FragColor = vec4(mix(color * uIntensity, uFog, far), 1.0);
+  // Fades out into whatever lies behind it (no horizon line).
+  gl_FragColor = vec4(mix(color * uIntensity, uFog, far * 0.6), 1.0 - far);
 }

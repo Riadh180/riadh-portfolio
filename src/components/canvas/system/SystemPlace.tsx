@@ -26,7 +26,7 @@ export function SystemPlace({ journey, clock, look, pointer, reducedMotion }: Pr
   useFrame(() => {
     const g = group.current
     if (!g) return
-    g.visible = journey.toSystem > 0.02
+    g.visible = journey.toSystem > 0.02 && journey.toDepth < 0.9
     g.position.set(column ? 0 : SYSTEM.x, PLACES.system, 0)
   })
 

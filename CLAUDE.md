@@ -284,9 +284,13 @@ These are now **places along the camera path** in one world:
   phone screen layout), then scatters as the spine comes into view. Complexity becomes a
   polished product, and the dark gap is filled.
 - `02 Work` — Experience: glass sculpture (the spine) + glass job cards with metrics
-- `03 System` — Skills graph
-- `04 Depth` — Data Engineering, my extra edge ("beneath the interface")
-- `05 Contact` — Let's talk
+- `03 System` — Skills graph round The Core; below it, the camera follows the data branch
+  down through a water surface into **Depth** (Data Engineering, my extra edge, "beneath
+  the interface"), one place with two beats. Depth's focal object: the capstone project as
+  a glass panel the data roots converge into, inside a glass data lattice.
+- `04 Contact` — Let's talk: the warm accent, The Core rising out of the dark (closer than
+  on the hero), email, LinkedIn, GitHub, CV; then the world loops visually back to the
+  hero (the HTML page ends normally at Contact for keyboard and screen readers).
 
 ### Hero
 Riadh Souissi — Senior React / React Native Developer
@@ -320,8 +324,10 @@ the interface. Languages: English, German, French, Arabic. Based in Essen, Germa
 ### Data Engineering — my extra edge (one section only)
 Framing: "I understand the data behind the interface" — a developer who can talk to data
 teams, design better APIs and build data-heavy UIs with confidence. Not a career switch.
-Data Engineering Programme, neue fische / SPICED (720 hrs, 2026): Python, SQL, Spark,
-Kafka, Airflow, dbt, Docker, AWS (S3, Glue, Redshift, Lambda). Capstone project.
+Data Engineering Programme, neue fische / SPICED, 04/2026–08/2026: 720 hrs / 960 lessons,
+certified, incl. AWS Certified Data Engineer – Associate exam prep. Python, SQL, Spark,
+Kafka, Airflow, dbt, Docker, AWS (S3, Glue, Redshift, Lambda). Capstone project (name,
+description and link to come; cover at public/work/capstone/cover.webp).
 
 ### Skills — show as a living system, not a list
 A graph with **React / TypeScript at the center**. Branches around it:

@@ -57,6 +57,11 @@ function nearestEdge(angle: number) {
   return best
 }
 
+const smooth01 = (x: number) => {
+  const t = Math.min(1, Math.max(0, x))
+  return t * t * (3 - 2 * t)
+}
+
 /** Resting angle: slightly off face-on so the bands catch the light while it dwells. */
 const REST = { x: 0.14, y: -0.25 }
 
@@ -124,8 +129,12 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
 
     tilt.current.x += (tiltX - tilt.current.x) * ease
     tilt.current.y += (tiltY - tilt.current.y) * ease
+    // At Contact The Core rises out of the dark (from ~30% into the leg) and spins again,
+    // posed exactly as on the hero, so the loop back to the hero is seamless.
+    const contact = journey && !anchored ? smooth01((journey.toContact - 0.3) / 0.7) : 0
     // Travels with the objects' slower settle, so it trails the camera down the path.
-    const travel = journey ? journey.objects * journey.objects * (3 - 2 * journey.objects) : 0
+    const objects = journey ? journey.objects : 0
+    const travel = objects * objects * (3 - 2 * objects) * (1 - contact)
 
     // The idle turn is continuous, never damped: highlights slide along the bands as it
     // turns. It winds down as The Core leaves for the statement.
@@ -140,7 +149,7 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
 
     const g = group.current
     // Out of sight down at Work (and no transmission pass for it there).
-    g.visible = anchored ? true : !journey || journey.toWork < 0.85
+    g.visible = anchored ? true : !journey || journey.toWork < 0.85 || contact > 0.001
     const heroTiltX = REST.x + tilt.current.x + Math.sin(t * 0.3) * 0.05
     g.rotation.x = heroTiltX + (tilt.current.x * 0.4 - heroTiltX) * travel
     g.rotation.y = heroTurn + (heldTurn - heroTurn) * travel
@@ -148,6 +157,7 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     // Narrow screens: stay over the (narrower) tagline.
     g.position.x *= Math.min(1, size.width / size.height / 1.6)
     g.position.y += Math.sin(t * 0.5) * emblem.float
+    if (contact > 0) g.position.y += PLACES.contact - (1 - contact) * 3.5
     // Portrait screens see a narrower slice of the world: keep the emblem's share of width.
     const portrait = Math.min(1, Math.max(0.55, (size.width / size.height) * 0.9))
     g.scale.setScalar(emblem.scale * portrait * (1 + (STATEMENT.scale - 1) * travel))
@@ -166,7 +176,7 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     // Order 'YXZ': three applies the negated angles in this order, which makes it the exact
     // inverse of the emblem's own XYZ rotation (with 'XYZ' the tilt flips sign once turned).
     // Down at Work the light stays put (its look was tuned unrotated).
-    const away = journey ? 1 - (1 - Math.cos(Math.PI * journey.toWork)) / 2 : 1
+    const away = journey ? Math.max(1 - smooth01(journey.toWork), contact) : 1
     if (!anchored)
       scene.environmentRotation.set(
         g.rotation.x * look.follow * away,

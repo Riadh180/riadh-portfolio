@@ -34,9 +34,9 @@ import { COLUMN_SPACING, ORBIT_SPACING, orbitPose } from './layout'
 import { ChipCluster } from './Pebbles'
 
 /** Big, like the reference: the nearest card fills ~45% of the screen width. */
-const CARD = { width: 2.4, height: 1.5, radius: 0.2 }
+export const CARD = { width: 2.4, height: 1.5, radius: 0.2 }
 /** One heavy glass block: thick, with a wide bevel that catches the light along its edges. */
-const BLOCK = { depth: 0.1, bevel: 0.06 }
+export const BLOCK = { depth: 0.1, bevel: 0.06 }
 
 /**
  * Where the cards sit. `orbit` (desktop): a descending helix round the spine, facing out.
@@ -70,7 +70,7 @@ function home(i: number, layout: CardLayout, target: Home) {
 }
 
 /** The card body: one thick rounded glass block with a wide, smooth bevel all round. */
-function createBlock() {
+export function createBlock() {
   const geometry = new ExtrudeGeometry(roundedRectShape(CARD.width, CARD.height, CARD.radius), {
     depth: BLOCK.depth,
     bevelEnabled: true,
@@ -88,7 +88,7 @@ function createBlock() {
  * lit along its bevelled edges, with The Core's thin-film rainbow and a sparkle where the
  * key light hits a corner. No transmission (six refractive cards would halve the FPS).
  */
-function createBlockGlass() {
+export function createBlockGlass() {
   const material = new MeshPhysicalMaterial({
     color: new Color(0, 0, 0),
     metalness: 0.6,
@@ -128,7 +128,7 @@ function createBlockGlass() {
 }
 
 /** The screen's outline: the block's front face, rounded like it, with 0..1 UVs. */
-function createScreenGeometry() {
+export function createScreenGeometry() {
   const geometry = new ShapeGeometry(roundedRectShape(CARD.width, CARD.height, CARD.radius), 16)
   const position = geometry.getAttribute('position')
   const uv = geometry.getAttribute('uv')
@@ -139,7 +139,7 @@ function createScreenGeometry() {
 }
 
 /** The frosted screen: sits on the block's flat front face (inside the bevel). */
-function createScreenMaterial(face: CardFace, seed: number) {
+export function createScreenMaterial(face: CardFace, seed: number) {
   return new ShaderMaterial({
     vertexShader: frostVertex,
     fragmentShader: `${noise}\n${dissolve}\n${frostFragment}`,

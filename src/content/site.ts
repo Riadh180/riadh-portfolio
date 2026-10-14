@@ -25,8 +25,9 @@ export const sections = [
   { id: 'approach', index: '01', label: 'Approach' },
   { id: 'work', index: '02', label: 'Work' },
   { id: 'system', index: '03', label: 'System' },
-  { id: 'depth', index: '04', label: 'Depth' },
-  { id: 'contact', index: '05', label: 'Contact' },
+  /** Depth lives inside System: the camera follows the data branch down into it. */
+  { id: 'depth', index: '03', label: 'Depth' },
+  { id: 'contact', index: '04', label: 'Contact' },
 ] as const
 
 export type SectionId = (typeof sections)[number]['id']
@@ -167,8 +168,9 @@ export const skillGraph: { core: Skill; branches: SkillBranch[] } = {
         { name: 'Cypress', usedAt: ['kuehne-nagel'] },
         { name: 'Jest', usedAt: ['eon'] },
         { name: 'React Testing Library', usedAt: ['eon'] },
-        { name: 'Sentry', usedAt: [] },
-        { name: 'CI/CD', usedAt: [] },
+        { name: 'Sentry', usedAt: ['bliggit'] },
+        { name: 'CI/CD', usedAt: ['bliggit'], note: 'GitLab CI/CD + EAS' },
+        { name: 'Robot Framework', usedAt: ['eon'] },
       ],
     },
     {
@@ -183,7 +185,7 @@ export const skillGraph: { core: Skill; branches: SkillBranch[] } = {
         { name: 'Three.js', usedAt: ['freelance'] },
         { name: 'WebGL / GLSL', usedAt: ['freelance'] },
         { name: 'GSAP', usedAt: ['freelance'] },
-        { name: 'Motion', usedAt: [] },
+        { name: 'Motion', usedAt: [], note: 'Framer Motion' },
       ],
     },
     {
@@ -193,7 +195,7 @@ export const skillGraph: { core: Skill; branches: SkillBranch[] } = {
       skills: ['Python', 'SQL', 'Spark', 'Kafka', 'Airflow', 'dbt', 'AWS'].map((name) => ({
         name,
         usedAt: [],
-        note: 'Data Engineering Programme (neue fische / SPICED, 2026)',
+        note: 'Data Engineering Programme (neue fische / SPICED, 04–08/2026)',
       })),
     },
   ],
@@ -203,7 +205,9 @@ export const skillGraph: { core: Skill; branches: SkillBranch[] } = {
 export const depth = {
   title: 'Beneath the interface',
   lead: 'I understand the data behind the interface: I design better APIs with it, talk to data teams in their language, and build data-heavy UIs with confidence.',
-  programme: 'Data Engineering Programme · neue fische / SPICED · 720 hours · 2026',
+  programme: 'Data Engineering Programme · neue fische / SPICED · 04/2026–08/2026',
+  details:
+    '720 hours / 960 lessons · certified · incl. AWS Certified Data Engineer – Associate exam prep',
   stack: [
     'Python',
     'SQL',
@@ -216,3 +220,18 @@ export const depth = {
   ],
   capstone: 'Capstone project',
 } as const
+
+/**
+ * The capstone project, shown as Depth's glass panel. Placeholder until the name,
+ * description and link arrive; its cover goes in public/work/capstone/.
+ */
+export const capstone: Job = {
+  slug: 'capstone',
+  company: 'Capstone project',
+  role: 'Data Engineering Programme',
+  years: '2026',
+  metric: 'Data engineering',
+  summary: 'Capstone project',
+  stack: [],
+  filters: ['Data'],
+}

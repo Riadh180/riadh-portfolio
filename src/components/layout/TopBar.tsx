@@ -23,7 +23,7 @@ export function TopBar() {
             Work
           </a>
           <SignalBars />
-          <a href={`mailto:${profile.email}`} className={link}>
+          <a href="#contact" className={link}>
             Contact
           </a>
           <span aria-hidden className="h-3 w-px bg-line" />

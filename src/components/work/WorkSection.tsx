@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { jobs, sections } from '@/content/site'
-import { useJourney } from '@/stores/journey'
+import { isShown, useJourney } from '@/stores/journey'
 import { useWork } from '@/stores/work'
 import { useWorkUrl } from './useWorkUrl'
 import { WorkDetail } from './WorkDetail'
@@ -45,7 +45,8 @@ function useCurrentCard() {
  */
 export function WorkSection({ initial = null }: { initial?: string | null }) {
   useWorkUrl(siteRoutes)
-  const here = useJourney((state) => state.place === 'work')
+  // By progress: the list fades as soon as the camera leaves Work (no lingering).
+  const here = useJourney((state) => isShown(state.progress, 'work'))
   const opened = useWork((state) => state.opened)
   const routed = useWork((state) => state.routed)
   const shown = routed ? opened : initial

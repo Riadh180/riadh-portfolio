@@ -74,21 +74,27 @@ type Props = {
   clock: SceneClock
   /** 0..1: how far below the hero the camera is; the warm moment belongs to the hero. */
   calm?: () => number
+  /** 0..1: a held warm light (Contact's warm accent), on top of the hero's pulse. */
+  warmHold?: () => number
 }
 
-export function HeroLighting({ look, clock, calm }: Props) {
+export function HeroLighting({ look, clock, calm, warmHold }: Props) {
   const meshes = useRef<(Mesh | null)[]>([])
   const horizonMesh = useRef<Mesh>(null)
   const [live, setLive] = useState(false)
   const liveRef = useRef(false)
   const lastKey = useRef('')
+  const lastWarm = useRef(0)
   const settleUntil = useRef(0)
   const horizon = useMemo(() => createHorizon(), [])
   useEffect(() => () => horizon.geometry.dispose(), [horizon])
 
   useFrame(() => {
     const { warmPeriod, warmth } = sceneConfig.light
-    const warm = warmPulse(clock.time, warmPeriod) * warmth * (1 - (calm?.() ?? 0))
+    const warm = Math.max(
+      warmPulse(clock.time, warmPeriod) * warmth * (1 - (calm?.() ?? 0)),
+      (warmHold?.() ?? 0) * warmth,
+    )
 
     const key = lightKey(look)
     if (key !== lastKey.current) {
@@ -102,7 +108,12 @@ export function HeroLighting({ look, clock, calm }: Props) {
       )
     }
 
-    const active = warm > 0.002 || clock.time < settleUntil.current
+    // Re-render the cube map only while the warmth is changing (the hero's pulse, Contact's
+    // rise): a held warmth is baked once, like the cool light.
+    const changing = Math.abs(warm - lastWarm.current) > 0.0005
+    lastWarm.current = warm
+    if (changing) settleUntil.current = clock.time + SETTLE
+    const active = changing || clock.time < settleUntil.current
     if (active !== liveRef.current) {
       liveRef.current = active
       setLive(active)

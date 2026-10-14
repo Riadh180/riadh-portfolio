@@ -41,6 +41,8 @@ export class CardFace {
   constructor(
     private job: Job,
     private index: number,
+    /** The small line at the top; by default "NN / years". */
+    private kicker?: string,
   ) {
     this.canvas.width = this.background.width = WIDTH
     this.canvas.height = this.background.height = HEIGHT
@@ -86,7 +88,11 @@ export class CardFace {
     c.textBaseline = 'alphabetic'
     c.font = `30px ${this.family}`
     c.fillStyle = palette.muted
-    c.fillText(`${String(this.index + 1).padStart(2, '0')} / ${this.job.years}`, left, 84)
+    c.fillText(
+      this.kicker ?? `${String(this.index + 1).padStart(2, '0')} / ${this.job.years}`,
+      left,
+      84,
+    )
 
     c.font = `34px ${this.family}`
     c.fillStyle = palette.text

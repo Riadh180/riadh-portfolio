@@ -6,7 +6,10 @@ export function DepthPanel() {
     <div className="flex max-w-[46ch] flex-col gap-3">
       <h2 className="ui-lg text-base text-text sm:text-lg">{depth.title}</h2>
       <p className="copy text-sm leading-relaxed text-text/90">{depth.lead}</p>
-      <p className="ui text-xs text-text/70">{depth.programme}</p>
+      <p className="ui text-xs text-text/70">
+        {depth.programme}
+        <span className="block">{depth.details}</span>
+      </p>
       <ul
         className="flex flex-wrap gap-x-3 gap-y-1 ui text-xs text-emerald"
         aria-label="Data stack"

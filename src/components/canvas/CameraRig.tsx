@@ -20,13 +20,13 @@ export function CameraRig({ pointer, journey, enabled }: Props) {
     const p = parallax.current
     p.x += ((enabled ? (pointer.uv.x - 0.5) * 0.9 : 0) - p.x) * ease
     p.y += ((enabled ? (pointer.uv.y - 0.5) * 0.5 : 0) - p.y) * ease
-    const { angle, distance, y } = journey
+    const { angle, distance, y, lookUp } = journey
     camera.position.set(
       Math.sin(angle) * distance + p.x * Math.cos(angle),
       y + p.y,
       Math.cos(angle) * distance - p.x * Math.sin(angle),
     )
-    camera.lookAt(0, y, 0)
+    camera.lookAt(0, y + lookUp, 0)
     FIELD.center.y = y
   }, -3)
 

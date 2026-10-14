@@ -29,6 +29,11 @@ function measure(): Anchors {
     [end('work'), 3],
     [top('system'), 4],
     [end('system'), 4],
+    [top('depth'), 5],
+    [end('depth'), 5],
+    [top('contact'), 6],
+    [end('contact'), 6],
+    [end('loop'), 7],
   ]
   // Keep it strictly increasing in scroll, whatever the layout.
   for (let i = 1; i < points.length; i++) {
@@ -73,8 +78,23 @@ function stopsAt(anchors: Anchors) {
     toScroll(1 + (DESCENT.holdFrom + DESCENT.holdTo) / 2, anchors),
     ...cards.map((progress) => toScroll(progress, anchors)),
     toScroll(4, anchors),
+    toScroll(5, anchors),
+    toScroll(6, anchors),
   ]
 }
+
+/** Where each section link lands on the path (progress). */
+const PLACE_PROGRESS: Record<string, number> = {
+  signal: 0,
+  approach: 1,
+  work: 2,
+  system: 4,
+  depth: 5,
+  contact: 6,
+}
+
+/** Section links fly the camera there quickly, whatever the distance (seconds). */
+const FLIGHT = { min: 1, max: 1.8 }
 
 /** Waits this long after the scroll has settled before easing to a stop (ms). */
 const SETTLE = 140
@@ -131,7 +151,8 @@ export function SmoothScroll() {
       }
     }
 
-    const lenis = new Lenis({ autoRaf: true, lerp: 0.1, anchors: true })
+    // Anchors are handled below (fast flights), not by Lenis.
+    const lenis = new Lenis({ autoRaf: true, lerp: 0.1 })
     let input: 'gesture' | 'key' = 'gesture'
     let direction = 1
     let snapping = false
@@ -151,6 +172,13 @@ export function SmoothScroll() {
     }
     lenis.on('scroll', () => {
       update(lenis.scroll)
+      // The end of the visual loop: the view is now the hero's, so return to the top
+      // without a visible cut (wheel / touch only: keyboard users simply reach the end).
+      if (input === 'gesture' && lenis.scroll >= toScroll(6.97, anchors)) {
+        snapping = false
+        lenis.scrollTo(0, { immediate: true, force: true })
+        return
+      }
       if (lenis.direction) direction = lenis.direction
       window.clearTimeout(timer)
       timer = window.setTimeout(settle, SETTLE)
@@ -164,6 +192,32 @@ export function SmoothScroll() {
         input = 'key'
       }
     }
+    // Section links (nav pill, name, list): a quick flight to the place, ~1–2s.
+    const onClick = (event: MouseEvent) => {
+      const anchor = (event.target as Element | null)?.closest?.('a[href^="#"]')
+      const id = anchor?.getAttribute('href')?.slice(1)
+      const progress = id ? PLACE_PROGRESS[id] : undefined
+      if (progress === undefined) return
+      event.preventDefault()
+      const target = toScroll(progress, anchors)
+      const distance = Math.abs(target - lenis.scroll) / window.innerHeight
+      snapping = true
+      lenis.scrollTo(target, {
+        duration: Math.min(FLIGHT.max, FLIGHT.min + distance * 0.06),
+        easing: (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2),
+        force: true,
+        onComplete: () => {
+          snapping = false
+          // Keyboard users land on the section's content.
+          document
+            .getElementById(id ?? '')
+            ?.querySelector<HTMLElement>('a, button')
+            ?.focus({ preventScroll: true })
+        },
+      })
+      window.history.replaceState(null, '', `#${id}`)
+    }
+    document.addEventListener('click', onClick)
     window.addEventListener('wheel', onGesture, { passive: true })
     window.addEventListener('touchstart', onGesture, { passive: true })
     window.addEventListener('keydown', onKey)
@@ -172,6 +226,7 @@ export function SmoothScroll() {
     return () => {
       resize.disconnect()
       window.clearTimeout(timer)
+      document.removeEventListener('click', onClick)
       window.removeEventListener('wheel', onGesture)
       window.removeEventListener('touchstart', onGesture)
       window.removeEventListener('keydown', onKey)

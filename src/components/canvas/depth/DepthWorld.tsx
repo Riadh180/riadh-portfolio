@@ -22,6 +22,7 @@ import edgeVertex from '../shaders/skillEdge.vert'
 import waterFragment from '../shaders/water.frag'
 import waterVertex from '../shaders/water.vert'
 import type { SceneClock } from '../useSceneClock'
+import { CapstonePanel, PANEL } from './CapstonePanel'
 
 /** The surface's height above the place's origin. */
 export const SURFACE = 4
@@ -47,9 +48,21 @@ function createRoots(count: number) {
     // Right of the text column.
     const x0 = (r / (count - 1)) * 9 - 1.5 + gaussian() * 0.4
     const z0 = -2 - Math.random() * 6
+    // From the surface down, wandering, converging on the capstone panel's edges.
+    const end = PANEL.clone().add(
+      new Vector3((r / (count - 1) - 0.5) * 2.2, 0.75, (Math.random() - 0.5) * 0.3),
+    )
+    const start = new Vector3(x0, SURFACE, z0)
     const points = Array.from({ length: 6 }, (_, k) => {
-      const y = SURFACE - k * 1.9
-      return new Vector3(x0 + Math.sin(k * 1.3 + r) * 0.8 * (k / 5), y, z0 + Math.cos(k + r) * 0.7)
+      const t = k / 5
+      return start
+        .clone()
+        .lerp(end, t * t * (3 - 2 * t))
+        .add(
+          new Vector3(Math.sin(k * 1.3 + r) * 0.7, 0, Math.cos(k + r) * 0.5).multiplyScalar(
+            Math.sin(Math.PI * t),
+          ),
+        )
     })
     const curve = new CatmullRomCurve3(points)
     const steps = 60
@@ -81,15 +94,15 @@ function createPlankton() {
 
 type Props = {
   clock: SceneClock
-  /** The colour of the water's darkness (the background behind it). */
+  /** The colour the far water fades into. */
   fog: Color
 }
 
 /**
  * Depth: beneath the interface. Seen from under a water surface: a bright window of light
  * overhead with a shifting web of caustics, soft shafts of light falling into the deep,
- * slow plankton, and glowing data roots hanging down from the surface with signal pulses
- * running down them, the data beneath what the user sees.
+ * slow plankton, and glowing data roots running down from the surface with signal pulses,
+ * converging on the focal object: the capstone project's glass panel in its data lattice.
  */
 export function DepthWorld({ clock, fog }: Props) {
   const group = useRef<Group>(null)
@@ -166,6 +179,7 @@ export function DepthWorld({ clock, fog }: Props) {
           fragmentShader={`${noise}\n${waterFragment}`}
           uniforms={uniforms.water}
           side={2}
+          transparent
           depthWrite={false}
         />
       </mesh>
@@ -196,6 +210,7 @@ export function DepthWorld({ clock, fog }: Props) {
           depthWrite={false}
         />
       </lineSegments>
+      <CapstonePanel clock={clock} />
       <points geometry={planktonGeometry} frustumCulled={false}>
         <shaderMaterial
           ref={plankton}

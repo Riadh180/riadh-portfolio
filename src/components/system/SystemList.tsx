@@ -64,7 +64,10 @@ export function SystemList() {
         ))}
       </ul>
       <p className="min-h-[1.65em] ui text-violet" aria-live="polite">
-        {current && (usedAt(current) ? `Used at → ${usedAt(current)}` : (current.note ?? ''))}
+        {current &&
+          [usedAt(current) && `Used at → ${usedAt(current)}`, current.note]
+            .filter(Boolean)
+            .join(' · ')}
         {current === skillGraph.core && ' · every role'}
       </p>
     </nav>

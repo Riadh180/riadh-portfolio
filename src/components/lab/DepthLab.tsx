@@ -5,15 +5,11 @@
 
 import { StatsGl } from '@react-three/drei'
 import { Canvas, useFrame } from '@react-three/fiber'
+import { DEPTH_BOTTOM, DEPTH_FOG, DepthBackdrop } from '@/components/canvas/depth/DepthBackdrop'
 import { DepthWorld } from '@/components/canvas/depth/DepthWorld'
 import { Effects } from '@/components/canvas/post/Effects'
 import { useSceneClock } from '@/components/canvas/useSceneClock'
 import { DepthPanel } from '@/components/depth/DepthPanel'
-import { sceneColors } from '@/styles/scene'
-import { Color } from 'three'
-
-/** The water's own darkness: a deep teal, not the world's charcoal. */
-const deep = new Color().copy(sceneColors.teal).multiplyScalar(0.05).lerp(sceneColors.bg, 0.6)
 
 function LabCamera() {
   useFrame(({ camera, clock }) => {
@@ -28,9 +24,10 @@ function DepthScene() {
   const clock = useSceneClock(1)
   return (
     <>
-      <primitive attach="background" object={deep} />
+      <primitive attach="background" object={DEPTH_BOTTOM} />
+      <DepthBackdrop opacity={() => 1} />
       <LabCamera />
-      <DepthWorld clock={clock} fog={deep} />
+      <DepthWorld clock={clock} fog={DEPTH_FOG} />
       <Effects reducedMotion={false} />
     </>
   )
