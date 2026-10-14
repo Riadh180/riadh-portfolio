@@ -23,14 +23,15 @@ export function createOilMaterial() {
     iridescence: 1,
     iridescenceIOR: 2.1,
     iridescenceThicknessRange: [380, 820],
-    envMapIntensity: 0.95,
+    // Lifted towards the studio-lit concept (docs/spine-concept.png).
+    envMapIntensity: 1.35,
     flatShading: true,
   })
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uOilTeal = { value: sceneColors.teal }
     shader.uniforms.uOilGreen = { value: sceneColors.emerald }
     shader.uniforms.uOilViolet = { value: sceneColors.violet }
-    shader.uniforms.uOilGlow = { value: 0.45 }
+    shader.uniforms.uOilGlow = { value: 0.7 }
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',

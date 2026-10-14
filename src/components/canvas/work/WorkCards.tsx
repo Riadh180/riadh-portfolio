@@ -333,7 +333,7 @@ function shown(object: { visible: boolean; parent: unknown } | null): boolean {
 }
 
 /** How far a card's own tilt goes (radians): a few degrees, never flat. */
-const TILT = { drift: 0.06, cursor: 0.07 }
+const TILT = { drift: 0.06, cursor: 0.12 }
 
 function Card({ job, index, layout, clock, block, plane, dust, screen, face, live }: CardProps) {
   const group = useRef<Group>(null)
@@ -479,7 +479,7 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     const u = screenMaterial.uniforms
     u.uBlur!.value = Math.max(side * (1 - s.focus), s.others * 0.8, s.outside * 0.6)
     u.uBrightness!.value =
-      (1 - side * 0.2 + 0.2 * s.focus) * (1 - s.others * 0.65) * (1 - s.outside * 0.6)
+      (0.88 - side * 0.2 + 0.22 * s.focus) * (1 - s.others * 0.65) * (1 - s.outside * 0.6)
     u.uDissolve!.value = Math.min(1, s.dissolve)
     // The thick glass block breaks away with the frost.
     glass.opacity = 1 - Math.min(1, s.dissolve * 1.2)

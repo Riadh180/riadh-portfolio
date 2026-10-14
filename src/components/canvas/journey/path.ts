@@ -34,10 +34,10 @@ export const SYSTEM = { x: 2.2, distance: 14, phoneDistance: 30, phoneShift: 0.2
  */
 export const WORK = {
   cards: 6,
-  /** Shifted right of centre, leaving the left column to the list and details. */
-  x: 1.1,
+  /** The column stands in the centre: the camera orbits it. */
+  x: 0,
   /** Camera distance from the spine, and how far it turns round it on the way down. */
-  distance: 6.6,
+  distance: 7.2,
 }
 
 /**
@@ -175,7 +175,9 @@ export class JourneyState {
       this.y = workY + (PLACES.system - workY) * down
       this.distance = workDistance + (systemDistance - workDistance) * down
       const swing = Math.sin(this.time * 0.07) * SYSTEM.swing
-      this.angle = this.angle * (1 - down) + (column ? 0 : swing) * down
+      // Leave the orbit to the nearest whole turn, so the camera doesn't unwind.
+      const turns = Math.round(this.angle / (Math.PI * 2)) * Math.PI * 2
+      this.angle = this.angle * (1 - down) + (column ? 0 : swing + turns) * down
     }
     this.lookUp = 0
     this.screenShift = column ? SYSTEM.phoneShift * smooth(toSystem) : 0
@@ -186,7 +188,9 @@ export class JourneyState {
       const depthDistance = column ? DEPTH.phoneDistance : DEPTH.distance
       this.y = PLACES.system + (PLACES.depth - DEPTH.below - PLACES.system) * down
       this.distance += (depthDistance - this.distance) * down
-      this.angle *= 1 - down
+      // Settle on the nearest whole turn (same view as 0, no unwinding).
+      const whole = Math.round(this.angle / (Math.PI * 2)) * Math.PI * 2
+      this.angle = whole + (this.angle - whole) * (1 - down)
       // Phones look lower, so the panel sits in the upper half, above the text.
       this.lookUp = (column ? -0.9 : DEPTH.lookUp) * down
       this.screenShift *= 1 - down

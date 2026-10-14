@@ -1,11 +1,33 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import { BufferGeometry, Float32BufferAttribute, type ShaderMaterial } from 'three'
+import {
+  InstancedBufferAttribute,
+  InstancedBufferGeometry,
+  OctahedronGeometry,
+  DoubleSide,
+  type ShaderMaterial,
+} from 'three'
 import { sceneColors, sceneConfig } from '@/styles/scene'
 import { gaussian } from '../journey/motes'
-import fragmentShader from '../shaders/pebbles.frag'
-import vertexShader from '../shaders/pebbles.vert'
+import fragmentShader from '../shaders/glassChip.frag'
+import vertexShader from '../shaders/glassChip.vert'
 import type { SceneClock } from '../useSceneClock'
+
+/** The shard every chip is drawn from: a flat-shaded octahedron (8 facets). */
+const SHARD = new OctahedronGeometry(1, 0)
+
+/** Instanced chips: one shard, per-chip orbit / cloud / seed (positions come from the shader). */
+function chipGeometry(orbit: Float32Array, cloud: Float32Array, seed: Float32Array, count: number) {
+  const geometry = new InstancedBufferGeometry()
+  geometry.index = SHARD.index
+  geometry.setAttribute('position', SHARD.getAttribute('position'))
+  geometry.setAttribute('normal', SHARD.getAttribute('normal'))
+  geometry.setAttribute('orbit', new InstancedBufferAttribute(orbit, 4))
+  geometry.setAttribute('cloud', new InstancedBufferAttribute(cloud, 4))
+  geometry.setAttribute('seed', new InstancedBufferAttribute(seed, 4))
+  geometry.instanceCount = count
+  return geometry
+}
 
 /** A few small clouds off the column: [x, y, z, spread]. */
 const CLOUDS: [number, number, number, number][] = [
@@ -34,7 +56,8 @@ function createPebbles() {
   for (let i = 0; i < count; i++) {
     const inCloud = Math.random() < clouds
     const cluster = clusters[i % clusters.length] ?? { y: 0, angle: 0 }
-    const loose = Math.random() < 0.25
+    // Almost nothing in empty space: few loose chips.
+    const loose = Math.random() < 0.06
     const reach = inCloud
       ? 0.2 + Math.random() * 0.8
       : 0.85 + Math.abs(gaussian()) * (1 - hug) * 0.6
@@ -51,13 +74,7 @@ function createPebbles() {
     cloud.set(inCloud ? home : [0, 0, 0, 0], i * 4)
     seed.set([Math.random(), Math.random(), Math.random(), Math.random()], i * 4)
   }
-  const geometry = new BufferGeometry()
-  // Positions come from the shader; three still needs a position attribute to draw.
-  geometry.setAttribute('position', new Float32BufferAttribute(new Float32Array(count * 3), 3))
-  geometry.setAttribute('orbit', new Float32BufferAttribute(orbit, 4))
-  geometry.setAttribute('cloud', new Float32BufferAttribute(cloud, 4))
-  geometry.setAttribute('seed', new Float32BufferAttribute(seed, 4))
-  return geometry
+  return chipGeometry(orbit, cloud, seed, count)
 }
 
 function createUniforms(focusDistance: number) {
@@ -68,21 +85,15 @@ function createUniforms(focusDistance: number) {
     uRadius: { value: 1 },
     uRise: { value: 0 },
     uHalfHeight: { value: sceneConfig.spine.height / 2 },
-    uAperture: { value: 4 },
     uFocusDistance: { value: focusDistance },
-    uViewportHeight: { value: 1 },
+    uFilm: { value: [sceneColors.glow, sceneColors.violet, sceneColors.pink] },
     uPalette: {
       value: [sceneColors.pink, sceneColors.violet, sceneColors.teal, sceneColors.emerald],
     },
   }
 }
 
-function updateUniforms(
-  material: ShaderMaterial | null,
-  clock: SceneClock,
-  viewportHeight: number,
-  scale = 1,
-) {
+function updateUniforms(material: ShaderMaterial | null, clock: SceneClock, scale = 1) {
   if (!material) return
   const { size, brightness, radius, rise } = sceneConfig.pebbles
   const u = material.uniforms
@@ -91,16 +102,15 @@ function updateUniforms(
   u.uBrightness!.value = brightness
   u.uRadius!.value = radius
   u.uRise!.value = rise
-  u.uViewportHeight!.value = viewportHeight
 }
 
 type Props = { clock: SceneClock; focusDistance: number }
 
 /**
- * Small chips of tinted glass (pink, violet, teal, emerald), slightly see-through and
- * glinting, packed in dense clusters round the spine and in a few small clouds, rising
- * slowly; a rare few large ones blur out of focus. Nothing far from the column. All motion
- * runs in the vertex shader, so thousands cost only a draw call.
+ * Small shards of tinted glass (pink, violet, teal, emerald), tumbling and glinting,
+ * packed in dense clusters round the spine and in a few small clouds, rising slowly; a
+ * rare few large ones. Nothing far from the column. Instanced, moved in the vertex
+ * shader: thousands cost one draw call.
  */
 export function Pebbles({ clock, focusDistance }: Props) {
   const material = useRef<ShaderMaterial>(null)
@@ -108,12 +118,10 @@ export function Pebbles({ clock, focusDistance }: Props) {
   const uniforms = useMemo(() => createUniforms(focusDistance), [focusDistance])
   useEffect(() => () => geometry.dispose(), [geometry])
 
-  useFrame(({ size, viewport }) =>
-    updateUniforms(material.current, clock, size.height * viewport.dpr),
-  )
+  useFrame(() => updateUniforms(material.current, clock))
 
   return (
-    <points geometry={geometry} frustumCulled={false}>
+    <mesh geometry={geometry} frustumCulled={false}>
       <shaderMaterial
         ref={material}
         vertexShader={vertexShader}
@@ -121,8 +129,9 @@ export function Pebbles({ clock, focusDistance }: Props) {
         uniforms={uniforms}
         transparent
         depthWrite={false}
+        side={DoubleSide}
       />
-    </points>
+    </mesh>
   )
 }
 
@@ -149,11 +158,9 @@ export function ChipCluster({
   const geometry = useMemo(() => createCluster(clusters, count), [clusters, count])
   const uniforms = useMemo(() => createUniforms(focusDistance), [focusDistance])
   useEffect(() => () => geometry.dispose(), [geometry])
-  useFrame((state) =>
-    updateUniforms(material.current, clock, state.size.height * state.viewport.dpr, size),
-  )
+  useFrame(() => updateUniforms(material.current, clock, size))
   return (
-    <points geometry={geometry} frustumCulled={false}>
+    <mesh geometry={geometry} frustumCulled={false}>
       <shaderMaterial
         ref={material}
         vertexShader={vertexShader}
@@ -161,8 +168,9 @@ export function ChipCluster({
         uniforms={uniforms}
         transparent
         depthWrite={false}
+        side={DoubleSide}
       />
-    </points>
+    </mesh>
   )
 }
 
@@ -183,10 +191,5 @@ function createCluster(clusters: [number, number, number, number][], count: numb
     cloud.set(clusters[i % clusters.length] ?? [0, 0, 0, 0.1], i * 4)
     seed.set([Math.random() * 0.7, Math.random(), Math.random(), Math.random()], i * 4)
   }
-  const geometry = new BufferGeometry()
-  geometry.setAttribute('position', new Float32BufferAttribute(new Float32Array(count * 3), 3))
-  geometry.setAttribute('orbit', new Float32BufferAttribute(orbit, 4))
-  geometry.setAttribute('cloud', new Float32BufferAttribute(cloud, 4))
-  geometry.setAttribute('seed', new Float32BufferAttribute(seed, 4))
-  return geometry
+  return chipGeometry(orbit, cloud, seed, count)
 }

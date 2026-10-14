@@ -19,6 +19,6 @@ void main() {
   float rim = exp(-abs(d) / 0.05);
   float t = vUv.x * 0.7 + vUv.y * 0.3;
   vec3 hue = t < 0.5 ? mix(uColors[0], uColors[1], t * 2.0) : mix(uColors[1], uColors[2], t * 2.0 - 1.0);
-  vec3 color = hue * (fill * 0.09 + rim * 0.32) + vec3(1.0) * rim * fill * 0.04;
+  vec3 color = hue * (fill * 0.2 + rim * 0.7) + vec3(1.0) * rim * fill * 0.08;
   gl_FragColor = vec4(color * uOpacity, 1.0);
 }

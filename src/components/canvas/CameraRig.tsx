@@ -39,6 +39,10 @@ export function CameraRig({ pointer, journey, enabled }: Props) {
     } else {
       s.y.step(journey.y, dt)
       s.distance.step(journey.distance, dt)
+      // The orbit is periodic: when the target jumps by whole turns (the loop back to the
+      // top), carry the spring along instead of spinning the camera round.
+      const turns = Math.round((journey.angle - s.angle.value) / (Math.PI * 2))
+      if (turns !== 0) s.angle.value += turns * Math.PI * 2
       s.angle.step(journey.angle, dt)
       s.lookUp.step(journey.lookUp, dt)
     }

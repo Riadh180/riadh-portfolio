@@ -295,3 +295,27 @@ System 59, Depth 47, Contact 47.
 - The spine reads darker than the studio-lit concept; a real model would help most
   (`public/models/spine-raw.glb` → clean / decimate / Draco + KTX2 → `spine.glb`).
 - Fill in the Impressum and Datenschutz texts.
+
+---
+# Round 3 (2026-10-14)
+
+## Part A — Work scene rework
+- Orbit: `SPIRAL` 0.5 → 5/6 turn; the camera circles the column (one card every 60°) while
+  descending; scroll drives the angle. `WORK.x` 0 (column centred, orbit centre),
+  `WORK.distance` 6.6 → 7.2. Cards sit at radius ~2.6, ±0.72–0.78 rad beside the camera's
+  line (alternating right / left), so the focused card is ~40% of the frame and overlaps
+  the column only at its edge; the neighbours appear smaller round the column. Leaving
+  Work (to System / Depth) eases to the nearest whole turn; `CameraRig` unwraps whole
+  turns (no spin on the loop back to the top).
+- Card glass restored: milk 0.36, saturation ×1.2, rest brightness 0.88, cursor tilt 0.12.
+- Chips are now instanced faceted glass shards (`shaders/glassChip.*`, `Pebbles.tsx`:
+  octahedron stretched per chip, tumbling, dark tinted body, bright rims, iridescent
+  glints); soft and translucent near the lens and far away, crisp at the focus. Loose
+  chips in empty space 25% → 6%.
+- Lens shards bigger (1.3 × 0.85) and ~2× brighter. Spine: envMapIntensity 0.95 → 1.35,
+  oil glow 0.45 → 0.7.
+- FPS (prod, Retina): AMD full — hero 60.2, statement 58.8, Work 60.3 at every card,
+  System/Depth/Contact 60.2. HD 630 lite — hero 57.6, statement 56.2, Work 60.3,
+  System/Depth/Contact 60.2.
+- Strip: `docs/screens/round3-work-orbit.jpg` (seg_44 above, our Work scroll below).
+- Open: the lens shards still read faintly; the spine is still darker than the concept.

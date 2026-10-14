@@ -8,7 +8,7 @@ import vertexShader from '../shaders/glow.vert'
 import { SPIRAL } from './layout'
 
 /** Panel size (world units) and how far in front of the camera's stop it hangs. */
-const SHARD = { width: 0.95, height: 0.6, ahead: 1.25 }
+const SHARD = { width: 1.3, height: 0.85, ahead: 1.35 }
 
 /**
  * Out-of-focus glass panels right in front of the lens (the reference's foreground
