@@ -2,6 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useRef } from 'react'
 import { Color, type Group } from 'three'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { useWork } from '@/stores/work'
 import { sceneColors } from '@/styles/scene'
 import { SceneWord } from '../journey/SceneWord'
 import { PLACES, WORK, type JourneyState } from '../journey/path'
@@ -46,7 +47,12 @@ export function WorkPlace({ journey, clock }: Props) {
         color={INK}
         clock={clock}
         reducedMotion={reducedMotion}
-        amount={() => ease((journey.toWork - 0.55) / 0.45) * (1 - ease(journey.inWork / 0.12))}
+        // Gone while a card is open: its details take the left side.
+        amount={() =>
+          useWork.getState().opened
+            ? 0
+            : ease((journey.toWork - 0.55) / 0.45) * (1 - ease(journey.inWork / 0.12))
+        }
       />
       <WorkHaze journey={journey} />
       <Drift journey={journey} seed={11} weight={1.4}>

@@ -75,6 +75,10 @@ export type Job = {
   location: string
   /** Extra detail lines for the CV (from the CV itself). */
   details?: string[]
+  /** More images shown in the opened card's details (public/work/<slug>/…). */
+  gallery?: { src: string; alt: string }[]
+  /** A public repository, linked from the details. */
+  repo?: string
   /** The card title: company · metric. */
   metric: string
   summary: string
@@ -97,6 +101,7 @@ export const jobs: Job[] = [
       'Crash monitoring with Sentry (>99% crash-free sessions)',
       'CI/CD with GitLab and EAS: weekly releases, zero rollbacks',
     ],
+    gallery: [{ src: '/work/bliggit/login.png', alt: 'Treuewelt Wuppertal app: login screen' }],
     metric: '>99% crash-free',
     summary:
       'Led the Treuewelt Wuppertal app (React Native / Expo) for Stadtsparkasse Wuppertal, used by tens of thousands of bank customers. Apple Pay & PayPal integration, ~30% faster screen loads, >99% crash-free sessions, weekly releases with zero rollbacks.',

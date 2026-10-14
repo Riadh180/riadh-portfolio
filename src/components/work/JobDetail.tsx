@@ -31,6 +31,33 @@ export function JobDetail({ job, headingId, as: Heading = 'h2' }: Props) {
           <li key={item}>{item}</li>
         ))}
       </ul>
+      {job.gallery && (
+        <div className="flex gap-3">
+          {job.gallery.map((image) => (
+            // Real screenshots, small: a phone screen at the side of the details.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={image.src}
+              src={image.src}
+              alt={image.alt}
+              width={120}
+              height={260}
+              loading="lazy"
+              className="h-auto w-[7.5rem] rounded-[1rem] border border-line"
+            />
+          ))}
+        </div>
+      )}
+      {job.repo && (
+        <a
+          href={job.repo}
+          target="_blank"
+          rel="noopener"
+          className="self-start ui text-xs text-violet transition-colors duration-(--motion-duration-ui) hover:text-text"
+        >
+          Repository on GitHub ↗
+        </a>
+      )}
     </>
   )
 }

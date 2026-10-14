@@ -319,3 +319,14 @@ System 59, Depth 47, Contact 47.
   System/Depth/Contact 60.2.
 - Strip: `docs/screens/round3-work-orbit.jpg` (seg_44 above, our Work scroll below).
 - Open: the lens shards still read faintly; the spine is still darker than the concept.
+
+## Part B — Bliggit cover
+- The two files' contents were swapped (cover.png showed the login, login.png the home
+  screen): renamed so `cover.png` = home screen, `login.png` = login (both are WebP data
+  with a .png name; browsers handle it).
+- `cardFace.setCover`: portrait screenshots are drawn whole, right of centre, over a
+  blurred, darkened enlargement of themselves (landscape covers still cover-fit).
+- `Job.gallery` (+ `JobDetail`): the login screen shows in the opened card's details;
+  `Job.repo` adds a "Repository on GitHub" link (used by the capstone).
+- The 3D "SELECTED WORK" hides while a card is open (it sat behind the details).
+- Sheet: `docs/screens/round3-bliggit.jpg`.

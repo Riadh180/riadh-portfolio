@@ -74,11 +74,30 @@ export class CardFace {
       this.hasCover = true
       const context = this.background.getContext('2d')
       if (!context) return
-      // Cover-fit, then darken so the title always reads.
-      const scale = Math.max(WIDTH / image.width, HEIGHT / image.height)
-      const w = image.width * scale
-      const h = image.height * scale
-      context.drawImage(image, (WIDTH - w) / 2, (HEIGHT - h) / 2, w, h)
+      if (image.width < image.height) {
+        // A phone screenshot: shown whole, right of centre, over a blurred, darkened
+        // enlargement of itself (so the card stays full and its colours carry).
+        const fill = Math.max(WIDTH / image.width, HEIGHT / image.height)
+        context.filter = 'blur(28px) brightness(0.55) saturate(1.2)'
+        context.drawImage(
+          image,
+          (WIDTH - image.width * fill) / 2,
+          (HEIGHT - image.height * fill) / 2,
+          image.width * fill,
+          image.height * fill,
+        )
+        context.filter = 'none'
+        const fit = (HEIGHT * 0.92) / image.height
+        const w = image.width * fit
+        context.drawImage(image, WIDTH * 0.68 - w / 2, HEIGHT * 0.04, w, image.height * fit)
+      } else {
+        // Cover-fit.
+        const scale = Math.max(WIDTH / image.width, HEIGHT / image.height)
+        const w = image.width * scale
+        const h = image.height * scale
+        context.drawImage(image, (WIDTH - w) / 2, (HEIGHT - h) / 2, w, h)
+      }
+      // Darken the title's corner so it always reads.
       this.shade(context)
       this.image.needsUpdate = true
     }
