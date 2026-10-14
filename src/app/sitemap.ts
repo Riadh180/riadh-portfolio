@@ -7,6 +7,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: url('/'), changeFrequency: 'monthly', priority: 1 },
     { url: url('/cv'), changeFrequency: 'monthly', priority: 0.8 },
+    { url: url('/impressum'), changeFrequency: 'yearly', priority: 0.1 },
+    { url: url('/datenschutz'), changeFrequency: 'yearly', priority: 0.1 },
     ...jobs.map((job) => ({
       url: url(`/work/${job.slug}`),
       changeFrequency: 'yearly' as const,

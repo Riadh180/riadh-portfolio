@@ -279,3 +279,19 @@ System 59, Depth 47, Contact 47.
   extra skill rows, the B.Sc. under Education. No phone number.
 - PDF regenerated (`node scripts/cv-pdf.mjs <url>`): `public/cv/riadh-souissi-cv.pdf`.
 - Print view: `docs/screens/round2-cv.png`.
+
+## Part "Legal pages"
+- `/impressum` and `/datenschutz` (`components/legal/LegalPage.tsx`, static world + mono
+  text), placeholders for the full texts. Datenschutz states: no cookies, no tracking or
+  analytics, self-hosted fonts, no third-party content; two technical settings in local /
+  session storage (sound on/off, intro shown); hosting by Vercel, which processes server
+  logs. Linked bottom right in Contact; both in the sitemap.
+- Lighthouse (desktop, prod): Performance 91, Accessibility 100, Best Practices 100,
+  SEO 100. Contact FPS 60.1.
+- Sheet: `docs/screens/round2-legal.jpg`.
+
+## Next session
+- Lens shards (Work) read too faintly: raise opacity / size or bring them closer.
+- The spine reads darker than the studio-lit concept; a real model would help most
+  (`public/models/spine-raw.glb` → clean / decimate / Draco + KTX2 → `spine.glb`).
+- Fill in the Impressum and Datenschutz texts.

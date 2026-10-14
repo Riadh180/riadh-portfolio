@@ -7,6 +7,8 @@ import { profile, sections } from '@/content/site'
 import { isShown, useJourney } from '@/stores/journey'
 
 const section = sections.find((s) => s.id === 'contact')
+const legal =
+  'transition-colors duration-(--motion-duration-ui) hover:text-text focus-visible:text-text'
 const link =
   'ui text-sm text-text transition-colors duration-(--motion-duration-ui) hover:text-warm focus-visible:text-warm'
 
@@ -61,9 +63,20 @@ export function ContactSection() {
               </li>
             </ul>
           </div>
-          <p className="ui text-muted">
-            {profile.location} · {profile.availability}
-          </p>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+            <p className="ui text-muted">
+              {profile.location} · {profile.availability}
+            </p>
+            <p className="ui text-muted">
+              <a href="/impressum" className={legal}>
+                Impressum
+              </a>
+              {' · '}
+              <a href="/datenschutz" className={legal}>
+                Datenschutz
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </section>
