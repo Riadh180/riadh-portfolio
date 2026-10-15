@@ -51,11 +51,10 @@ export function SystemPlace({ journey, clock, look, pointer, reducedMotion }: Pr
         reducedMotion={reducedMotion}
         fit={0.95}
         billboard
-        // Phones: the graph is small and its labels sit over the word: fainter there.
+        // Phones: the graph fills the screen, no clear space above it: the HTML heading
+        // carries the word there.
         amount={() =>
-          (column ? 0.45 : 1) *
-          ease((journey.toSystem - 0.6) / 0.4) *
-          (1 - ease(journey.toDepth * 2.5))
+          column ? 0 : ease((journey.toSystem - 0.6) / 0.4) * (1 - ease(journey.toDepth * 2.5))
         }
       />
       <Drift journey={journey} seed={23} weight={1}>

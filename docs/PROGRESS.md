@@ -458,3 +458,30 @@ System 59, Depth 47, Contact 47.
 - `ui/EmailButton.tsx`: magnetic, warm glow on hover / focus, a ring of light ripples out
   on click (none with reduced motion).
 - Sheet: `docs/screens/final-contact.jpg`.
+
+## Loop, phones, final checks
+- Loop: The Core grows back to hero size only after Contact's text has gone (it covered
+  "LET'S TALK" at the start of the loop). Wheel and trackpad runs: no blank frame, no jump.
+- Phones (390×844, 375×667): every place checked; System's 3D word is off on phones (no
+  clear space above the graph; the HTML heading carries it).
+- Perf guards: hero DPR cap 1.4 → 1.25 (The Core at 1.5× costs more refractive pixels);
+  lite tier: dust-slab smoke field updates every other frame, one smoke layer; tagline
+  dust 2500 motes.
+- FPS (prod, Retina, measured after arriving by nav): AMD full — hero 59.8, statement
+  60.2, Work 60.2 (60.3 every card), System/Depth/Contact 60.2. HD 630 lite — hero 56.6,
+  statement 56.6, Work 60.2, System/Depth/Contact 60.2.
+- Lighthouse (desktop, prod): Performance 92, Accessibility 100, Best Practices 100, SEO 100.
+- Full-journey strip: `docs/screens/final-journey.jpg`.
+
+## Next session (open)
+- **HD 630, idle hero:** with no interaction the hero swings 38–58 fps over time on the
+  integrated GPU (lite tier engaged, DPR 1). The previous round's build does the same, so
+  it isn't new; measured after a nav flight it holds 56–59. Investigate (The Core's
+  face-on angle vs edge-on? GPU power state?) with a frame-time trace.
+- System: the transition where Work's chips gather into the first nodes was not built;
+  hover propagation "in sequence" + the "used at" scramble not reworked.
+- Wireframe: no extra glow pulse / shatter into Work's chip clouds (its own scatter kept).
+- Craft: cursor labels ("EXPLORE"), sound tone shift between places and a glass "tink" on
+  open were not done in this pass.
+- Depth: a real dashboard screenshot (`public/work/capstone/dashboard.png`) would read
+  better than the medal flow.
