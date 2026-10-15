@@ -84,6 +84,8 @@ export type Job = {
   gallery?: { src: string; alt: string }[]
   /** A public repository, linked from the details. */
   repo?: string
+  /** A part of the cover to show (source pixels: x, y, width, height). */
+  coverCrop?: [number, number, number, number]
   /** A cover with its own file name in public/work/<slug>/ (otherwise cover.webp|jpg|png). */
   coverFile?: string
   /** The card title: company · metric. */
@@ -327,5 +329,7 @@ export const capstone: Job = {
   ],
   repo: 'https://github.com/Riadh180/data-engineering-capstone',
   coverFile: 'aiwork_medallion.svg',
+  // Only the clean bronze → silver → gold flow (and the dashboard), larger.
+  coverCrop: [190, 175, 1100, 300],
   filters: ['Data'],
 }

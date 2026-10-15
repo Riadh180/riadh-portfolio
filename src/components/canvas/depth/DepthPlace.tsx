@@ -8,6 +8,7 @@ import { DEPTH, type JourneyState, PLACES } from '../journey/path'
 import { Drift } from '../motion/Drift'
 import type { SceneClock } from '../useSceneClock'
 import { DEPTH_FOG } from './DepthBackdrop'
+import { DepthBubbles } from './DepthBubbles'
 import { DepthWorld } from './DepthWorld'
 
 type Props = { journey: JourneyState; clock: SceneClock }
@@ -54,6 +55,7 @@ export function DepthPlace({ journey, clock }: Props) {
       />
       <Drift journey={journey} seed={37} weight={1.2}>
         <DepthWorld clock={clock} fog={DEPTH_FOG} />
+        <DepthBubbles clock={clock} />
       </Drift>
     </group>
   )

@@ -440,3 +440,13 @@ System 59, Depth 47, Contact 47.
   from Work (chips gathering into the first nodes) was not built (the blue particle wall
   carries it).
 - Sheet: `docs/screens/final-system.jpg`.
+
+## Depth — "calm curiosity"
+- Capstone media: only the bronze → silver → gold flow of the medallion, larger
+  (`Job.coverCrop`, drawn on the dark screen). No dashboard.png yet (drop it in
+  `public/work/capstone/` and set `coverFile` to use it).
+- Light shafts sway slowly (`shaft.vert`); `depth/DepthBubbles.tsx`: 70 ring-lit bubbles
+  rising and wobbling.
+- Dev note: `/assets.json` can be cached by the dev server (it showed the capstone cover
+  as null); the production build is right.
+- Sheet: `docs/screens/final-depth.jpg`.

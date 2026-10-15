@@ -80,9 +80,11 @@ export class CardFace {
         // A diagram: shown whole on the dark screen, never cropped.
         context.fillStyle = palette.bg
         context.fillRect(0, 0, WIDTH, HEIGHT)
-        const fit = Math.min(WIDTH / image.width, (HEIGHT * 0.86) / image.height)
-        const w = image.width * fit
-        context.drawImage(image, (WIDTH - w) / 2, HEIGHT * 0.02, w, image.height * fit)
+        const [sx, sy, sw, sh] = this.job.coverCrop ?? [0, 0, image.width, image.height]
+        const fit = Math.min((WIDTH * 0.94) / sw, (HEIGHT * 0.62) / sh)
+        const w = sw * fit
+        const h = sh * fit
+        context.drawImage(image, sx, sy, sw, sh, (WIDTH - w) / 2, HEIGHT * 0.06, w, h)
       } else if (image.width < image.height) {
         // A phone screenshot: shown whole, right of centre, over a blurred, darkened
         // enlargement of itself (so the card stays full and its colours carry).
