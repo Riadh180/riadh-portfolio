@@ -637,3 +637,12 @@ System 59, Depth 47, Contact 47.
   INTERFACE" (`SceneWord`) and the tagline (`Tagline`): one glitch as the text settles on
   arrival, then 0.2s every 8–12s (readable well over 95% of the time). The scramble-in on
   arrival (~1.2s) is kept as the reveal.
+
+## Part 7 — Small items
+- System: The Core at the centre faces the camera (gentle sway only).
+- Depth HTML: heading (small, muted: the 3D words carry it large), one sentence, "Capstone ·
+  AI × Work · GitHub ↗", and a `<details>` "Stack" line holding the programme, the data
+  stack, the capstone summary and stack (all still in the HTML).
+- Loop: Contact's text hides at progress 6.06 (was 6.2), before The Core rises through it.
+- After the Freelance card: the chip trail to System 1500 → 3200 grains, brighter.
+- Sheet: `docs/screens/round6-system-depth.jpg`.

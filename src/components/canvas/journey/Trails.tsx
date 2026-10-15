@@ -80,9 +80,9 @@ export function Trails({ journey, clock }: { journey: JourneyState; clock: Scene
         toX={SYSTEM.x}
         width={1.1}
         depth={1.6}
-        count={1500}
+        count={3200}
         colors={[...colors.chips]}
-        brightness={1.1}
+        brightness={1.6}
         amount={() => band(journey.toSystem, 0.02, 0.95, 0.12)}
       />
       <DustTrail

@@ -195,6 +195,8 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     if (anchored) {
       g.position.set(0, Math.sin(t * 0.5) * emblem.float, 0)
       g.scale.setScalar(anchored.scale)
+      // At System's centre it is the identity anchor: face-on, swaying only a little.
+      g.rotation.set(REST.x * 0.5 + Math.sin(t * 0.3) * 0.05, Math.sin(t * 0.25) * 0.22, 0)
     } else {
       // The preloader's reveal: The Core resolves out of the condensing dust, turning in.
       const reveal = reducedMotion ? revealed(0.6) : revealed(1.1, BURST * 0.55)
