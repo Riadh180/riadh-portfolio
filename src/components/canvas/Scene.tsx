@@ -12,6 +12,7 @@ import { Emblem } from './hero/Emblem'
 import { Drift } from './motion/Drift'
 import { DustSheet } from './journey/DustSheet'
 import { Atmosphere } from './journey/Atmosphere'
+import { ContactEmbers } from './journey/ContactEmbers'
 import { ContactGlow } from './journey/ContactGlow'
 import { FormMoment } from './journey/FormMoment'
 import { GoldCloud } from './journey/GoldCloud'
@@ -129,6 +130,7 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
         />
         <DepthPlace journey={journey} clock={clock} />
         <ContactGlow journey={journey} />
+        <ContactEmbers journey={journey} clock={clock} />
       </Deferred>
       <Soon>
         <Atmosphere journey={journey} clock={clock} />

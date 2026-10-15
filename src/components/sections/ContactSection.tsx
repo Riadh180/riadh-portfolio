@@ -1,7 +1,7 @@
 'use client'
 
 import { GlitchText } from '@/components/ui/GlitchText'
-import { Magnetic } from '@/components/ui/Magnetic'
+import { EmailButton } from '@/components/ui/EmailButton'
 import { Scramble } from '@/components/ui/Scramble'
 import { profile, sections } from '@/content/site'
 import { isShown, useJourney } from '@/stores/journey'
@@ -37,14 +37,7 @@ export function ContactSection() {
             <GlitchText text="Let’s talk" active={here} />
           </h2>
           <div className="flex flex-wrap items-center gap-x-8 gap-y-5">
-            <Magnetic>
-              <a
-                href={`mailto:${profile.email}`}
-                className="inline-flex items-center gap-3 rounded-full border border-warm/60 bg-warm/10 px-6 py-3.5 ui-lg text-text transition-colors duration-(--motion-duration-ui) hover:border-warm hover:bg-warm/20"
-              >
-                <span aria-hidden>→</span> <Scramble text={profile.email} />
-              </a>
-            </Magnetic>
+            <EmailButton email={profile.email} />
             <ul className="flex flex-wrap gap-x-6 gap-y-2">
               <li>
                 <a href={profile.linkedin} className={link} rel="me noopener" target="_blank">

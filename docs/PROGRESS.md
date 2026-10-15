@@ -450,3 +450,11 @@ System 59, Depth 47, Contact 47.
 - Dev note: `/assets.json` can be cached by the dev server (it showed the capstone cover
   as null); the production build is right.
 - Sheet: `docs/screens/final-depth.jpg`.
+
+## Contact — "warmth and arrival"
+- `Emblem`: at Contact The Core turns face-on to the visitor (eases back to its own turn
+  over the loop). `journey/ContactEmbers.tsx`: 40 warm embers rising round it with the
+  warm moment.
+- `ui/EmailButton.tsx`: magnetic, warm glow on hover / focus, a ring of light ripples out
+  on click (none with reduced motion).
+- Sheet: `docs/screens/final-contact.jpg`.

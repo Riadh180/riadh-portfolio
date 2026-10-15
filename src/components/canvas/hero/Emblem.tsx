@@ -164,6 +164,13 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     const heroTiltX = REST.x + tilt.current.x + Math.sin(t * 0.3) * 0.05
     g.rotation.x = heroTiltX + (tilt.current.x * 0.4 - heroTiltX) * travel
     g.rotation.y = heroTurn + (heldTurn - heroTurn) * travel
+    // Contact: The Core turns to face the visitor as the camera arrives (back to its own
+    // turn over the loop, so the hero is unchanged).
+    const greet = contact * (1 - smooth01(journey ? journey.loop * 1.5 : 0))
+    if (greet > 0) {
+      const faceOn = Math.round(g.rotation.y / Math.PI) * Math.PI + REST.y
+      g.rotation.y += (faceOn - g.rotation.y) * greet * 0.9
+    }
     g.position.lerpVectors(POSES.hero, POSES.statement, travel)
     g.position.y += statementLift(size.width, size.height) * travel
     // Narrow screens: stay over the (narrower) tagline.
