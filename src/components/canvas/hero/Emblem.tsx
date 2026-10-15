@@ -172,10 +172,17 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     if (contact > 0) g.position.y += PLACES.contact - (1 - contact) * 3.5
     // Portrait screens see a narrower slice of the world: keep the emblem's share of width.
     const portrait = Math.min(1, Math.max(0.55, (size.width / size.height) * 0.9))
+    // Leaving the statement: held edge-on, The Core follows the camera down a little and
+    // shrinks into a sliver of light instead of being cut off by the frame's top edge.
+    const leave = journey && !anchored ? smooth01(journey.toWork / 0.32) * (1 - contact) : 0
+    if (leave > 0) g.position.y += (journey!.y - PLACES.statement) * 0.8 * leave
     const loop = journey ? smooth01(journey.loop) : 0
     const heroScale = HERO - (HERO - 1) * contact * (1 - loop)
     g.scale.setScalar(
-      emblem.scale * portrait * (heroScale + (STATEMENT.scale - heroScale) * travel),
+      emblem.scale *
+        portrait *
+        (heroScale + (STATEMENT.scale - heroScale) * travel) *
+        (1 - leave * 0.94),
     )
     if (anchored) {
       g.position.set(0, Math.sin(t * 0.5) * emblem.float, 0)

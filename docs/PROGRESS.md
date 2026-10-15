@@ -405,3 +405,14 @@ System 59, Depth 47, Contact 47.
 - `hero/HeroAura.tsx`: a soft teal halo behind it breathing every ~6s, and 70 glass chips
   orbiting it at different depths (`ChipCluster`), hero only (and the loop's return).
 - Sheet: `docs/screens/final-hero.jpg`.
+
+## Statement exit + descent — "clarity → transformation"
+- `tagline.frag` `uExit`: as the camera leaves (toWork 0 → 0.3) each line breaks up in small
+  cells, top line first; `shaders/taglineDust.*` + `createDust` in `Tagline.tsx`: 5000
+  motes sampled from the tagline texture's own pixels, released with their line, falling
+  with the camera and drifting apart, fading as they reach the descent's dust.
+- `Emblem`: leaving the statement it follows the camera down (80%) and shrinks to 6% (a
+  small edge-on sliver of light) instead of being cut off by the top edge.
+- The dust leads straight into the wireframe (no dark frames). The wireframe's own
+  assemble / hold / scatter was kept.
+- Sheet: `docs/screens/final-statement-exit.jpg`.

@@ -1,8 +1,18 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AdditiveBlending, Color, type Mesh, type ShaderMaterial, type Texture } from 'three'
+import {
+  AdditiveBlending,
+  BufferGeometry,
+  Color,
+  Float32BufferAttribute,
+  type Mesh,
+  type ShaderMaterial,
+  type Texture,
+} from 'three'
 import { statementLines } from '@/content/site'
 import { useJourney } from '@/stores/journey'
+import dustFragment from '../shaders/taglineDust.frag'
+import dustVertex from '../shaders/taglineDust.vert'
 import fragmentShader from '../shaders/tagline.frag'
 import vertexShader from '../shaders/tagline.vert'
 import type { SceneClock } from '../useSceneClock'
@@ -34,6 +44,33 @@ const expoOut = (x: number) => (x >= 1 ? 1 : 1 - 2 ** (-10 * x))
 
 type Props = { clock: SceneClock; reducedMotion: boolean; journey: JourneyState }
 
+/** Dust motes sampled on the letters (from the tagline texture's own pixels). */
+function createDust({ texture, aspect }: { texture: Texture; aspect: number }) {
+  const canvas = texture.image as HTMLCanvasElement
+  const context = canvas.getContext('2d')
+  const positions: number[] = []
+  const rows: number[] = []
+  const seeds: number[] = []
+  if (context) {
+    const { width, height } = canvas
+    const data = context.getImageData(0, 0, width, height).data
+    const width3d = HEIGHT * aspect
+    for (let tries = 0; tries < 60000 && rows.length < 5000; tries++) {
+      const x = Math.floor(Math.random() * width)
+      const y = Math.floor(Math.random() * height)
+      if ((data[(y * width + x) * 4] ?? 0) < 128) continue
+      positions.push((x / width - 0.5) * width3d, (0.5 - y / height) * HEIGHT, 0)
+      rows.push(Math.min(2, Math.floor((y / height) * 3)))
+      seeds.push(Math.random(), Math.random(), Math.random())
+    }
+  }
+  const geometry = new BufferGeometry()
+  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
+  geometry.setAttribute('row', new Float32BufferAttribute(rows, 1))
+  geometry.setAttribute('seed', new Float32BufferAttribute(seeds, 3))
+  return geometry
+}
+
 /**
  * The statement tagline as large type in the world. It is drawn additively in the opaque
  * pass, so The Core's transmission sees it and bends it as the glass passes in front.
@@ -43,6 +80,18 @@ export function Tagline({ clock, reducedMotion, journey }: Props) {
   const material = useRef<ShaderMaterial>(null)
   const mesh = useRef<Mesh>(null)
   const [text, setText] = useState<{ texture: Texture; aspect: number } | null>(null)
+  const dustMaterial = useRef<ShaderMaterial>(null)
+  const dust = useMemo(() => (text ? createDust(text) : null), [text])
+  useEffect(() => () => dust?.dispose(), [dust])
+  const dustUniforms = useMemo(
+    () => ({
+      uExit: { value: 0 },
+      uFall: { value: 0 },
+      uSize: { value: 1 },
+      uColor: { value: INK },
+    }),
+    [],
+  )
   const state = useRef({
     shownAt: -1,
     reveal: [0, 0, 0],
@@ -72,6 +121,7 @@ export function Tagline({ clock, reducedMotion, journey }: Props) {
       uGlitchLine: { value: -1 },
       uGlitch: { value: 0 },
       uTime: { value: 0 },
+      uExit: { value: 0 },
       uColor: { value: INK },
     }),
     [],
@@ -130,6 +180,15 @@ export function Tagline({ clock, reducedMotion, journey }: Props) {
     u.uGlitchLine!.value = s.glitchLine
     u.uGlitch!.value = glitch
     u.uTime!.value = now
+    // Leaving the statement: the lines dissolve and fall as dust with the camera.
+    const exit = Math.min(1, Math.max(0, journey.toWork / 0.3))
+    u.uExit!.value = exit
+    const dust = dustMaterial.current
+    if (dust) {
+      dust.uniforms.uExit!.value = exit
+      dust.uniforms.uFall!.value = (CENTER_Y - journey.y) / mesh.current.scale.y
+      dust.uniforms.uSize!.value = 0.03 * size.height * viewport.dpr
+    }
   })
 
   if (!text) return null
@@ -137,6 +196,19 @@ export function Tagline({ clock, reducedMotion, journey }: Props) {
   return (
     <mesh ref={mesh}>
       <planeGeometry args={[HEIGHT * text.aspect, HEIGHT]} />
+      {dust && (
+        <points geometry={dust} frustumCulled={false}>
+          <shaderMaterial
+            ref={dustMaterial}
+            vertexShader={dustVertex}
+            fragmentShader={dustFragment}
+            uniforms={dustUniforms}
+            blending={AdditiveBlending}
+            transparent
+            depthWrite={false}
+          />
+        </points>
+      )}
       <shaderMaterial
         ref={material}
         vertexShader={vertexShader}

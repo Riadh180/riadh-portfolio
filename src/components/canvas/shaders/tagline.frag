@@ -6,6 +6,8 @@ uniform sampler2D uMap;
 uniform float uReveal[3];
 uniform float uGlitchLine;
 uniform float uGlitch;
+/** 0 → 1 as the camera leaves: each line dissolves into dust, top line first. */
+uniform float uExit;
 uniform float uTime;
 uniform vec3 uColor;
 
@@ -30,6 +32,9 @@ void main() {
   // they come up from below the line's baseline.
   float source = row - (1.0 - reveal);
   if (source < line) discard;
+  // Exit: the line breaks up in small cells (taglineDust.vert releases the same timing).
+  float lineExit = clamp((uExit * 1.6 - line * 0.3) / 0.6, 0.0, 1.0);
+  if (lineExit > 0.0 && hash(floor(vUv.x * 160.0) + floor(row * 14.0) * 157.0) < lineExit * 1.15) discard;
   vec2 uv = vec2(vUv.x, 1.0 - source / LINES);
 
   float glitch = abs(line - uGlitchLine) < 0.5 ? uGlitch : 0.0;
