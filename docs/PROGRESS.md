@@ -838,3 +838,63 @@ after load.
    halation and corner bleeds (no god rays).
 5. **Phones start static.** The 3D begins on the first touch (see deviations). Until then
    the static Core is beautiful, but nothing moves.
+
+---
+# Final round (autonomous)
+
+Branch `final-round` from tag `before-final` (6e1a45d). Nothing goes to `main`.
+
+## Plan
+**Measurement first (before any change).** Reference: `docs/reference/motion/Screen Recording
+2026-10-12.mov` (3334×1708, 24 fps, 20.6 Mb/s). ffmpeg isn't installed, so a static build is
+fetched into the session scratchpad (`ffmpeg-static`), not into the project.
+- `scripts/extract-frames.mjs`: Work segment at 4 fps, centre-cropped to 16:10 and scaled to
+  1440×900, then passed through the shared H.264 step → `docs/reference/work-frames/`.
+- `scripts/record-work.mjs`: production build, desktop full tier, 1440×900, DPR 1, a fixed
+  scripted wheel scroll through all six cards; frames at 4 fps plus each card's projected
+  corners; the frames go through the same H.264 step → `docs/reference/work-frames-ours/`.
+- `scripts/compare-frames.mjs`: 8% crop on every edge, cards masked (ours: projected corners;
+  reference: detected bright frosted regions, checked by eye, hand masks if unreliable), then
+  luminance / contrast / p5 / p95 / saturation / 12-bin hue / EMPTY AREA / SPARKLE →
+  `docs/screens/metrics-work.md` (baseline, stage 1, stage 2, final).
+- `scripts/sheet.mjs`: labelled image grids for every sheet.
+
+**Stage 1 — spine** (`work/spineGeometry.ts`, `work/oilMaterial.ts`, `work/spine.worker.ts`,
+`shaders/oil.glsl`, the spine block of `styles/scene.ts`; `work/WorkPlace.tsx` only for the
+phone column's width). Restore all of them from b27333c with `git checkout b27333c -- …`
+(Spine.tsx is identical in both commits), check build + types + Work in production, then:
+(a) finer facets (denser tessellation and a facet-normal field in the shader), (b) silhouette
+deformation of the restored mesh (0.7–1.3× width, slow twist, S-curve), blades shrunk into
+lumps, (c) darker indigo body, sharp facet highlights, grazing iridescence, (d) column longer
+than the frame / tips dissolving. Phones: column ~55–65% of the screen width.
+Sheet `docs/screens/spine-final.jpg`. Fallback paths as in the brief.
+
+**Stage 2 — air** (`work/Pebbles.tsx`, `shaders/glitter.*`, the Work haze in the backdrop
+shader / `Backdrop.tsx`): 18–24 bigger foam pockets wrapping the column (some in front, some
+behind, never on the focused card's face), a drifting violet-teal backlight haze behind the
+column (cheaper on lite), 2–3 pockets on phones. Sheet `docs/screens/work-air.jpg`.
+
+**Stage 3 — tune** spine material, pockets and haze only (max 3 passes) against the metrics;
+the sheet decides.
+
+**Gate:** FPS (both tiers), Lighthouse ×3 mobile/desktop, reduced motion, no-WebGL, phone
+number only on /impressum, console clean, `final-journey-6.jpg`, `work-vs-reference-2.jpg`.
+
+## LOCKED (unchanged this round)
+Card system (family grade, bevel line, frost without ghosts, title scrim, General Sans Light
+titles, Bliggit layout), phone Work card layout (one centred card, 86% width, bottom safe
+area), phone start on first interaction (first swipe also scrolls), mobile/desktop
+performance work, the tier system, hero, statement, tagline dust, wireframe, System, Depth,
+Contact, scramble/glitch rules, transitions, UI, content, SEO, legal pages, CV. Phone number
+only on /impressum.
+
+## Decisions I made
+- **Work segment = 26–51 s, not 44–60 s.** A 2 s contact sheet of 24–64 s shows Work begins
+  at ~26 s (first card, "Frontier"), seg_44 matches 44–51 s (hover on one card), and from
+  ~52 s a card is opened (no column, only the detail view). 26–51 s is the whole descent.
+- **Reference crop.** The recording is 1.95:1; it is centre-cropped to 16:10 (the same
+  vertical field as our 1440×900) before scaling, rather than squashed.
+- **Shared compression.** Both sides' 4 fps frames go through one identical step (libx264,
+  4 fps, ~0.8 Mb/s = the reference's bits per frame scaled to 1440×900), then are decoded
+  again. Our frames are screenshots at the 4 fps instants (headless capture can't hold
+  real-time video at 1440×900 with the GPU busy).

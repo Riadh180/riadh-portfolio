@@ -40,6 +40,7 @@
     "prettier-plugin-tailwindcss": "^0.8.1",
     "puppeteer-core": "^25.13.0",
     "raw-loader": "^4.0.2",
+    "sharp": "0.35.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

@@ -4,56 +4,59 @@ import noise from '../shaders/noise.glsl'
 import oilFragment from '../shaders/oil.glsl'
 
 /**
- * The spine's material: a near-black, glossy body that stays dark, with thin, sharp
- * streaks of oily colour (teal, green, violet) running across it, fine grain in the
- * normals and patchy roughness, so the light catches only edges, chips and the streaks.
- * Reflective only, no transmission: one cheap material for the whole mass.
+ * The spine's material: a gemstone. A deep indigo body, near-black in the carved hollows,
+ * a crust of small facets (a facet-normal field on top of the flat-shaded mesh), each with
+ * its own thin-film colour, that flash as sharp points of pink, violet, teal or green-gold
+ * when they turn towards the light, a film that strengthens at grazing angles and along a
+ * few oily streaks, and tiny glints twinkling inside. Reflective only, no transmission: one
+ * material, one draw call.
  *
- * The streaks and grain are added to three's physical shader (oil.glsl): the streaks set
- * where the thin film shows and how thick it is, so its colour comes from the film itself.
+ * The detail is added to three's physical shader (oil.glsl).
  */
 export function createOilMaterial() {
   const material = new MeshPhysicalMaterial({
-    // A hint of violet in the near-black body (Work's accent).
-    // Lighter, lilac (the reference column): a textured body under a soft purple sheen.
-    color: new Color().copy(sceneColors.violet).lerp(sceneColors.glass, 0.08).multiplyScalar(0.14),
-    // Wet, polished stone-glass: glossy body under a full clear coat.
-    metalness: 0.7,
-    roughness: 0.2,
-    clearcoat: 1,
+    // Deep indigo-violet: dark enough that the facets' highlights carry the form.
+    color: new Color().copy(sceneColors.violet).lerp(sceneColors.blue, 0.35).multiplyScalar(0.12),
+    metalness: 0.9,
+    roughness: 0.15,
+    clearcoat: 0.6,
     clearcoatRoughness: 0.06,
     iridescence: 1,
     iridescenceIOR: 2.1,
     iridescenceThicknessRange: [380, 820],
-    // Lifted towards the studio-lit concept (docs/spine-concept.png).
-    envMapIntensity: 1.35,
+    envMapIntensity: 1.6,
+    flatShading: true,
   })
   material.userData.time = { value: 0 }
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uOilTeal = { value: sceneColors.teal }
     shader.uniforms.uOilGreen = { value: sceneColors.emerald }
     shader.uniforms.uOilViolet = { value: sceneColors.violet }
-    shader.uniforms.uOilGlow = { value: 0.7 }
+    shader.uniforms.uOilPink = { value: sceneColors.pink }
+    shader.uniforms.uOilGold = { value: sceneColors.warm }
+    shader.uniforms.uOilGlow = { value: 0.8 }
     shader.uniforms.uOilTime = material.userData.time
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
-        '#include <common>\nvarying vec3 vSpinePosition;\nattribute float oilSmooth;\nvarying float vOilSmooth;',
+        '#include <common>\nvarying vec3 vSpinePosition;\nattribute float crevice;\nvarying float vCrevice;',
       )
       .replace(
         '#include <begin_vertex>',
-        '#include <begin_vertex>\nvSpinePosition = position;\nvOilSmooth = oilSmooth;',
+        '#include <begin_vertex>\nvSpinePosition = position;\nvCrevice = crevice;',
       )
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
         `#include <common>
         varying vec3 vSpinePosition;
-        // 1 on the smooth oily wings, collars and drips; 0 on the carved crystal bodies.
-        varying float vOilSmooth;
+        // 0 on the crests, 1 deep in the carving.
+        varying float vCrevice;
         uniform vec3 uOilTeal;
         uniform vec3 uOilGreen;
         uniform vec3 uOilViolet;
+        uniform vec3 uOilPink;
+        uniform vec3 uOilGold;
         uniform float uOilGlow;
         uniform float uOilTime;
         ${noise}
@@ -64,61 +67,48 @@ export function createOilMaterial() {
         `#include <roughnessmap_fragment>
         #ifndef OIL_LITE
           roughnessFactor = oilRoughness(roughnessFactor, vSpinePosition);
-        #endif
-        // Wings and collars: wet, near-mirror oil.
-        roughnessFactor = mix(roughnessFactor, 0.28, vOilSmooth);`,
+        #endif`,
       )
       .replace(
         '#include <normal_fragment_maps>',
         `#include <normal_fragment_maps>
-        #if !defined(SCULPTED) && !defined(OIL_LITE)
-          // Grain and chips on the bodies only; the wings stay smooth.
-          normal = normalize(mix(oilGrain(normal, vSpinePosition), normal, vOilSmooth));
+        #ifndef SCULPTED
+          // The crystal crust: small facets, each tilted its own way.
+          normal = oilFacets(normal, vSpinePosition);
         #endif`,
       )
       .replace(
         '#include <lights_physical_fragment>',
         `#include <lights_physical_fragment>
         #ifdef USE_IRIDESCENCE
+          oilGrazing = smoothstep(0.45, 0.95, 1.0 - abs(dot(normal, normalize(vViewPosition))));
           oilStreaks(material.iridescence, material.iridescenceThickness, vSpinePosition,
             iridescenceThicknessMinimum, iridescenceThicknessMaximum);
-          // Thin film strongest at grazing angles (violet → teal → gold).
-          material.iridescence *= 0.35 + 0.65 * pow(1.0 - abs(dot(normal, normalize(vViewPosition))), 1.5);
         #endif`,
       )
       .replace(
         '#include <opaque_fragment>',
-        `// One lit sculpture: a lilac rim light along its whole silhouette (wings included);
-        // the darkest values stay in the crevices.
-        {
-          float rimLight = pow(1.0 - abs(dot(normal, normalize(vViewPosition))), 2.5);
-          outgoingLight += mix(uOilViolet, vec3(1.0), 0.35) * rimLight * 0.3;
-        }
-        // A soft inner glow in the crevices (where the surface faces away, low ambient):
-        // a subsurface feel.
-        {
-          float crevice = smoothstep(0.35, 0.0, abs(dot(normal, normalize(vViewPosition))));
-          outgoingLight += uOilViolet * 0.08 * (1.0 - crevice);
-        }
-        // Glitter inside the material: round sparks on two depth layers seen through the
-        // surface (parallax with the view), each its own size and twinkle.
-        {
-          vec3 view = normalize(vViewPosition);
-          for (int layer = 0; layer < 2; layer++) {
-            float d = 0.05 + float(layer) * 0.07;
-            vec3 q = (vSpinePosition + view * d) * (34.0 + float(layer) * 14.0);
-            vec3 cell = floor(q);
-            float h = fract(sin(dot(cell, vec3(12.99, 78.23, 37.71))) * 43758.55);
-            vec3 centre = vec3(fract(h * 7.1), fract(h * 13.7), fract(h * 3.3)) * 0.6 + 0.2;
-            float r = length(fract(q) - centre);
-            float size = 0.05 + fract(h * 31.0) * 0.1;
-            float spark = step(0.975, h) * smoothstep(size, 0.0, r);
-            float twinkle = 0.35 + 0.65 * pow(0.5 + 0.5 * sin(h * 80.0 + uOilTime * (0.6 + h * 1.5)), 4.0);
-            outgoingLight += vec3(1.0, 0.88, 1.0) * spark * twinkle * (1.2 - float(layer) * 0.5);
-          }
+        `{
+          float facing = abs(dot(normal, normalize(vViewPosition)));
+          // The hollows fall to near-black; the crests keep their light.
+          outgoingLight *= mix(1.0, 0.18, smoothstep(0.2, 0.85, vCrevice));
+          // A thin, cold rim along the silhouette only.
+          outgoingLight += mix(uOilViolet, uOilTeal, 0.3) * pow(1.0 - facing, 5.0) * 0.22;
+          // Facet glints: a facet turned towards the key direction flashes its own colour
+          // (pink, violet, teal, green-gold), so the crust sparkles in many hues as it turns.
+          vec3 key = normalize(normalize(vec3(-0.45, 0.7, 0.55)) + normalize(vViewPosition));
+          float glint = pow(max(dot(normal, key), 0.0), 64.0);
+          vec3 tint = oilFacet < 0.3 ? uOilPink : oilFacet < 0.55 ? uOilViolet
+            : oilFacet < 0.8 ? uOilTeal : mix(uOilGreen, uOilGold, 0.6);
+          outgoingLight += mix(tint, vec3(1.0), 0.25) * glint * 1.4 * (1.0 - vCrevice);
+          // Inner glitter: tiny bright points twinkling inside the mass.
+          vec3 cell = floor(vSpinePosition * 46.0);
+          float h = fract(sin(dot(cell, vec3(12.99, 78.23, 37.71))) * 43758.55);
+          float twinkle = 0.5 + 0.5 * sin(h * 80.0 + uOilTime * (1.0 + h * 2.0));
+          outgoingLight += vec3(1.0, 0.86, 1.0) * step(0.992, h) * twinkle * 1.6 * (1.0 - vCrevice * 0.7);
         }
         outgoingLight += oilStreakGlow(normal, normalize(vViewPosition), uOilTeal, uOilGreen,
-          uOilViolet, uOilGlow * (0.6 + 1.6 * vOilSmooth));
+          uOilViolet, uOilGlow);
         #include <opaque_fragment>`,
       )
   }

@@ -44,3 +44,8 @@ next-env.d.ts
 /docs/reference/video/
 /docs/reference/**/*.mov
 /docs/reference/**/*.mp4
+
+# extracted reference / measurement frames (large, regenerable)
+/docs/reference/work-frames/
+/docs/reference/work-frames-ours/
+/docs/reference/work-masks/

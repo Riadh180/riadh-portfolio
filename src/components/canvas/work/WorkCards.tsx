@@ -58,6 +58,30 @@ export type CardLayout = 'orbit' | 'column'
 /** Phones: smaller cards, so one fits the narrow screen with margin. */
 const COLUMN_SCALE = 0.74
 
+declare global {
+  interface Window {
+    /** Measurement only (scripts/record-work.mjs): each visible card's projected corners, in px. */
+    __cardCorners?: Record<string, number[]>
+  }
+}
+const corner = new Vector3()
+
+/** Writes the card's eight box corners, projected to the screen, for the frame metrics. */
+function exportCorners(slug: string, card: Group, camera: PerspectiveCamera, width: number, height: number) {
+  const out: number[] = []
+  const halfDepth = BLOCK.depth / 2 + BLOCK.bevel
+  for (const x of [-1, 1]) {
+    for (const y of [-1, 1]) {
+      for (const z of [-1, 1]) {
+        corner.set((x * CARD.width) / 2, (y * CARD.height) / 2, z * halfDepth)
+        card.localToWorld(corner).project(camera)
+        out.push(((corner.x + 1) / 2) * width, ((1 - corner.y) / 2) * height)
+      }
+    }
+  }
+  window.__cardCorners![slug] = out
+}
+
 type Home = { position: Vector3; turn: number; pitch: number; roll: number; face: number }
 
 function home(i: number, layout: CardLayout, target: Home) {
@@ -539,6 +563,12 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
       if (s.frustum.intersectsSphere(s.bounds)) {
         live.render(gl, clock.time)
       }
+    }
+
+    if (window.__cardCorners) {
+      if (glass.visible && shown(g)) {
+        exportCorners(job.slug, g, camera as PerspectiveCamera, size.width, size.height)
+      } else delete window.__cardCorners[job.slug]
     }
 
     // Scramble the title for its duration after the card gains focus.

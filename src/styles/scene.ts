@@ -86,8 +86,11 @@ export const sceneConfig = {
   spine: {
     /** Pieces stacked up the column (slabs, key blocks, fins). */
     pieces: 72,
-    /** Height of the column. */
+    /** Height of the Work span (cards and grains live in it). */
     height: 13,
+    /** Where the column itself starts and ends: beyond the frame at every Work stop. */
+    top: 10,
+    bottom: -18,
     /** Turn between one piece and the next, in radians. */
     twist: 0.7,
     /** Sideways wander off the axis and tilt of each piece. */
@@ -101,7 +104,7 @@ export const sceneConfig = {
     turn: 0.05,
     /** Oily sheen strength and how glossy the dark body is. */
     sheen: 0.85,
-    gloss: 0.82,
+    gloss: 0.72,
   },
   /**
    * Work's own, much darker light rig (the hero's is built for thin glass and would turn a

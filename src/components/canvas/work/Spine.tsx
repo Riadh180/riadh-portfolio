@@ -20,7 +20,7 @@ export function Spine({ clock }: Props) {
   const mesh = useRef<Mesh>(null)
   const gl = useThree((state) => state.gl)
   const lite = useTier((state) => state.tier === 'lite')
-  const standIn = useStandIn(lite ? 0.24 : 0.13)
+  const standIn = useStandIn(lite ? 0.2 : 0.1)
   const material = useMemo(() => createOilMaterial(), [])
   const [model, setModel] = useState<BufferGeometry | null>(null)
 
