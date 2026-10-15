@@ -1,16 +1,20 @@
-// An atmosphere grain: a tiny faceted glass crystal (diamond, four faces, bright rim, hot
-// glint), not a round bokeh disc.
+// An atmosphere grain: a tiny glass bead (dark body, rim, glint), never a bokeh disc.
 varying vec3 vColor;
 varying float vAlpha;
 
+// A glass bead on a point sprite: dark tinted body, darker edge, a thin bright rim and a
+// hot glint up-left; `level` scales it (most beads dim, a few bright). Returns colour.
+vec3 bead(vec2 c, vec3 tint, float level) {
+  float r = length(c);
+  float body = 1.0 - smoothstep(0.86, 1.0, r);
+  float rim = smoothstep(0.62, 0.86, r) * (1.0 - smoothstep(0.86, 1.0, r));
+  float glint = exp(-dot(c - vec2(-0.3, 0.32), c - vec2(-0.3, 0.32)) * 22.0);
+  vec3 color = tint * (0.35 - 0.2 * r) + tint * rim * 1.1 + vec3(1.0) * glint * 1.3 * length(tint);
+  return color * body * level;
+}
+
 void main() {
   vec2 c = gl_PointCoord * 2.0 - 1.0;
-  float d = abs(c.x) + abs(c.y);
-  float body = 1.0 - smoothstep(0.85, 1.0, d);
-  if (body <= 0.0) discard;
-  float face = 0.45 + 0.2 * step(0.0, c.x) + 0.3 * step(0.0, c.y);
-  float rim = smoothstep(0.5, 0.95, d);
-  float glint = exp(-dot(c, c) * 12.0);
-  vec3 color = vColor * (face * 0.8 + rim * 0.6) + vec3(1.0) * glint * 0.5 * length(vColor);
-  gl_FragColor = vec4(color * body * vAlpha, 1.0);
+  if (length(c) > 1.0) discard;
+  gl_FragColor = vec4(bead(c, vColor, 1.0) * vAlpha, 1.0);
 }

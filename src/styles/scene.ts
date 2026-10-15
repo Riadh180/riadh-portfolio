@@ -115,15 +115,15 @@ export const sceneConfig = {
   },
   /** Work: round coloured pebbles clumped round the spine and in a few small clouds. */
   pebbles: {
-    count: 11000,
+    count: 14000,
     size: 0.022,
     brightness: 1,
     /** Distance from the axis where they gather. */
-    radius: 1.15,
+    radius: 1.5,
     /** How tightly they hug the column (higher = tighter). */
-    hug: 0.35,
+    hug: 0.75,
     /** Share that drift in the loose clouds between the cards. */
-    clouds: 0.45,
+    clouds: 0.3,
     /** Rise speed up the column, units per second. */
     rise: 0.18,
   },

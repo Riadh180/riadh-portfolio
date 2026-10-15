@@ -579,3 +579,17 @@ System 59, Depth 47, Contact 47.
 - Work's chips streaming down into the first skill nodes.
 - System hover: connections lighting in sequence, "used at" scramble.
 - Cursor label ("EXPLORE"), sound tone shift between places, glass "tink" on open.
+
+---
+# Perfectionist round (2026-10-15)
+
+## Part 1 — Grains as glass beads
+- Chips are faceted beads (icosahedron detail 1, mostly round, some oval), shaded dark
+  body → darker edge → thin iridescent rim → hot glint up-left; per-bead brightness 0.25–1.6
+  (few bright, many dim). Point-sprite grains (atmosphere, transitions, Depth plankton,
+  embers) share the same bead shading.
+- Distribution: ring radius 1.5 (outside the column's surface; at 1.15 many were buried
+  inside it), hug 0.75, 2% loose, tight clouds 30% (spread 0.45–0.8), 14000 beads;
+  palette pink / violet / teal.
+- Hero: grains only behind The Core and at its sides (three clusters), never in front.
+- Sheet: `docs/screens/round6-beads.jpg`.

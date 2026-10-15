@@ -12,7 +12,12 @@ import type { SceneClock } from '../useSceneClock'
 /** Where The Core floats at the hero (matches Emblem's hero pose). */
 const CENTRE: [number, number, number] = [0, 0.45, 0]
 /** A sparse ring of chips round it: [x, y, z, spread]. */
-const ORBIT: [number, number, number, number][] = [[0, 0.45, 0, 1.9]]
+const ORBIT: [number, number, number, number][] = [
+  // Behind The Core and at its sides, never in front of it.
+  [0, 0.45, -2.2, 1.4],
+  [-2.1, 0.6, -0.6, 0.55],
+  [2.1, 0.3, -0.6, 0.55],
+]
 
 /**
  * The hero's mystery: a soft halo of light behind The Core that breathes (one slow pulse
@@ -52,7 +57,7 @@ export function HeroAura({ journey, clock }: { journey: JourneyState; clock: Sce
           depthWrite={false}
         />
       </mesh>
-      <ChipCluster clusters={ORBIT} count={90} size={2.4} clock={clock} focusDistance={10} />
+      <ChipCluster clusters={ORBIT} count={90} size={2.2} clock={clock} focusDistance={10} />
     </group>
   )
 }

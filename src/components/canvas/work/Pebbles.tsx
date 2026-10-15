@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import {
   InstancedBufferAttribute,
   InstancedBufferGeometry,
-  OctahedronGeometry,
+  IcosahedronGeometry,
   DoubleSide,
   type Color,
   type ShaderMaterial,
@@ -14,8 +14,8 @@ import fragmentShader from '../shaders/glassChip.frag'
 import vertexShader from '../shaders/glassChip.vert'
 import type { SceneClock } from '../useSceneClock'
 
-/** The shard every chip is drawn from: a flat-shaded octahedron (8 facets). */
-const SHARD = new OctahedronGeometry(1, 0)
+/** The bead every grain is drawn from: a faceted near-sphere (icosahedron, 80 faces). */
+const SHARD = new IcosahedronGeometry(1, 1)
 
 /** Instanced chips: one shard, per-chip orbit / cloud / seed (positions come from the shader). */
 function chipGeometry(orbit: Float32Array, cloud: Float32Array, seed: Float32Array, count: number) {
@@ -36,8 +36,9 @@ function chipGeometry(orbit: Float32Array, cloud: Float32Array, seed: Float32Arr
  */
 const CLOUDS: [number, number, number, number][] = Array.from({ length: 14 }, (_, k) => {
   const angle = k * 2.4
-  const reach = 1.6 + (k % 3) * 0.7
-  return [Math.cos(angle) * reach, 3 - k * 0.95, Math.sin(angle) * reach, 0.9 + (k % 4) * 0.25]
+  // Tight clouds near the column (and the cards' inner edges), not open space.
+  const near = 1.2 + (k % 3) * 0.35
+  return [Math.cos(angle) * near, 3 - k * 0.95, Math.sin(angle) * near, 0.45 + (k % 4) * 0.12]
 })
 
 /**
@@ -60,7 +61,7 @@ function createPebbles() {
     const inCloud = Math.random() < clouds
     const cluster = clusters[i % clusters.length] ?? { y: 0, angle: 0 }
     // Almost nothing in empty space: few loose chips.
-    const loose = Math.random() < 0.06
+    const loose = Math.random() < 0.02
     const reach = inCloud
       ? 0.2 + Math.random() * 0.8
       : 0.85 + Math.abs(gaussian()) * (1 - hug) * 0.6
