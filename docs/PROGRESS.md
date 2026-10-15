@@ -646,3 +646,33 @@ System 59, Depth 47, Contact 47.
 - Loop: Contact's text hides at progress 6.06 (was 6.2), before The Core rises through it.
 - After the Freelance card: the chip trail to System 1500 → 3200 grains, brighter.
 - Sheet: `docs/screens/round6-system-depth.jpg`.
+
+## Final checks (perfectionist round)
+- Full journey at normal wheel speed: desktop full tier, desktop lite tier (HD 630), phone
+  390×844 → `docs/screens/final-journey-3.jpg` (three strips).
+- FPS (prod, Retina, after arriving by nav): every place 60.2 on both tiers. Idle hero 60s:
+  AMD 60.0–60.2 in every window; HD 630 60.2 after the first window (55.4 during the tier
+  switch).
+- Lighthouse (desktop, prod): Performance 92, Accessibility 100, Best Practices 100, SEO 100.
+- Loop: Contact's text is gone before The Core rises (no more overlap).
+
+## What still differs from the reference (honest list)
+1. **Sculpted matter (needs art).** Their column and Lab are scanned / sculpted assets with
+   fine organic detail; our spine is procedural noise on extruded blocks. Code can't
+   close this: a real model (`public/models/spine-raw.glb`, the loader is in place) would.
+2. **Card media richness (mostly needs art).** Their cards carry art-directed photography
+   and video; ours carry two real screenshots, one dashboard and abstract live scenes for
+   confidential work. Better source images or short muted videos per job would close
+   most of it; code can only frame them.
+3. **Bead clouds (code, partly closed).** Ours now read as glass beads hugging the column,
+   but theirs are denser, more varied in size and blur, with real refraction. A depth-
+   of-field post pass and per-bead refraction would get closer; both cost GPU.
+4. **Thin frames (code).** About a second of sparse frame remains between the last card
+   and System, and right after the descent into Depth. More grain density on those legs
+   would fix it.
+5. **Type (code + font choice).** Their display face is a thin geometric sans; ours is a
+   light monospace (Martian Mono 300) to stay within the approved fonts. A licensed thin
+   sans would be closer, if you want to add one.
+6. **Lighting finesse (code).** Their scenes have soft volumetric light and halation; ours
+   uses fog layers, bloom and corner bleeds. A cheap screen-space god-ray / halation pass
+   could close part of it within budget on the full tier.
