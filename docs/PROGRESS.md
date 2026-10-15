@@ -532,3 +532,9 @@ System 59, Depth 47, Contact 47.
 - Two variants compared (`docs/screens/round5-depth-variants.jpg`): A "deep emerald",
   B "deep teal-blue". Chose **B**: closer to the reference Lab's cold, dark mood.
 - The capstone panel already uses the job cards' glass and lit edge.
+
+## Part 5 — Capstone media
+- `public/work/capstone/dashboard.png` (your Streamlit AI-exposure chart) is now the panel
+  media: `coverFile: 'dashboard.png'`, `coverCrop` on the bubble cloud only; cover-fit
+  now honours crops. The medallion SVG stays in the folder, unused.
+- Shot: `docs/screens/round5-capstone-dashboard.png`.

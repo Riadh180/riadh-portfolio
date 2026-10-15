@@ -116,11 +116,12 @@ export class CardFace {
         context.drawImage(image, x, y, w, h)
         context.restore()
       } else {
-        // Cover-fit.
-        const scale = Math.max(WIDTH / image.width, HEIGHT / image.height)
-        const w = image.width * scale
-        const h = image.height * scale
-        context.drawImage(image, (WIDTH - w) / 2, (HEIGHT - h) / 2, w, h)
+        // Cover-fit (a crop of it when the job names one).
+        const [sx, sy, sw, sh] = this.job.coverCrop ?? [0, 0, image.width, image.height]
+        const scale = Math.max(WIDTH / sw, HEIGHT / sh)
+        const w = sw * scale
+        const h = sh * scale
+        context.drawImage(image, sx, sy, sw, sh, (WIDTH - w) / 2, (HEIGHT - h) / 2, w, h)
       }
       // Darken the title's corner so it always reads.
       this.shade(context)

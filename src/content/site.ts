@@ -328,8 +328,9 @@ export const capstone: Job = {
     'Plotly',
   ],
   repo: 'https://github.com/Riadh180/data-engineering-capstone',
-  coverFile: 'aiwork_medallion.svg',
-  // Only the clean bronze → silver → gold flow (and the dashboard), larger.
-  coverCrop: [190, 175, 1100, 300],
+  // The live dashboard (Streamlit): its AI-exposure bubble chart.
+  coverFile: 'dashboard.png',
+  // The bubble cloud only (source pixels of the 2312×1618 screenshot).
+  coverCrop: [380, 800, 1240, 740],
   filters: ['Data'],
 }
