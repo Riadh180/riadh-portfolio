@@ -53,7 +53,7 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
       uWorkBase: {
         value: new Color()
           .copy(sceneColors.bg)
-          .multiplyScalar(0.55)
+          .multiplyScalar(0.4)
           .add(new Color().copy(sceneColors.teal).multiplyScalar(0.004)),
       },
       uViolet: { value: 0 },
@@ -79,7 +79,7 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
     const lowerLeft = u.uLowerLeft!.value as Color
     const upperRight = u.uUpperRight!.value as Color
     lowerLeft.copy(sceneColors.violet)
-    // Work: charcoal and dark teal round the frame; the purple is one soft, drifting bleed
+    // Work: charcoal and dark teal round the frame; the purple is one faint, drifting bleed
     // off the upper-right corner.
     {
       const ease = (x: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, x)))) / 2
@@ -90,7 +90,7 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
       u.uOctaves!.value = useTier.getState().tier === 'lite' ? 2 : 4
       u.uTime!.value = performance.now() / 1000
       // Portrait: the corner bleed would cover half the frame; much weaker there.
-      u.uViolet!.value = work * (size.width < size.height ? 0.1 : 0.25)
+      u.uViolet!.value = work * (size.width < size.height ? 0.05 : 0.1)
       // At Work the corner bleeds step back: the light is behind the column instead.
       u.uStrength!.value *= 1 - work * 0.85
       // The backlight follows the column on screen (phones: centred, further back).

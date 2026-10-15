@@ -1001,3 +1001,19 @@ Self-review against at_05/at_06:
 - Metrics: EMPTY 18% → 36% (reference 51%), SPARKLE 3.6× → 3.2×, hue distance 0.45 → 0.19.
 - Note: a scripted jump in the first seconds after the phone's 3D starts can land back at the
   top (the phone `2.00` capture). Real swipes are unaffected; it is left alone (locked).
+
+## Stage 3 — tuning with the numbers (tag `final-stage-3`)
+Three passes, only spine material, pockets and haze (`work/oilMaterial.ts`,
+`shaders/glitter.vert`, `canvas/Backdrop.tsx`, `shaders/backdrop.frag`). The sheet decided
+each; numbers in `docs/screens/metrics-work.md`.
+1. Darker Work base (bg × 0.4) and less fog lift (p5, EMPTY); pocket beads at 35% (p95,
+   contrast); a more violet, less blue column body (hue). Sheet: the same look, a touch darker
+   and more violet. Kept: luminance +26% → +20%, p5 +40% → +26%, p95 +33% → +24%.
+2. A violet bleed low on the left (their at_06 has one) and a fainter upper-right bleed;
+   column reflections 1.6 → 1.4. Hue distance got worse (0.19 → 0.22: on the dark teal base
+   the violet lands in azure). The lower-left change was reverted.
+3. Lower-left back to teal, keeping the fainter upper-right bleed and the lower reflections.
+   Hue distance 0.17 (best), luminance +18%, contrast +20%, p95 +23%. Kept as final.
+
+Still outside ±15% after three passes (listed as open points): luminance, contrast, p5,
+p95, EMPTY AREA (−30%), SPARKLE (~3×) and the hue distance (0.17).

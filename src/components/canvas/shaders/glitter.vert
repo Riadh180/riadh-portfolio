@@ -81,7 +81,7 @@ void main() {
   float level = mix(0.7, 1.05, seed.z) + twinkle * mix(2.2, 0.8, vPocket) + spark * 2.0;
   // Pocket grains are many and overlap (additive): each one dimmer, so a pocket reads as
   // coloured beads, not a burnt-out core.
-  level *= mix(1.0, 0.45, vPocket);
+  level *= mix(1.0, 0.35, vPocket);
   // Out of focus: the light spreads over the disc (dimmer per pixel).
   float energy = clamp((focusSize * focusSize) / (size * size), 0.08, 1.0);
   vColor = hue * level * energy * uBrightness;

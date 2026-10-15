@@ -16,7 +16,7 @@ import oilFragment from '../shaders/oil.glsl'
 export function createOilMaterial() {
   const material = new MeshPhysicalMaterial({
     // Deep indigo-violet: dark enough that the facets' highlights carry the form.
-    color: new Color().copy(sceneColors.violet).lerp(sceneColors.blue, 0.35).multiplyScalar(0.12),
+    color: new Color().copy(sceneColors.violet).lerp(sceneColors.blue, 0.15).multiplyScalar(0.12),
     metalness: 0.9,
     roughness: 0.15,
     clearcoat: 0.6,
@@ -24,7 +24,7 @@ export function createOilMaterial() {
     iridescence: 1,
     iridescenceIOR: 2.1,
     iridescenceThicknessRange: [380, 820],
-    envMapIntensity: 1.6,
+    envMapIntensity: 1.4,
   })
   material.userData.time = { value: 0 }
   material.onBeforeCompile = (shader) => {

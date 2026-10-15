@@ -65,7 +65,7 @@ void main() {
     float far = fbm(p * 0.55 - vec2(uTime * 0.005, 0.0) + 7.0);
     float fog = smoothstep(0.35, 0.85, near) * 0.6 + smoothstep(0.4, 0.8, far) * 0.4;
     vec3 haze = mix(uFogColor, uFogColor.bgr * 0.9, smoothstep(0.3, 0.8, far));
-    color = mix(color, color + haze * 0.25, fog * uFog * (0.3 + 0.7 * edge));
+    color = mix(color, color + haze * 0.15, fog * uFog * (0.3 + 0.7 * edge));
     // Backlight: a tall, soft haze behind the column, violet at its heart and teal round
     // it, broken up by the slow fog so it drifts and is never one flat glow. The dark
     // column stands against it.
