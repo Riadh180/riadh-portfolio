@@ -37,7 +37,7 @@ export const WORK = {
   /** The column stands in the centre: the camera orbits it. */
   x: 0,
   /** Camera distance from the spine, and how far it turns round it on the way down. */
-  distance: 7.2,
+  distance: 6.8,
 }
 
 /**

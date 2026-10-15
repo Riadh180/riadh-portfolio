@@ -17,6 +17,11 @@ uniform vec3 uHaze;
 /** 0 frosted .. 1 fully cleared (the glass has broken away into particles). */
 uniform float uDissolve;
 uniform vec3 uEdgeGlow;
+/** Hover: where the cursor is on the pane (uv) and how present (0..1): a soft defrost spot. */
+uniform vec2 uCursor;
+uniform float uHover;
+/** Opened: a soft light band sweeping across once the image is sharp (-0.3 → 1.3). */
+uniform float uSweep;
 /** 1 for live scenes: darken the lower part here, where the title sits (covers are pre-shaded). */
 uniform float uShade;
 
@@ -30,13 +35,16 @@ void main() {
   float threshold = dissolveThreshold(vUv, uSeed);
   float clear = clamp((uDissolve - threshold) / 0.06, 0.0, 1.0);
   float seam = uDissolve > 0.0 ? (1.0 - smoothstep(0.0, 0.03, abs(threshold - uDissolve))) : 0.0;
-  float glass = 1.0 - clear;
+  // Hover: the frost thins round the cursor.
+  float spot = uHover * (1.0 - smoothstep(0.08, 0.32, distance(vUv * vec2(1.6, 1.0), uCursor * vec2(1.6, 1.0))));
+  float glass = (1.0 - clear) * (1.0 - spot * 0.75);
 
   // The cast relief, baked once per card (frostField.frag): image shift, ripple, swell.
   vec4 relief = texture2D(uField, vUv);
   float ripple = relief.z;
   float swell = relief.w;
-  vec2 shift = relief.xy * glass;
+  // Readable through the glass: the relief bends the image, it doesn't shatter it.
+  vec2 shift = relief.xy * glass * 0.6;
   vec2 uv = vUv + shift;
 
   // Smear along the streaks: a few taps along the slant, longer out of focus. Each channel
@@ -75,6 +83,9 @@ void main() {
   color = mix(color, title.rgb, title.a * (1.0 - uBlur * 0.6) * glass);
   // The seam takes the image's own colour, lifted: the card burns away into its dust.
   color = color * mix(uBrightness, 1.05, clear) * (1.0 + seam * 0.8);
+  // The opening sweep: one soft diagonal band of light.
+  float band = vUv.x + vUv.y * 0.35 - uSweep;
+  color += vec3(1.0) * exp(-band * band * 90.0) * 0.22 * step(-0.5, uSweep) * clear;
   gl_FragColor = vec4(color, 1.0);
   #include <colorspace_fragment>
 }

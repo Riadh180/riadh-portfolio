@@ -416,3 +416,16 @@ System 59, Depth 47, Contact 47.
 - The dust leads straight into the wireframe (no dark frames). The wireframe's own
   assemble / hold / scatter was kept.
 - Sheet: `docs/screens/final-statement-exit.jpg`.
+
+## Work — "richness and pride"
+- Camera 7.2 → 6.8 (focused card ~45%, the next one beside it, the column between).
+- Spine: deep purple-lilac jewel (violet, 12% glass, ×0.22; metalness 0.85).
+- Cards: a glint travels round each pane's edge (`uTime` in the block shader); the relief
+  shift is 0.6× so the media read through the frost; hover = a soft defrost spot under the
+  cursor (`uCursor`, `uHover`, uv from pointer moves); opened = one soft light band sweeps
+  across once the image is sharp (`uSweep`).
+- Bliggit: the screenshot as a phone (dark rounded bezel) filling 90% of the pane height.
+- Background: at Work the lower-left bleed turns dark teal; the purple stays in the glow
+  round the column.
+- FPS (prod, Retina) down the cards: AMD 60.3, HD 630 lite 60.3.
+- Sheet: `docs/screens/final-work.jpg` (seg_44 above).

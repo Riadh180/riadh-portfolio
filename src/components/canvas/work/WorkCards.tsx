@@ -18,6 +18,7 @@ import {
   ShapeGeometry,
   Quaternion,
   ShaderMaterial,
+  Vector2,
   Vector3,
 } from 'three'
 import { type Job, jobs } from '@/content/site'
@@ -117,10 +118,15 @@ export function createBlockGlass() {
   // Edge lines: where the surface turns away from the viewer (the bevel all round), a thin
   // bright line whose hue slides round the card (teal → violet → pink), like light caught
   // in thick cut glass. The flat faces stay dark.
+  material.userData.time = { value: 0 }
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uRimColors = { value: [sceneColors.glow, sceneColors.violet, sceneColors.pink] }
+    shader.uniforms.uTime = material.userData.time
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 uRimColors[3];')
+      .replace(
+        '#include <common>',
+        '#include <common>\nuniform vec3 uRimColors[3];\nuniform float uTime;',
+      )
       .replace(
         '#include <opaque_fragment>',
         `{
@@ -131,6 +137,10 @@ export function createBlockGlass() {
             : hue < 0.66 ? mix(uRimColors[1], uRimColors[2], hue * 3.0 - 1.0)
             : mix(uRimColors[2], uRimColors[0], hue * 3.0 - 2.0);
           outgoingLight += mix(vec3(1.0), rim, 0.45) * line * 1.3;
+          // A glint travelling round the edge as the card turns.
+          float around = atan(normal.y, normal.x);
+          float glint = pow(0.5 + 0.5 * sin(around * 2.0 - uTime * 0.9), 60.0);
+          outgoingLight += vec3(1.0) * glint * line * 2.2;
         }
         #include <opaque_fragment>`,
       )
@@ -183,6 +193,9 @@ export function createScreenMaterial(
       },
       uDissolve: { value: 0 },
       uEdgeGlow: { value: sceneColors.glow },
+      uCursor: { value: new Vector2(0.5, 0.5) },
+      uHover: { value: 0 },
+      uSweep: { value: -1 },
     },
     toneMapped: false,
   })
@@ -372,6 +385,9 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     /** The card's bounds, for the visibility test. */
     bounds: new Sphere(new Vector3(), 1.6),
     frame: 0,
+    hover: 0,
+    /** The cursor on the pane (uv), from pointer moves over it. */
+    cursorUv: new Vector2(0.5, 0.5),
   })
 
   useFrame(({ camera, pointer, size, viewport, gl }, delta) => {
@@ -477,6 +493,11 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
       flown > 0 ? 1 : Math.min(1, Math.max(0, (g.position.distanceTo(s.eye) - 1.6) / 1.4))
     u.uBrightness!.value *= near
     u.uDissolve!.value = Math.min(1, s.dissolve)
+    ;(glass.userData.time as { value: number }).value = clock.time
+    s.hover += ((isFocused && !isOpen ? 1 : 0) - s.hover) * ease
+    u.uHover!.value = s.hover
+    ;(u.uCursor!.value as Vector2).lerp(s.cursorUv, ease)
+    u.uSweep!.value = s.dissolve > 1 ? -0.3 + (s.dissolve - 1) * 2.4 : -1
     // The thick glass block breaks away with the frost.
     glass.opacity = (1 - Math.min(1, s.dissolve * 1.2)) * near
     glass.visible = glass.opacity > 0.01
@@ -526,6 +547,9 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
   return (
     <group
       ref={group}
+      onPointerMove={(event) => {
+        if (event.uv) state.current.cursorUv.copy(event.uv)
+      }}
       onPointerOver={(event) => {
         event.stopPropagation()
         if (useWork.getState().opened) return

@@ -96,9 +96,23 @@ export class CardFace {
           image.height * fill,
         )
         context.filter = 'none'
-        const fit = (HEIGHT * 0.92) / image.height
+        // As a phone: the screenshot in a rounded dark bezel filling most of the pane's
+        // height, centred, so the real app reads through the frost.
+        const fit = (HEIGHT * 0.9) / image.height
         const w = image.width * fit
-        context.drawImage(image, WIDTH * 0.68 - w / 2, HEIGHT * 0.04, w, image.height * fit)
+        const h = image.height * fit
+        const x = (WIDTH - w) / 2 + WIDTH * 0.12
+        const y = (HEIGHT - h) / 2
+        context.fillStyle = palette.bg
+        context.beginPath()
+        context.roundRect(x - 10, y - 10, w + 20, h + 20, 44)
+        context.fill()
+        context.save()
+        context.beginPath()
+        context.roundRect(x, y, w, h, 36)
+        context.clip()
+        context.drawImage(image, x, y, w, h)
+        context.restore()
       } else {
         // Cover-fit.
         const scale = Math.max(WIDTH / image.width, HEIGHT / image.height)

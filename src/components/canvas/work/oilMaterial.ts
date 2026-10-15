@@ -16,8 +16,8 @@ export function createOilMaterial() {
   const material = new MeshPhysicalMaterial({
     // A hint of violet in the near-black body (Work's accent).
     // Lighter, lilac (the reference column): a textured body under a soft purple sheen.
-    color: new Color().copy(sceneColors.violet).lerp(sceneColors.glass, 0.35).multiplyScalar(0.32),
-    metalness: 0.75,
+    color: new Color().copy(sceneColors.violet).lerp(sceneColors.glass, 0.12).multiplyScalar(0.22),
+    metalness: 0.85,
     roughness: 0.3,
     clearcoat: 0.25,
     clearcoatRoughness: 0.1,

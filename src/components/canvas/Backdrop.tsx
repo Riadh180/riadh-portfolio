@@ -54,6 +54,13 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
     const lowerLeft = u.uLowerLeft!.value as Color
     const upperRight = u.uUpperRight!.value as Color
     lowerLeft.copy(sceneColors.violet)
+    // Work: charcoal and dark teal round the frame; the purple lives in the glow round the
+    // column (WorkHaze), not in the corners.
+    {
+      const ease = (x: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, x)))) / 2
+      const work = journey ? ease(journey.toWork) * (1 - ease(journey.toSystem)) : 0
+      lowerLeft.lerp(sceneColors.teal, work * 0.65)
+    }
     upperRight.copy(sceneColors.teal).lerp(sceneColors.glass, 0.35)
     if (accent) upperRight.lerp(accent.color, accent.amount)
     // Contact: one soft warm bleed from the upper right; the violet lower left stays.
