@@ -545,3 +545,15 @@ System 59, Depth 47, Contact 47.
 - The large blurry blobs were the atmosphere's bokeh discs: now glass grains (Part 2).
   Nodes are the faceted glass gems; filaments keep their travelling pulses.
 - Sheet: `docs/screens/round5-system.jpg`.
+
+## Part 7 — Flow and empty frames
+- Checked System → water (progress 4.25–4.55) and the loop back to the hero (6.7–6.95):
+  the transition now passes through the grain wall into the falling data dust (the grain
+  sprites of Part 2 made the old faint trail visible), and the loop keeps The Core in frame
+  all the way. No code change needed. Statement exit kept as is.
+- Sheet: `docs/screens/round5-flow.jpg`.
+
+## Part 8 — Hero and Contact touches
+- Hero: the orbiting chips are now crystal grains, 90 of them at ×2.4, catching the light
+  (Part 2). Contact: embers are warm faceted grains (`ember.frag`); face-on Core and warm
+  arrival kept.
