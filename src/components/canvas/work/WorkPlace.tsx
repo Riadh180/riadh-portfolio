@@ -64,7 +64,7 @@ export function WorkPlace({ journey, clock }: Props) {
           position={column ? [0, -1.5, -2.4] : [0, 0, 0]}
         >
           <Spine clock={clock} />
-          {column && <Pebbles clock={clock} focusDistance={6} />}
+          {column && <Pebbles clock={clock} focusDistance={6} layout="column" />}
         </group>
         {/* Focus on the card the camera holds at (dollied in, card in front of the column). */}
         {!column && <Pebbles clock={clock} focusDistance={WORK.distance - WORK.dolly - 2} />}

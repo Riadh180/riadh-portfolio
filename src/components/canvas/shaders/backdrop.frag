@@ -12,6 +12,11 @@ uniform vec3 uFogColor;
 /** Fog detail (octaves: 4 full, 2 lite) and the backlight haze behind the column. */
 uniform int uOctaves;
 uniform vec3 uBacklight;
+uniform vec3 uBacklightOuter;
+/** Where the column stands on screen (uv), so the backlight stays behind it. */
+uniform vec2 uBacklightAt;
+/** Work's own base: a deep teal-charcoal (the reference's darks). */
+uniform vec3 uWorkBase;
 /** Work: a soft violet bleed off the upper-right corner, drifting slowly (~8s). */
 uniform float uViolet;
 uniform vec3 uVioletColor;
@@ -51,18 +56,23 @@ float fbm(vec2 p) {
 void main() {
   vec3 color = uBackground;
   if (uFog > 0.0) {
-    // Two layers drifting at different speeds: depth in the dark, never a flat field.
+    // Work: the base falls to a deep teal-charcoal, darker still towards the frame edges.
+    float edge = smoothstep(0.95, 0.35, length((vUv - 0.5) * vec2(1.2, 1.0)));
+    color = mix(color, uWorkBase * mix(0.45, 1.0, edge), uFog);
+    // Two fog layers drifting at different speeds: depth in the dark, never a flat field.
     vec2 p = vUv * vec2(uAspect, 1.0) * 2.2;
     float near = fbm(p + vec2(uTime * 0.012, uTime * 0.006));
     float far = fbm(p * 0.55 - vec2(uTime * 0.005, 0.0) + 7.0);
     float fog = smoothstep(0.35, 0.85, near) * 0.6 + smoothstep(0.4, 0.8, far) * 0.4;
-    // Three depth layers: charcoal / teal / violet haze, darker towards the edges.
     vec3 haze = mix(uFogColor, uFogColor.bgr * 0.9, smoothstep(0.3, 0.8, far));
-    float edge = smoothstep(0.95, 0.35, length((vUv - 0.5) * vec2(1.2, 1.0)));
-    color = mix(color * 0.75, color + haze * 0.9, fog * uFog * (0.5 + 0.5 * edge));
-    // Backlight: a soft lighter haze behind the column (centre of frame).
-    vec2 b = (vUv - vec2(0.5, 0.55)) * vec2(uAspect * 1.6, 0.9);
-    color += uBacklight * exp(-dot(b, b) * 3.0) * uFog;
+    color = mix(color, color + haze * 0.25, fog * uFog * (0.3 + 0.7 * edge));
+    // Backlight: a tall, soft haze behind the column, violet at its heart and teal round
+    // it, broken up by the slow fog so it drifts and is never one flat glow. The dark
+    // column stands against it.
+    vec2 b = (vUv - uBacklightAt) * vec2(uAspect, 1.0);
+    float body = exp(-b.x * b.x * 22.0 - b.y * b.y * 1.2);
+    vec3 back = mix(uBacklight, uBacklightOuter, smoothstep(0.05, 0.4, abs(b.x)));
+    color += back * body * (0.45 + 0.9 * far) * uFog;
   }
   color += uLowerLeft * bleed(vec2(-0.08, -0.12)) * uStrength;
   color += uUpperRight * bleed(vec2(1.08, 1.12)) * uStrength * 0.8;

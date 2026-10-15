@@ -20,16 +20,16 @@ the air are measured: ~31% of the cropped reference frame, ~59% of ours (our car
 
 ## Table (each cell: value, difference to the reference)
 
-| Metric | Reference | Baseline (6e1a45d) | b27333c spine as is | Stage 1 |
-|---|---|---|---|---|
-| Mean luminance (0–255) | 28.4 | 43.3 (+52% ✗) | 42.7 (+50% ✗) | 39.3 (+38% ✗) |
-| Contrast (luma std dev) | 21.2 | 19.2 (-9% ✓) | 20.7 (-2% ✓) | 20.1 (-5% ✓) |
-| 5th percentile | 10.8 | 23.3 (+116% ✗) | 22.2 (+105% ✗) | 17.5 (+62% ✗) |
-| 95th percentile | 70.8 | 77.6 (+10% ✓) | 76.7 (+8% ✓) | 71.7 (+1% ✓) |
-| Mean saturation | 0.427 | 0.435 (+2% ✓) | 0.418 (-2% ✓) | 0.405 (-5% ✓) |
-| EMPTY AREA (% tiles) | 51.1 | 18.0 (-65% ✗) | 17.3 (-66% ✗) | 18.5 (-64% ✗) |
-| SPARKLE (points / MP) | 341 | 949 (+178% ✗) | 1424 (+318% ✗) | 1242 (+264% ✗) |
-| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.38 ✗ | 0.38 ✗ | 0.45 ✗ |
+| Metric | Reference | Baseline (6e1a45d) | b27333c spine as is | Stage 1 | Stage 2 |
+|---|---|---|---|---|---|
+| Mean luminance (0–255) | 28.4 | 43.3 (+52% ✗) | 42.7 (+50% ✗) | 39.3 (+38% ✗) | 36.4 (+28% ✗) |
+| Contrast (luma std dev) | 21.2 | 19.2 (-9% ✓) | 20.7 (-2% ✓) | 20.1 (-5% ✓) | 26.9 (+27% ✗) |
+| 5th percentile | 10.8 | 23.3 (+116% ✗) | 22.2 (+105% ✗) | 17.5 (+62% ✗) | 15.1 (+40% ✗) |
+| 95th percentile | 70.8 | 77.6 (+10% ✓) | 76.7 (+8% ✓) | 71.7 (+1% ✓) | 94.2 (+33% ✗) |
+| Mean saturation | 0.427 | 0.435 (+2% ✓) | 0.418 (-2% ✓) | 0.405 (-5% ✓) | 0.424 (-1% ✓) |
+| EMPTY AREA (% tiles) | 51.1 | 18.0 (-65% ✗) | 17.3 (-66% ✗) | 18.5 (-64% ✗) | 35.8 (-30% ✗) |
+| SPARKLE (points / MP) | 341 | 949 (+178% ✗) | 1424 (+318% ✗) | 1242 (+264% ✗) | 1079 (+216% ✗) |
+| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.38 ✗ | 0.38 ✗ | 0.45 ✗ | 0.19 ✗ |
 
 Hue shares (%, 12 bins of 30° from red: red, orange, yellow, … cyan 180°, blue 210°, blue-violet 240°, violet 270°, magenta 300°):
 
@@ -37,3 +37,4 @@ Hue shares (%, 12 bins of 30° from red: red, orange, yellow, … cyan 180°, bl
 - Baseline (6e1a45d): 0 · 0 · 0 · 0 · 0 · 0 · 24 · 55 · 21 · 0 · 0 · 0
 - b27333c spine as is: 0 · 0 · 0 · 0 · 0 · 0 · 21 · 55 · 24 · 0 · 0 · 0
 - Stage 1: 0 · 0 · 0 · 0 · 0 · 0 · 24 · 62 · 12 · 1 · 1 · 0
+- Stage 2: 0 · 1 · 1 · 0 · 0 · 2 · 38 · 33 · 19 · 5 · 1 · 0

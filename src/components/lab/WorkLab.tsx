@@ -90,6 +90,7 @@ function WorkScene({ version, mode }: { version: number; mode: View }) {
         key={`pebbles-${version}`}
         clock={clock}
         focusDistance={mode === 'phone' ? 6 : view.distance}
+        layout={mode === 'phone' ? 'column' : 'orbit'}
       />
       <WorkCards layout={mode === 'phone' ? 'column' : 'orbit'} clock={clock} />
       <Effects reducedMotion={false} antialias={false} />

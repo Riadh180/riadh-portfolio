@@ -1,10 +1,10 @@
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
-import { Color, type ShaderMaterial } from 'three'
+import { Color, type ShaderMaterial, Vector2, Vector3 } from 'three'
 import { useTier } from '@/stores/tier'
 import { depthPalette } from './depth/depthPalette'
 import { sceneColors, sceneConfig } from '@/styles/scene'
-import type { JourneyState } from './journey/path'
+import { type JourneyState, WORK } from './journey/path'
 import fragmentShader from './shaders/backdrop.frag'
 import vertexShader from './shaders/backdrop.vert'
 
@@ -34,6 +34,7 @@ function accentOf(journey: JourneyState) {
  */
 export function Backdrop({ journey }: { journey?: JourneyState }) {
   const material = useRef<ShaderMaterial>(null)
+  const axis = useMemo(() => new Vector3(), [])
   const uniforms = useMemo(
     () => ({
       uBackground: { value: sceneColors.bg },
@@ -43,10 +44,17 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
       uFog: { value: 0 },
       uOctaves: { value: 4 },
       uBacklight: {
+        value: new Color().copy(sceneColors.violet).lerp(sceneColors.teal, 0.15).multiplyScalar(0.05),
+      },
+      uBacklightOuter: { value: new Color().copy(sceneColors.teal).multiplyScalar(0.012) },
+      uBacklightAt: { value: new Vector2(0.5, 0.5) },
+      // Work's darks: below the world's charcoal, with a trace of teal (the reference's
+      // darks measure ~7,13,14).
+      uWorkBase: {
         value: new Color()
-          .copy(sceneColors.violet)
-          .lerp(sceneColors.teal, 0.35)
-          .multiplyScalar(0.07),
+          .copy(sceneColors.bg)
+          .multiplyScalar(0.55)
+          .add(new Color().copy(sceneColors.teal).multiplyScalar(0.004)),
       },
       uViolet: { value: 0 },
       uVioletColor: { value: new Color().copy(sceneColors.violet).multiplyScalar(0.16) },
@@ -59,7 +67,7 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
     [],
   )
 
-  useFrame(({ size }) => {
+  useFrame(({ size, camera }) => {
     if (!material.current) return
     const u = material.current.uniforms
     // One world haze for every place (as in the reference): violet from the lower left, a
@@ -82,9 +90,14 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
       u.uOctaves!.value = useTier.getState().tier === 'lite' ? 2 : 4
       u.uTime!.value = performance.now() / 1000
       // Portrait: the corner bleed would cover half the frame; much weaker there.
-      u.uViolet!.value = work * (size.width < size.height ? 0.25 : 1)
-      // At Work the corner bleeds step back: the darkness is textured fog instead.
-      u.uStrength!.value *= 1 - work * 0.55
+      u.uViolet!.value = work * (size.width < size.height ? 0.1 : 0.25)
+      // At Work the corner bleeds step back: the light is behind the column instead.
+      u.uStrength!.value *= 1 - work * 0.85
+      // The backlight follows the column on screen (phones: centred, further back).
+      if (work > 0) {
+        axis.set(WORK.x, camera.position.y, size.width < 700 ? -2.4 : 0).project(camera)
+        ;(u.uBacklightAt!.value as Vector2).set((axis.x + 1) / 2, (axis.y + 1) / 2)
+      }
     }
     upperRight.copy(sceneColors.teal).lerp(sceneColors.glass, 0.35)
     if (accent) upperRight.lerp(accent.color, accent.amount)

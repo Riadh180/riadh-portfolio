@@ -122,7 +122,7 @@ export const sceneConfig = {
   },
   /** Work: round coloured pebbles clumped round the spine and in a few small clouds. */
   pebbles: {
-    count: 10000,
+    count: 16000,
     size: 0.022,
     brightness: 1,
     /** Distance from the axis where they gather. */

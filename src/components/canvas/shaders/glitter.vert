@@ -14,6 +14,9 @@ uniform float uFocusDistance;
 uniform float uViewportHeight;
 uniform float uBokeh;
 uniform float uBrightness;
+/** Pocket grains' size relative to the column dust, and how much colour grains keep. */
+uniform float uCloudScale;
+uniform float uSaturation;
 /** silver-lilac, violet/pink, teal, warm gold. */
 uniform vec3 uPalette[4];
 
@@ -28,6 +31,8 @@ varying vec3 vColor;
 varying float vSoft;
 varying float vSpark;
 varying float vPointSize;
+/** 1 for a pocket grain: drawn as a soft disc, not a point. */
+varying float vPocket;
 
 void main() {
   vec3 p;
@@ -53,7 +58,10 @@ void main() {
   // Power law: ~80% tiny, ~17% small, ~3% medium; sparks (seed.x > 0.9985) larger.
   float pick = seed.x;
   float scale = pick < 0.8 ? 0.6 + pick * 0.6 : pick < 0.97 ? 1.6 + (pick - 0.8) * 6.0 : 3.0 + (pick - 0.97) * 30.0;
-  float spark = step(0.9985, pick);
+  scale *= cloud.w > 0.0 ? uCloudScale : 1.0;
+  vPocket = cloud.w > 0.0 && uCloudScale > 1.0 ? 1.0 : 0.0;
+  // No sparks in the pockets: at the pocket scale they would be glowing cores.
+  float spark = step(0.9985, pick) * (1.0 - vPocket);
   scale = mix(scale, 6.0, spark);
   float focusSize = max(uSize * scale * pixelsPerUnit, 1.0);
   float coc = uBokeh * abs(depth - uFocusDistance) / depth * uViewportHeight * 0.006;
@@ -66,11 +74,14 @@ void main() {
   // Colour: ~60% silver-lilac, ~25% violet/pink, ~10% teal, ~5% gold; desaturated.
   float c = seed.y;
   vec3 hue = c < 0.6 ? uPalette[0] : c < 0.85 ? uPalette[1] : c < 0.95 ? uPalette[2] : uPalette[3];
-  hue = mix(vec3(dot(hue, vec3(0.299, 0.587, 0.114))), hue, 0.55);
+  hue = mix(vec3(dot(hue, vec3(0.299, 0.587, 0.114))), hue, uSaturation);
   // Mostly dim; a slow random twinkle (period 2–6 s) peaks briefly.
   float period = 2.0 + seed.w * 4.0;
   float twinkle = pow(max(sin(uTime * 6.2831 / period + seed.z * 6.2831), 0.0), 14.0);
-  float level = mix(0.7, 1.05, seed.z) + twinkle * 2.2 + spark * 2.0;
+  float level = mix(0.7, 1.05, seed.z) + twinkle * mix(2.2, 0.8, vPocket) + spark * 2.0;
+  // Pocket grains are many and overlap (additive): each one dimmer, so a pocket reads as
+  // coloured beads, not a burnt-out core.
+  level *= mix(1.0, 0.45, vPocket);
   // Out of focus: the light spreads over the disc (dimmer per pixel).
   float energy = clamp((focusSize * focusSize) / (size * size), 0.08, 1.0);
   vColor = hue * level * energy * uBrightness;

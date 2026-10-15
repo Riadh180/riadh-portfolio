@@ -960,3 +960,44 @@ Self-review against at_05/at_06:
 - Still different: their flecks are partly particles *around* the column (the pockets);
   ours are on the surface. Stage 2 adds the pockets.
 - Metrics: luminance and p5 improved (darker body), SPARKLE rose (see decisions).
+
+## Stage 2 — the air around the column (tag `final-stage-2`)
+Files: `work/Pebbles.tsx`, `shaders/glitter.vert`, `shaders/glitter.frag`,
+`shaders/backdrop.frag`, `canvas/Backdrop.tsx`, `work/WorkPlace.tsx` (phone pockets),
+`lab/WorkLab.tsx` (passes the layout), `styles/scene.ts` (grain count 10k → 16k).
+- **Foam pockets.** 20 on desktop (was 14): 16 wrap the column, one every ~0.9 units down,
+  alternating sides and depths (1.25–1.85 from the axis, so the camera sees some in front of
+  the column and some behind as it turns), and 4 hang between the camera and the column
+  between the stops (out of focus on full). Spread 0.8–1.2 (2–3× the old 0.32–0.48). Any
+  pocket that would sit between a card and the camera at the card's stop is moved round the
+  column, so none covers a focused card. The 90/10 split stays (10% sparse silver dust).
+- **The grains became beads.** Pocket grains are 3.2× the dust (3–8 px at 1×), drawn as
+  soft filled discs with a faint rim (not hot points), kept at 80% saturation, each at 45%
+  brightness with a gentler twinkle and no sparks (overlapping additive grains otherwise burnt
+  the cores out). The body of a pocket is evenly dense, with 6% strays for the wispy edge.
+  Hues: violet-pink, teal, a little green-gold. These are Pebbles-only uniforms
+  (`uCloudScale`, `uSaturation`): the card-edge and Core clusters that share the shader keep
+  their look.
+- **Haze.** At Work the backdrop's base drops to a deep teal-charcoal below the world's
+  charcoal (the reference's darks measure ~7,13,14; ours were ~33,39,58), darker towards
+  the edges; the fog's lift is a quarter of what it was; the corner bleeds step back further.
+  A tall violet → teal backlight follows the column on screen (projected each frame), broken
+  up by the slow fog, so the dark column has a halo to stand against. Lite: the same with two
+  fog octaves (as before) and half the grains (`setDrawRange`).
+- **Phones:** three pockets round the column, between the cards; 25% of the grains.
+
+Sheet: `docs/screens/work-air.jpg` (progress 2.00–3.00 in 0.10 steps between at_05 and at_06;
+the integrated GPU and the phone at 0.25 steps).
+
+Self-review against at_05/at_06:
+- Closer: the space round the column is full of coloured bead clouds with clean dark between
+  them, the way theirs is. No frame has a large flat area; foreground beads, the column with
+  the cards, and the haze behind are three readable layers.
+- Closer: the darks are now near-black teal-charcoal, not a lifted navy.
+- Still different: their pockets are bigger and denser with more pink/magenta and green; ours
+  lean violet and teal.
+- Still different: their backlight / corner light is a little stronger (teal from the left in
+  at_06). Ours is deliberately subtle after the first try washed the frame.
+- Metrics: EMPTY 18% → 36% (reference 51%), SPARKLE 3.6× → 3.2×, hue distance 0.45 → 0.19.
+- Note: a scripted jump in the first seconds after the phone's 3D starts can land back at the
+  top (the phone `2.00` capture). Real swipes are unaffected; it is left alone (locked).
