@@ -1,9 +1,13 @@
-// An ember: a small warm point with a soft glow.
+// An ember as a warm glass grain: a tiny faceted crystal with a hot glint.
 uniform vec3 uColor;
 varying float vAlpha;
 
 void main() {
-  float d = length(gl_PointCoord - 0.5) * 2.0;
-  if (d > 1.0) discard;
-  gl_FragColor = vec4(uColor * vAlpha * exp(-d * d * 4.0) * 1.4, 1.0);
+  vec2 c = gl_PointCoord * 2.0 - 1.0;
+  float d = abs(c.x) + abs(c.y);
+  float body = 1.0 - smoothstep(0.85, 1.0, d);
+  if (body <= 0.0) discard;
+  float face = 0.5 + 0.2 * step(0.0, c.x) + 0.3 * step(0.0, c.y);
+  float glint = exp(-dot(c, c) * 10.0);
+  gl_FragColor = vec4((uColor * face + vec3(1.0, 0.85, 0.6) * glint * 0.7) * body * vAlpha * 1.3, 1.0);
 }

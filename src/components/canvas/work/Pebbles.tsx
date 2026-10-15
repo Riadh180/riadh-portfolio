@@ -5,6 +5,7 @@ import {
   InstancedBufferGeometry,
   OctahedronGeometry,
   DoubleSide,
+  type Color,
   type ShaderMaterial,
 } from 'three'
 import { sceneColors, sceneConfig } from '@/styles/scene'
@@ -79,7 +80,7 @@ function createPebbles() {
   return chipGeometry(orbit, cloud, seed, count)
 }
 
-function createUniforms(focusDistance: number) {
+function createUniforms(focusDistance: number, palette?: Color[]) {
   return {
     uTime: { value: 0 },
     uSize: { value: 0 },
@@ -88,9 +89,14 @@ function createUniforms(focusDistance: number) {
     uRise: { value: 0 },
     uHalfHeight: { value: sceneConfig.spine.height / 2 },
     uFocusDistance: { value: focusDistance },
-    uFilm: { value: [sceneColors.glow, sceneColors.violet, sceneColors.pink] },
+    uFilm: { value: [sceneColors.glow, sceneColors.violet, sceneColors.warm] },
     uPalette: {
-      value: [sceneColors.pink, sceneColors.violet, sceneColors.teal, sceneColors.emerald],
+      value: palette ?? [
+        sceneColors.pink,
+        sceneColors.violet,
+        sceneColors.teal,
+        sceneColors.emerald,
+      ],
     },
   }
 }
@@ -148,6 +154,7 @@ export function ChipCluster({
   size = 1,
   clock,
   focusDistance,
+  palette,
 }: {
   clusters: [number, number, number, number][]
   count: number
@@ -155,10 +162,12 @@ export function ChipCluster({
   size?: number
   clock: SceneClock
   focusDistance: number
+  /** Four tints for the grains (default: pink, violet, teal, emerald). */
+  palette?: Color[]
 }) {
   const material = useRef<ShaderMaterial>(null)
   const geometry = useMemo(() => createCluster(clusters, count), [clusters, count])
-  const uniforms = useMemo(() => createUniforms(focusDistance), [focusDistance])
+  const uniforms = useMemo(() => createUniforms(focusDistance, palette), [focusDistance, palette])
   useEffect(() => () => geometry.dispose(), [geometry])
   useFrame(() => updateUniforms(material.current, clock, size))
   return (

@@ -57,7 +57,7 @@ export function ContactEmbers({ journey, clock }: { journey: JourneyState; clock
     if (!p.visible) return
     const u = (p.material as ShaderMaterial).uniforms
     u.uTime!.value = clock.time
-    u.uSize!.value = 0.05 * size.height * dpr * value
+    u.uSize!.value = 0.03 * size.height * dpr * value
   })
 
   return (

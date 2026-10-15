@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { AdditiveBlending, type Color, type Points, type ShaderMaterial } from 'three'
-import particlesFragment from '../shaders/particles.frag'
+import particlesFragment from '../shaders/grain.frag'
 import motesVertex from '../shaders/motes.vert'
 import { createMotesGeometry, createMotesUniforms, gaussian } from './motes'
 

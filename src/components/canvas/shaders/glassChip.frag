@@ -24,10 +24,10 @@ void main() {
   float rim = pow(1.0 - facing, 2.5);
   // A key light from above right: facets flash as they pass it.
   vec3 light = normalize(vec3(0.5, 0.8, 0.4));
-  float glint = pow(max(dot(reflect(-light, n), vView), 0.0), 28.0);
+  float glint = pow(max(dot(reflect(-light, n), vView), 0.0), 22.0);
   vec3 body = vTint * (0.22 + 0.25 * facing);
   vec3 iridescent = film(facing * 1.3 + vSeed * 2.0) * (rim * 0.9 + glint * 1.6);
-  vec3 color = (body + vTint * rim * 0.6 + iridescent + vec3(1.0) * glint * 0.8) * uBrightness;
+  vec3 color = (body + vTint * rim * 0.6 + iridescent + vec3(1.0) * glint * 1.4) * uBrightness;
   float alpha = mix(0.92, 0.28, vSoft);
   color = mix(color, vTint * 0.35 * uBrightness, vSoft * 0.6);
   gl_FragColor = vec4(color, alpha);

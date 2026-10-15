@@ -52,7 +52,7 @@ export function HeroAura({ journey, clock }: { journey: JourneyState; clock: Sce
           depthWrite={false}
         />
       </mesh>
-      <ChipCluster clusters={ORBIT} count={70} size={1.3} clock={clock} focusDistance={10} />
+      <ChipCluster clusters={ORBIT} count={90} size={2.4} clock={clock} focusDistance={10} />
     </group>
   )
 }

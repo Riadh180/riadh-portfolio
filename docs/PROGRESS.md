@@ -498,3 +498,15 @@ System 59, Depth 47, Contact 47.
   light-formers are soft), and no hero warm pulse in the lite tier (Contact's warmth stays).
 - Idle hero, 60s, prod, Retina: HD 630 lite 60.2 in every 5s window after the first
   (tier switch); AMD full 60.2 in every window (was 53–59).
+
+## Part 2 — Particles as glass grains
+- Chips (`glassChip.vert/.frag`): varied crystals per instance (long shards, flat flakes,
+  near-cubic grains), mostly tiny (×0.45–2.0), stronger glint, gold in the thin-film
+  fringe; 11000 round the column (was 7000).
+- Point particles: `shaders/grain.frag` (tiny faceted diamond: four lit faces, bright rim,
+  hot glint; soft small disc only far out of focus) for the transition walls, trails and
+  Depth plankton; `atmosphere.frag` the same crystal (fore max 6px, mid 7px: the round
+  bokeh blobs are gone); Contact embers as warm grains (`ember.frag`); hero orbit grains
+  larger (×2.4) and 90 of them. `ChipCluster` takes a `palette`.
+- FPS (prod, Retina) down the Work cards: AMD 60.3; HD 630 lite 60.0–60.3.
+- Sheets: `docs/screens/round5-grains.jpg` (seg_44 above), `round5-grains-detail.jpg`.

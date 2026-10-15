@@ -12,7 +12,7 @@ import {
 } from 'three'
 import { sceneColors } from '@/styles/scene'
 import { createMotesGeometry, createMotesUniforms, gaussian } from '../journey/motes'
-import particlesFragment from '../shaders/particles.frag'
+import particlesFragment from '../shaders/grain.frag'
 import motesVertex from '../shaders/motes.vert'
 import noise from '../shaders/noise.glsl'
 import shaftFragment from '../shaders/shaft.frag'

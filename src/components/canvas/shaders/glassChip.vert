@@ -61,8 +61,13 @@ void main() {
   }
 
   // A shard: the octahedron stretched long and flat, its own proportions per chip.
-  vec3 shape = vec3(1.0, 0.45 + seed.w * 0.4, 0.22 + seed.z * 0.2);
-  float size = uSize * mix(0.6, 2.6, pow(seed.x, 5.0)) * ends;
+  // Varied crystals: long shards, flat flakes, near-cubic grains.
+  float kind = fract(seed.w * 7.31);
+  vec3 shape = kind < 0.35 ? vec3(1.0, 0.35 + seed.z * 0.2, 0.3)
+    : kind < 0.65 ? vec3(0.8, 0.75, 0.18 + seed.z * 0.1)
+    : vec3(0.7 + seed.z * 0.3, 0.65, 0.6);
+  // Mostly tiny, a few larger.
+  float size = uSize * mix(0.45, 2.0, pow(seed.x, 6.0)) * ends;
   mat3 spin = rotation(vec3(seed.z - 0.5, seed.w - 0.5, seed.x - 0.4), uTime * (0.25 + seed.z * 0.6) + seed.y * 20.0);
   vec3 local = spin * (position * shape) * size;
 
