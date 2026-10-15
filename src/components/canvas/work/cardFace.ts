@@ -21,7 +21,7 @@ const mix = (a: string, b: string, amount: number) => {
   return `#${hex(16)}${hex(8)}${hex(0)}`
 }
 
-/** Card title style: 'light' (Martian Mono 300, chosen) or 'pixel' (Departure Mono). */
+/** Card title style: 'light' (General Sans Light, chosen) or 'pixel' (Departure Mono). */
 const TITLE_STYLE: 'light' | 'pixel' =
   typeof window !== 'undefined' &&
   new URLSearchParams(window.location.search).get('type') === 'pixel'
@@ -56,7 +56,7 @@ export class CardFace {
   private context: CanvasRenderingContext2D
   private background = document.createElement('canvas')
   private family: string
-  /** The card titles' display face (Martian Mono, light). */
+  /** The card titles' display face (General Sans Light). */
   private display: string
   private hasCover = false
 
@@ -75,7 +75,7 @@ export class CardFace {
       getComputedStyle(document.documentElement).getPropertyValue('--font-departure').trim() ||
       'monospace'
     this.display =
-      getComputedStyle(document.documentElement).getPropertyValue('--font-martian').trim() ||
+      getComputedStyle(document.documentElement).getPropertyValue('--font-general').trim() ||
       'monospace'
     this.texture = new CanvasTexture(this.canvas)
     this.texture.colorSpace = SRGBColorSpace

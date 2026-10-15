@@ -676,3 +676,63 @@ System 59, Depth 47, Contact 47.
 6. **Lighting finesse (code).** Their scenes have soft volumetric light and halation; ours
    uses fog layers, bloom and corner bleeds. A cheap screen-space god-ray / halation pass
    could close part of it within budget on the full tier.
+
+---
+# Final polish round (2026-10-15)
+
+## What changed
+1. **Glitter grains.** `Pebbles` is now point-sprite glitter (`shaders/glitter.*`): power-law
+   sizes (~80% tiny 1–2 px at 1×, ~17% small, ~3% medium, ~0.15% faceted "sparks"), mostly
+   dim with a slow random twinkle (period 2–6 s), muted palette (~60% silver-lilac, 25%
+   violet/pink, 10% teal, 5% gold), density falling off from the spine (reach capped
+   inside the card ring). Full tier: bokeh by distance from the focus (the held card);
+   lite: none. Atmosphere and trail grains share the soft point with a hot core. The
+   instanced bead meshes and `glassChip.*` are gone. Sheet: `docs/screens/final-grains.jpg`.
+2. **Spine silhouette.** A lilac rim light along the whole silhouette (wings included), wings
+   shorter; no dark blades from any of 8 orbit angles: `docs/screens/spine-orbit.jpg`.
+3. **Light.** `WorkHaze` (a fixed plane that read as a vertical band when the camera
+   orbited) removed; a soft violet bleed off the upper-right corner drifting over ~8 s
+   (`backdrop.frag` `uViolet`).
+4. **Transitions.** The trail after the last card narrows and streams into System's centre
+   and stays until the constellation fills the frame; System mounts its graph from
+   toSystem 0.3. Depth: backdrop, word and bubbles come in earlier, the emerald grain wall
+   sits just above the surface (the camera breaks through dust into the water); the data
+   trail is brighter. The Core now descends into Contact from above (it used to rise
+   through "LET'S TALK"). Strips at 0.25 s: `docs/screens/final-transitions.jpg`.
+5. **Halation** (`post/HalationEffect.ts`, full tier only): a warm halo round highlights
+   above threshold 1.1. God rays not added (optional).
+6. **Card titles: General Sans Light** (Fontshare Free License, self-hosted
+   `src/fonts/GeneralSans-Light.woff2`, not preloaded): clearly more editorial than
+   Martian Mono 300 at 1× and Retina; Satoshi Light close but rounder.
+   `docs/screens/title-type.jpg`.
+7. **Performance fix found in the gate:** fast scrolling dipped to 15–20 fps (also on the
+   previous commit). Cause: every pointer / wheel event raycast each card group,
+   including its 14 000 dissolve-dust points, on the CPU. The dust is excluded from
+   raycasting (`raycast={() => null}`). Work / System also unmount from view earlier.
+
+## Quality gate
+| | AMD (full) | HD 630 (lite) |
+|---|---|---|
+| Hero / statement / Work / System / Depth / Contact (after arriving) | 60.2 / 60.2 / 60.2 / 60.2 / 60.2 / 60.2 | 60.0 / 60.2 / 60.2 / 60.0 / 60.2 / 60.2 |
+| Down the Work cards | 60.3 every card | 60.3 every card |
+| Idle hero, 60 s (5 s windows) | 60.2 in all 12 | 55.0 first (tier switch), then 60.0–60.2 |
+| Fast scroll, 2 full loops (1 s windows) | median 60, p10 58, min 19 (first second after load) | median 60, p10 58, min 16 (first second) |
+
+- Lighthouse desktop: Performance 90–91 (three runs), Accessibility 100, Best Practices 100,
+  SEO 100. Mobile: Performance 70 (TBT 1.3 s under 4× CPU throttle: the 3D start-up), FCP
+  1.1 s, LCP 2.1 s, CLS 0; Accessibility / Best Practices / SEO 100.
+- Reduced motion and the no-WebGL fallback checked. Phone number only on /impressum (build
+  output, live pages, CV PDF). No console errors or warnings in the production runs.
+- Final journey (desktop full, desktop lite, phone 390×844): `docs/screens/final-journey-4.jpg`.
+
+## What still differs from the reference
+1. Sculpted matter: their column / Lab are scanned assets; ours is procedural (needs a
+   model in `public/models/spine-raw.glb`).
+2. Card media: theirs are art-directed photo / video; ours are screenshots, a dashboard and
+   abstract live scenes (needs better images or short clips per job).
+3. Mobile load: Lighthouse mobile 70; the 3D start-up blocks ~1.3 s on a throttled CPU.
+   Splitting more of the world's construction across idle callbacks would help (code).
+4. Grain refraction: their grains bend what's behind them; ours are additive sprites (code,
+   costly).
+5. Volumetric light: their shafts and halation are richer; ours are fog layers, halation
+   and corner bleeds (no god rays yet).

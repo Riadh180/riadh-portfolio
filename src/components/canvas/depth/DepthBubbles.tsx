@@ -12,7 +12,7 @@ import vertexShader from '../shaders/bubble.vert'
 import type { SceneClock } from '../useSceneClock'
 
 const COUNT = 70
-const BOX = { width: 9, height: 8, depth: 5 }
+const BOX = { width: 9, height: 13, depth: 5 }
 
 function createBubbles() {
   const positions = new Float32Array(COUNT * 3)
@@ -57,7 +57,7 @@ export function DepthBubbles({ clock }: { clock: SceneClock }) {
     m.uniforms.uSize!.value = 0.07 * size.height * dpr
   })
   return (
-    <points geometry={geometry} frustumCulled={false} position={[0, -2.5, 0]}>
+    <points geometry={geometry} frustumCulled={false} position={[0, 0.5, 0]}>
       <shaderMaterial
         ref={material}
         vertexShader={vertexShader}

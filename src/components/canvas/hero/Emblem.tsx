@@ -176,7 +176,8 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     // Narrow screens: stay over the (narrower) tagline.
     g.position.x *= Math.min(1, size.width / size.height / 1.6)
     g.position.y += Math.sin(t * 0.5) * emblem.float
-    if (contact > 0) g.position.y += PLACES.contact - (1 - contact) * 3.5
+    // Descends into place from above, never through "LET'S TALK" below it.
+    if (contact > 0) g.position.y += PLACES.contact + (1 - contact) * 3.5
     // Portrait screens see a narrower slice of the world: keep the emblem's share of width.
     const portrait = Math.min(1, Math.max(0.55, (size.width / size.height) * 0.9))
     // Leaving the statement: held edge-on, The Core follows the camera down a little and

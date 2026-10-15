@@ -55,7 +55,7 @@ export function LensShards({ journey }: { journey: JourneyState }) {
   useFrame(({ camera }) => {
     const g = group.current
     if (!g) return
-    g.visible = !column && journey.toWork > 0.9 && journey.toSystem < 0.2
+    g.visible = !column && journey.toWork > 0.9 && journey.toSystem < 0.15
     if (!g.visible) return
     g.children.forEach((child, i) => {
       const pose = poses[i]

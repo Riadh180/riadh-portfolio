@@ -88,7 +88,13 @@ export function createOilMaterial() {
       )
       .replace(
         '#include <opaque_fragment>',
-        `// Wings: the body's lilac, lit, never a black mirror.
+        `// One lit sculpture: a lilac rim light along its whole silhouette (wings included);
+        // the darkest values stay in the crevices.
+        {
+          float rimLight = pow(1.0 - abs(dot(normal, normalize(vViewPosition))), 2.5);
+          outgoingLight += mix(uOilViolet, vec3(1.0), 0.35) * rimLight * 0.3;
+        }
+        // Wings: the body's lilac, lit, never a black mirror.
         outgoingLight += uOilViolet * 0.16 * vOilSmooth;
         // Inner glitter: tiny bright points twinkling inside the bodies (not the wings).
         {

@@ -1,32 +1,26 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import {
-  InstancedBufferAttribute,
-  InstancedBufferGeometry,
-  IcosahedronGeometry,
-  DoubleSide,
+  AdditiveBlending,
+  BufferGeometry,
+  Float32BufferAttribute,
   type Color,
   type ShaderMaterial,
 } from 'three'
+import { useTier } from '@/stores/tier'
 import { sceneColors, sceneConfig } from '@/styles/scene'
 import { gaussian } from '../journey/motes'
-import fragmentShader from '../shaders/glassChip.frag'
-import vertexShader from '../shaders/glassChip.vert'
+import fragmentShader from '../shaders/glitter.frag'
+import vertexShader from '../shaders/glitter.vert'
 import type { SceneClock } from '../useSceneClock'
 
-/** The bead every grain is drawn from: a faceted near-sphere (icosahedron, 20 faces). */
-const SHARD = new IcosahedronGeometry(1, 0)
-
-/** Instanced chips: one shard, per-chip orbit / cloud / seed (positions come from the shader). */
+/** Glitter points: per-grain orbit / cloud / seed (positions come from the shader). */
 function chipGeometry(orbit: Float32Array, cloud: Float32Array, seed: Float32Array, count: number) {
-  const geometry = new InstancedBufferGeometry()
-  geometry.index = SHARD.index
-  geometry.setAttribute('position', SHARD.getAttribute('position'))
-  geometry.setAttribute('normal', SHARD.getAttribute('normal'))
-  geometry.setAttribute('orbit', new InstancedBufferAttribute(orbit, 4))
-  geometry.setAttribute('cloud', new InstancedBufferAttribute(cloud, 4))
-  geometry.setAttribute('seed', new InstancedBufferAttribute(seed, 4))
-  geometry.instanceCount = count
+  const geometry = new BufferGeometry()
+  geometry.setAttribute('position', new Float32BufferAttribute(new Float32Array(count * 3), 3))
+  geometry.setAttribute('orbit', new Float32BufferAttribute(orbit, 4))
+  geometry.setAttribute('cloud', new Float32BufferAttribute(cloud, 4))
+  geometry.setAttribute('seed', new Float32BufferAttribute(seed, 4))
   return geometry
 }
 
@@ -62,12 +56,12 @@ function createPebbles() {
     const cluster = clusters[i % clusters.length] ?? { y: 0, angle: 0 }
     // Almost nothing in empty space: few loose chips.
     const loose = Math.random() < 0.02
-    const reach = inCloud
-      ? 0.2 + Math.random() * 0.8
-      : 0.85 + Math.abs(gaussian()) * (1 - hug) * 0.6
+    // Density falls off with distance from the spine: dense close in, wispy outside.
+    // Capped well inside the cards' ring, so grains don't cover a card's face.
+    const reach = inCloud ? 0.2 + Math.random() * 0.8 : 0.9 + Math.random() ** 3 * (1.45 - hug)
     orbit.set(
       [
-        loose ? Math.random() * Math.PI * 2 : cluster.angle + gaussian() * 0.45,
+        loose ? Math.random() * Math.PI * 2 : cluster.angle + gaussian() * 0.8,
         reach,
         loose ? (Math.random() * 2 - 1) * halfHeight : cluster.y + gaussian() * 0.22,
         0.9 + Math.random() * 0.2,
@@ -81,33 +75,46 @@ function createPebbles() {
   return chipGeometry(orbit, cloud, seed, count)
 }
 
+/** Muted glitter: mostly silver-lilac, some violet/pink, a little teal and gold. */
+const GLITTER = [
+  sceneColors.glass.clone().lerp(sceneColors.violet, 0.45),
+  sceneColors.violet.clone().lerp(sceneColors.pink, 0.4),
+  sceneColors.teal.clone(),
+  sceneColors.warm.clone(),
+]
+
+/** World size of a tiny grain at the focus (1–2 px at 1×). */
+const GRAIN = 0.011
+
 function createUniforms(focusDistance: number, palette?: Color[]) {
   return {
     uTime: { value: 0 },
     uSize: { value: 0 },
+    uViewportHeight: { value: 900 },
+    uBokeh: { value: 1 },
     uBrightness: { value: 1 },
     uRadius: { value: 1 },
     uRise: { value: 0 },
     uHalfHeight: { value: sceneConfig.spine.height / 2 },
     uFocusDistance: { value: focusDistance },
-    uFilm: { value: [sceneColors.glow, sceneColors.violet, sceneColors.warm] },
-    uPalette: {
-      value: palette ?? [
-        sceneColors.pink,
-        sceneColors.violet,
-        sceneColors.teal,
-        sceneColors.emerald,
-      ],
-    },
+    uPalette: { value: palette ?? GLITTER },
   }
 }
 
-function updateUniforms(material: ShaderMaterial | null, clock: SceneClock, scale = 1) {
+function updateUniforms(
+  material: ShaderMaterial | null,
+  clock: SceneClock,
+  viewportHeight: number,
+  scale = 1,
+) {
   if (!material) return
-  const { size, brightness, radius, rise } = sceneConfig.pebbles
+  const { brightness, radius, rise } = sceneConfig.pebbles
   const u = material.uniforms
   u.uTime!.value = clock.time
-  u.uSize!.value = size * scale
+  u.uSize!.value = GRAIN * scale
+  u.uViewportHeight!.value = viewportHeight
+  // Bokeh on the full tier only.
+  u.uBokeh!.value = useTier.getState().tier === 'lite' ? 0 : 1
   u.uBrightness!.value = brightness
   u.uRadius!.value = radius
   u.uRise!.value = rise
@@ -116,10 +123,9 @@ function updateUniforms(material: ShaderMaterial | null, clock: SceneClock, scal
 type Props = { clock: SceneClock; focusDistance: number }
 
 /**
- * Small shards of tinted glass (pink, violet, teal, emerald), tumbling and glinting,
- * packed in dense clusters round the spine and in a few small clouds, rising slowly; a
- * rare few large ones. Nothing far from the column. Instanced, moved in the vertex
- * shader: thousands cost one draw call.
+ * Glitter round the spine: mostly tiny, dim, muted grains that twinkle now and then, a
+ * few small and medium ones, a handful of faceted sparks; in loose layered clouds dense at
+ * the spine and wispy outside. Points moved in the vertex shader: one draw call.
  */
 export function Pebbles({ clock, focusDistance }: Props) {
   const material = useRef<ShaderMaterial>(null)
@@ -127,10 +133,12 @@ export function Pebbles({ clock, focusDistance }: Props) {
   const uniforms = useMemo(() => createUniforms(focusDistance), [focusDistance])
   useEffect(() => () => geometry.dispose(), [geometry])
 
-  useFrame(() => updateUniforms(material.current, clock))
+  useFrame(({ size, viewport }) =>
+    updateUniforms(material.current, clock, size.height * viewport.dpr),
+  )
 
   return (
-    <mesh geometry={geometry} frustumCulled={false}>
+    <points geometry={geometry} frustumCulled={false}>
       <shaderMaterial
         ref={material}
         vertexShader={vertexShader}
@@ -138,9 +146,9 @@ export function Pebbles({ clock, focusDistance }: Props) {
         uniforms={uniforms}
         transparent
         depthWrite={false}
-        side={DoubleSide}
+        blending={AdditiveBlending}
       />
-    </mesh>
+    </points>
   )
 }
 
@@ -163,16 +171,18 @@ export function ChipCluster({
   size?: number
   clock: SceneClock
   focusDistance: number
-  /** Four tints for the grains (default: pink, violet, teal, emerald). */
+  /** Four tints (default: silver-lilac, violet/pink, teal, gold). */
   palette?: Color[]
 }) {
   const material = useRef<ShaderMaterial>(null)
   const geometry = useMemo(() => createCluster(clusters, count), [clusters, count])
   const uniforms = useMemo(() => createUniforms(focusDistance, palette), [focusDistance, palette])
   useEffect(() => () => geometry.dispose(), [geometry])
-  useFrame(() => updateUniforms(material.current, clock, size))
+  useFrame((state) =>
+    updateUniforms(material.current, clock, state.size.height * state.viewport.dpr, size),
+  )
   return (
-    <mesh geometry={geometry} frustumCulled={false}>
+    <points geometry={geometry} frustumCulled={false}>
       <shaderMaterial
         ref={material}
         vertexShader={vertexShader}
@@ -180,9 +190,9 @@ export function ChipCluster({
         uniforms={uniforms}
         transparent
         depthWrite={false}
-        side={DoubleSide}
+        blending={AdditiveBlending}
       />
-    </mesh>
+    </points>
   )
 }
 

@@ -187,7 +187,7 @@ export function createSpineGeometry(edge = 0.13) {
       const kind = pick(i * 7 + k, 10)
       const long = kind < 0.45
       const blade = wing({
-        length: long ? 0.7 + pick(i, 11 + k) * 0.35 : 0.35 + pick(i, 12 + k) * 0.25,
+        length: long ? 0.55 + pick(i, 11 + k) * 0.25 : 0.3 + pick(i, 12 + k) * 0.2,
         width: long ? 0.85 + pick(i, 13 + k) * 0.45 : 0.6 + pick(i, 14 + k) * 0.35,
         sweep: (pick(i, 15 + k) - 0.4) * 0.7,
         curl: kind > 0.4 ? 0.7 + pick(i, 16 + k) * 0.7 : 0,

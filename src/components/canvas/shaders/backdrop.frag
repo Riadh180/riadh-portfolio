@@ -9,6 +9,9 @@ uniform float uAspect;
 uniform float uFog;
 uniform float uTime;
 uniform vec3 uFogColor;
+/** Work: a soft violet bleed off the upper-right corner, drifting slowly (~8s). */
+uniform float uViolet;
+uniform vec3 uVioletColor;
 
 varying vec2 vUv;
 
@@ -53,5 +56,10 @@ void main() {
   }
   color += uLowerLeft * bleed(vec2(-0.08, -0.12)) * uStrength;
   color += uUpperRight * bleed(vec2(1.08, 1.12)) * uStrength * 0.8;
+  if (uViolet > 0.0) {
+    vec2 corner = vec2(1.25 + sin(uTime * 0.785) * 0.06, 0.95 + cos(uTime * 0.6) * 0.08);
+    vec2 d = (vUv - corner) * vec2(max(uAspect, 1.0), 1.0);
+    color += uVioletColor * exp(-dot(d, d) * 3.2) * uViolet;
+  }
   gl_FragColor = vec4(color, 1.0);
 }

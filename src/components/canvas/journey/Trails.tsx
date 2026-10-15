@@ -50,7 +50,8 @@ export function Trails({ journey, clock }: { journey: JourneyState; clock: Scene
       />
       <ParticleWall
         clock={clock}
-        y={-65}
+        // Just above the water surface: the camera breaks through the dust into Depth.
+        y={-72.5}
         tilt={[0.05, 0.18]}
         colors={colors.walls.depth}
         seed={3}
@@ -75,15 +76,18 @@ export function Trails({ journey, clock }: { journey: JourneyState; clock: Scene
       />
       <DustTrail
         top={workBottom + 1}
-        bottom={PLACES.system + 3}
+        bottom={PLACES.system}
         fromX={WORK.x}
         toX={SYSTEM.x}
         width={1.1}
         depth={1.6}
         count={3200}
         colors={[...colors.chips]}
-        brightness={1.6}
-        amount={() => band(journey.toSystem, 0.02, 0.95, 0.12)}
+        brightness={2.8}
+        gather
+        // The work feeds the system: the trail streams into its centre and stays until
+        // the constellation fills the frame (overlapping its arrival).
+        amount={() => band(journey.toSystem, 0.02, 1.0, 0.12) * (1 - journey.toDepth)}
       />
       <DustTrail
         top={PLACES.system - 3}
@@ -95,7 +99,7 @@ export function Trails({ journey, clock }: { journey: JourneyState; clock: Scene
         count={3600}
         colors={[...colors.data]}
         amount={() => band(journey.toDepth, 0.02, 0.85, 0.12)}
-        brightness={2.4}
+        brightness={3.4}
       />
       <DustTrail
         top={PLACES.depth - 4}

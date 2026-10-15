@@ -10,7 +10,6 @@ import { Drift } from '../motion/Drift'
 import type { SceneClock } from '../useSceneClock'
 import { Pebbles } from './Pebbles'
 import { Spine } from './Spine'
-import { WorkHaze } from './WorkHaze'
 import { WorkCards } from './WorkCards'
 
 type Props = { journey: JourneyState; clock: SceneClock }
@@ -33,7 +32,9 @@ export function WorkPlace({ journey, clock }: Props) {
   useFrame(() => {
     const g = group.current
     if (!g) return
-    g.visible = journey.toWork > 0.02 && journey.toSystem < 0.98
+    // Gone once the camera has descended past it (it would still cost the full Work
+    // scene, off screen, for the rest of the flight to System).
+    g.visible = journey.toWork > 0.02 && journey.toSystem < 0.55
     g.position.set(WORK.x, PLACES.work, 0)
   })
 
@@ -54,10 +55,10 @@ export function WorkPlace({ journey, clock }: Props) {
             : ease((journey.toWork - 0.55) / 0.45) * (1 - ease(journey.inWork / 0.12))
         }
       />
-      <WorkHaze journey={journey} />
       <Drift journey={journey} seed={11} weight={1.4}>
         <Spine clock={clock} />
-        <Pebbles clock={clock} focusDistance={column ? 6 : WORK.distance} />
+        {/* Focus on the card the camera holds at (dollied in, card in front of the column). */}
+        <Pebbles clock={clock} focusDistance={column ? 6 : WORK.distance - WORK.dolly - 2} />
         <WorkCards layout={column ? 'column' : 'orbit'} clock={clock} />
       </Drift>
     </group>

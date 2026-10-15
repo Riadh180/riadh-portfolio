@@ -20,16 +20,26 @@ type Trail = {
   /** How strongly the trail shows now (0 hides it): set from the journey. */
   amount: () => number
   brightness?: number
+  /** Narrows to a point at the bottom (the trail streams into the next place's centre). */
+  gather?: boolean
 }
 
-type Shape = Pick<Trail, 'top' | 'bottom' | 'fromX' | 'toX' | 'width' | 'depth' | 'count'>
+type Shape = Pick<
+  Trail,
+  'top' | 'bottom' | 'fromX' | 'toX' | 'width' | 'depth' | 'count' | 'gather'
+>
 
-function createTrail({ top, bottom, fromX, toX, width, depth, count }: Shape) {
+function createTrail({ top, bottom, fromX, toX, width, depth, count, gather }: Shape) {
   return createMotesGeometry(count, (_, out) => {
     const t = Math.random()
     const x = fromX + (toX - fromX) * t * t + Math.sin(t * 5) * width * 0.4
+    const narrow = gather ? 1 - t * t * 0.9 : 1
     // Spread in depth towards the camera (z > 0): the camera passes through it.
-    out.set(x + gaussian() * width * 1.6, top + (bottom - top) * t, gaussian() * depth * 1.8 + 1.5)
+    out.set(
+      x + gaussian() * width * 1.6 * narrow,
+      top + (bottom - top) * t,
+      (gaussian() * depth * 1.8 + 1.5) * narrow,
+    )
   })
 }
 
@@ -48,11 +58,12 @@ export function DustTrail({
   colors,
   amount,
   brightness = 1.6,
+  gather = false,
 }: Trail) {
   const points = useRef<Points>(null)
   const geometry = useMemo(
-    () => createTrail({ top, bottom, fromX, toX, width, depth, count }),
-    [top, bottom, fromX, toX, width, depth, count],
+    () => createTrail({ top, bottom, fromX, toX, width, depth, count, gather }),
+    [top, bottom, fromX, toX, width, depth, count, gather],
   )
   const uniforms = useMemo(() => createMotesUniforms(colors), [colors])
   useEffect(() => () => geometry.dispose(), [geometry])

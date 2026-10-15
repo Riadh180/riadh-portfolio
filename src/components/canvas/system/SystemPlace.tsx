@@ -34,7 +34,8 @@ export function SystemPlace({ journey, clock, look, pointer, reducedMotion }: Pr
   useFrame(() => {
     const g = group.current
     if (!g) return
-    g.visible = journey.toSystem > 0.02 && journey.toDepth < 0.9
+    // From when it can come into view until the camera has dropped below it.
+    g.visible = journey.toSystem > 0.3 && journey.toDepth < 0.6
     g.position.set(column ? 0 : SYSTEM.x, PLACES.system, 0)
   })
 

@@ -40,6 +40,8 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
       uUpperRight: { value: new Color().copy(sceneColors.teal) },
       uStrength: { value: 0 },
       uFog: { value: 0 },
+      uViolet: { value: 0 },
+      uVioletColor: { value: new Color().copy(sceneColors.violet).multiplyScalar(0.16) },
       uTime: { value: 0 },
       uFogColor: {
         value: new Color().copy(sceneColors.teal).lerp(sceneColors.bg, 0.55).multiplyScalar(0.18),
@@ -61,8 +63,8 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
     const lowerLeft = u.uLowerLeft!.value as Color
     const upperRight = u.uUpperRight!.value as Color
     lowerLeft.copy(sceneColors.violet)
-    // Work: charcoal and dark teal round the frame; the purple lives in the glow round the
-    // column (WorkHaze), not in the corners.
+    // Work: charcoal and dark teal round the frame; the purple is one soft, drifting bleed
+    // off the upper-right corner.
     {
       const ease = (x: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, x)))) / 2
       const work = journey ? ease(journey.toWork) * (1 - ease(journey.toSystem)) : 0
@@ -70,6 +72,7 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
       // Lite tier: no fog (a full-screen noise pass).
       u.uFog!.value = useTier.getState().tier === 'lite' ? 0 : work
       u.uTime!.value = performance.now() / 1000
+      u.uViolet!.value = work
       // At Work the corner bleeds step back: the darkness is textured fog instead.
       u.uStrength!.value *= 1 - work * 0.55
     }

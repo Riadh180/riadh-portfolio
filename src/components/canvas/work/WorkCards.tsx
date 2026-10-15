@@ -577,7 +577,15 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
       <mesh ref={blockMesh} geometry={block} material={blockGlass} />
       {screen && <mesh ref={screenMesh} geometry={plane} material={screen} position-z={front} />}
       {dustMaterial && (
-        <points ref={dustPoints} geometry={dust} material={dustMaterial} frustumCulled={false} />
+        // Not interactive: no raycasting (14k points per card would be tested on every
+        // pointer / wheel event that reaches the card's handlers).
+        <points
+          ref={dustPoints}
+          geometry={dust}
+          material={dustMaterial}
+          frustumCulled={false}
+          raycast={() => null}
+        />
       )}
     </group>
   )

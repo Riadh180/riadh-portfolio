@@ -125,7 +125,8 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
         <DepthBackdrop
           opacity={() => {
             const ease = (x: number) => (1 - Math.cos(Math.PI * x)) / 2
-            return ease(journey.toDepth) * (1 - ease(journey.toContact))
+            // In early: the camera breaks through the surface into the scene.
+            return ease(Math.min(1, journey.toDepth * 1.6)) * (1 - ease(journey.toContact))
           }}
         />
         <DepthPlace journey={journey} clock={clock} />

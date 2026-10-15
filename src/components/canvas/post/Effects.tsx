@@ -6,6 +6,7 @@ import { HalfFloatType } from 'three'
 import { useTier } from '@/stores/tier'
 import { sceneConfig } from '@/styles/scene'
 import { GradeEffect } from './GradeEffect'
+import { HalationEffect } from './HalationEffect'
 
 /**
  * HDR pipeline: bloom on the brightest cores only, radial chromatic aberration
@@ -24,6 +25,7 @@ export function Effects({ reducedMotion, antialias = true }: Props) {
   const bloom = useRef<BloomEffect>(null)
   const chromatic = useRef<ChromaticAberrationEffect>(null)
   const grade = useMemo(() => new GradeEffect(), [])
+  const halation = useMemo(() => new HalationEffect(), [])
   // Only on coarse (~1×) screens, judged by the device, not the live DPR: when the
   // performance monitor lowers a Retina screen's DPR, multisampling must not switch on
   // and cost back the frames it just won.
@@ -31,6 +33,7 @@ export function Effects({ reducedMotion, antialias = true }: Props) {
   const multisampling = antialias && coarse ? 2 : 0
   const lite = useTier((state) => state.tier === 'lite')
   useEffect(() => () => grade.dispose(), [grade])
+  useEffect(() => () => halation.dispose(), [halation])
 
   useFrame(() => {
     const { bloom: bloomConfig, chromatic: chromaticConfig } = sceneConfig
@@ -52,6 +55,8 @@ export function Effects({ reducedMotion, antialias = true }: Props) {
   return (
     <EffectComposer multisampling={multisampling} frameBufferType={HalfFloatType}>
       {/* Bloom at half resolution (a quarter in the lite tier): it only blurs the cores. */}
+      {/* Halation before bloom sees the HDR highlights; full tier only. */}
+      {!lite && <primitive object={halation} />}
       <Bloom ref={bloom} mipmapBlur resolutionScale={lite ? 0.25 : 0.5} levels={lite ? 4 : 8} />
       <ChromaticAberration ref={chromatic} radialModulation />
       <primitive object={grade} />
