@@ -40,15 +40,17 @@ export function SystemPlace({ journey, clock, look, pointer, reducedMotion }: Pr
 
   return (
     <group ref={group} visible={false}>
-      {/* "SYSTEM", huge behind the graph: The Core's glass bends it, the gems break it. */}
+      {/* "SYSTEM", large and dim above the constellation. */}
       <SceneWord
         lines={WORD}
-        height={3.4}
-        position={column ? [0, 0.2, -5.5] : [-1.8, 0.2, -5.5]}
+        height={column ? 3.4 : 2.2}
+        // Above the graph, never behind a label; The Core's glass is below it.
+        position={column ? [0, 4.2, -5.5] : [-1, 5.3, -4]}
         color={INK}
         clock={clock}
         reducedMotion={reducedMotion}
         fit={0.95}
+        billboard
         // Phones: the graph is small and its labels sit over the word: fainter there.
         amount={() =>
           (column ? 0.45 : 1) *

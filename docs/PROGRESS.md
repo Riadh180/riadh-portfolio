@@ -429,3 +429,14 @@ System 59, Depth 47, Contact 47.
   round the column.
 - FPS (prod, Retina) down the cards: AMD 60.3, HD 630 lite 60.3.
 - Sheet: `docs/screens/final-work.jpg` (seg_44 above).
+
+## System — "intelligence and connection"
+- "SYSTEM" moved fully above the constellation (desktop: [-1, 5.3, -4], height 2.2),
+  billboarded (`SceneWord billboard`) so the camera's swing never sees it at a slant;
+  camera 14 → 16.5 to make room. Never behind a label now.
+- Livelier: the camera's drift round the graph 0.07 → 0.12 rad/s, ±0.6 rad; filament
+  pulses leave more often (0.35 → 0.45).
+- Open: the word's rise-in / glitch is often caught mid-way in captures; the transition
+  from Work (chips gathering into the first nodes) was not built (the blue particle wall
+  carries it).
+- Sheet: `docs/screens/final-system.jpg`.

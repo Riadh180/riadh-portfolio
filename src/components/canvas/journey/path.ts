@@ -26,7 +26,7 @@ export const DEPTH = { x: 1.2, distance: 7.5, below: 2.6, lookUp: 1.3, phoneDist
 export const CONTACT = { distance: 7, hero: 10 }
 
 /** The System place: the graph right of centre, seen from further back (it's wide). */
-export const SYSTEM = { x: 2.2, distance: 14, phoneDistance: 30, phoneShift: 0.24, swing: 0.45 }
+export const SYSTEM = { x: 2.2, distance: 16.5, phoneDistance: 30, phoneShift: 0.24, swing: 0.6 }
 
 /**
  * The Work place's layout, in its own space: the spine on the axis, the cards stacked
@@ -174,7 +174,8 @@ export class JourneyState {
       const systemDistance = column ? SYSTEM.phoneDistance : SYSTEM.distance
       this.y = workY + (PLACES.system - workY) * down
       this.distance = workDistance + (systemDistance - workDistance) * down
-      const swing = Math.sin(this.time * 0.07) * SYSTEM.swing
+      // A slow but constant drift round the constellation: never still for long.
+      const swing = Math.sin(this.time * 0.12) * SYSTEM.swing
       // Leave the orbit to the nearest whole turn, so the camera doesn't unwind.
       const turns = Math.round(this.angle / (Math.PI * 2)) * Math.PI * 2
       this.angle = this.angle * (1 - down) + (column ? 0 : swing + turns) * down

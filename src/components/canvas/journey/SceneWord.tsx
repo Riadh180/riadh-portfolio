@@ -32,6 +32,8 @@ type Props = {
   ripple?: boolean
   /** Share of the visible width it may take at most (it shrinks on narrow screens). */
   fit?: number
+  /** Always turned to face the camera (for places the camera swings round). */
+  billboard?: boolean
 }
 
 /**
@@ -50,6 +52,7 @@ export function SceneWord({
   reducedMotion,
   ripple = false,
   fit = 0.9,
+  billboard = false,
 }: Props) {
   const mesh = useRef<Mesh>(null)
   const material = useRef<ShaderMaterial>(null)
@@ -107,6 +110,7 @@ export function SceneWord({
       s.nextGlitch = now + RISE + 1.4
     }
 
+    if (billboard) m.quaternion.copy(camera.quaternion)
     // Fit: never wider than the visible width at its depth.
     m.getWorldPosition(s.world)
     const visible = viewport.getCurrentViewport(camera, s.world).width
