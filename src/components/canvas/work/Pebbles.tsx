@@ -29,13 +29,15 @@ function chipGeometry(orbit: Float32Array, cloud: Float32Array, seed: Float32Arr
   return geometry
 }
 
-/** A few small clouds off the column: [x, y, z, spread]. */
-const CLOUDS: [number, number, number, number][] = [
-  [-1.4, 2.4, 2.2, 0.45],
-  [1.6, -1.1, 2.0, 0.38],
-  [-1.6, -3.2, -0.4, 0.4],
-  [1.7, 3.6, -0.6, 0.32],
-]
+/**
+ * Loose drifting clouds round the column and between the cards: [x, y, z, spread], at
+ * the cards' heights and in the gaps between them, spread through depth.
+ */
+const CLOUDS: [number, number, number, number][] = Array.from({ length: 14 }, (_, k) => {
+  const angle = k * 2.4
+  const reach = 1.6 + (k % 3) * 0.7
+  return [Math.cos(angle) * reach, 3 - k * 0.95, Math.sin(angle) * reach, 0.9 + (k % 4) * 0.25]
+})
 
 /**
  * Most chips sit in dense clusters strung up the spine (each cluster rises as one, since

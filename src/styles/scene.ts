@@ -119,11 +119,11 @@ export const sceneConfig = {
     size: 0.022,
     brightness: 1,
     /** Distance from the axis where they gather. */
-    radius: 0.95,
+    radius: 1.15,
     /** How tightly they hug the column (higher = tighter). */
-    hug: 0.7,
-    /** Share that sit in the small clouds away from the column. */
-    clouds: 0.12,
+    hug: 0.35,
+    /** Share that drift in the loose clouds between the cards. */
+    clouds: 0.45,
     /** Rise speed up the column, units per second. */
     rise: 0.18,
   },

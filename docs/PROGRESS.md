@@ -372,3 +372,25 @@ System 59, Depth 47, Contact 47.
 - Lens shards still read faintly in captures; the spine is still darker than the concept.
 - A real spine model would help most (`public/models/spine-raw.glb`).
 - Bliggit's cover.png / login.png were swapped to match their contents: check.
+
+---
+# Round 4 (2026-10-15)
+- Cards as thin glass panes: `BLOCK` 0.24/0.08 → 0.06/0.02, corner radius 0.2 → 0.1, lighter
+  glass body, brighter, wider edge line; the frosted media fills the pane edge to edge.
+  Media brighter (milk 0.26, saturation ×1.3, rest brightness 1.05).
+- Spine lighter and calmer: lilac body (violet/glass mix), metalness 0.75; wings shorter
+  (long 0.95–1.4, short 0.45–0.8), flatter (section 0.16), gentler sweep.
+- Particles: the per-card corner chip clusters are gone; the glass chips drift in 14 loose
+  clouds round the column and between the cards (pebbles radius 1.15, hug 0.35, clouds
+  45%).
+- Capstone card: title "AI × WORK", subtitle "CAPSTONE · BRONZE → GOLD" (`cardTitle`,
+  `cardSubtitle`). Cover: kept the medallion; `aiwork_concept.svg` is a light, emoji-heavy
+  sheet that glares on dark glass.
+- Lens shards: the shader never compiled (`half` is a reserved word in GLSL), so they had
+  never shown. Fixed; one soft out-of-focus pane per stop, only near the frame's left /
+  right edge (fades by projected x and when the lens is within ~1.1 units), blur kept
+  inside the plane. Cards passing right by the lens between stops fade too.
+- FPS (prod, Retina): AMD full — hero 60.2, statement 58.6, Work 60.3 every card,
+  System/Depth/Contact 60.2. HD 630 lite — hero 57.4, statement 56.0, Work 60.3,
+  System/Depth/Contact 60.2.
+- Strip: `docs/screens/round4-work.jpg` (seg_44 above, ours below).

@@ -130,12 +130,13 @@ export class CardFace {
 
     c.font = `34px ${this.family}`
     c.fillStyle = palette.text
-    c.fillText(this.job.company.toUpperCase(), left, HEIGHT - 150)
+    c.fillText((this.job.cardSubtitle ?? this.job.company).toUpperCase(), left, HEIGHT - 150)
 
     // The metric, scrambling: ghosted, doubled letters that resolve left to right.
     c.font = `78px ${this.family}`
     let x = left
-    for (const { char, ghost } of scramble(this.job.metric.toUpperCase(), elapsed)) {
+    const title = this.job.cardTitle ?? this.job.metric
+    for (const { char, ghost } of scramble(title.toUpperCase(), elapsed)) {
       const width = c.measureText(char).width
       if (ghost > 0) {
         c.fillStyle = rgba(palette.text, 0.35 * ghost)

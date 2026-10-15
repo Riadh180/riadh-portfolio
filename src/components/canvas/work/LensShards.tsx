@@ -1,6 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
-import { AdditiveBlending, type Group, Vector3 } from 'three'
+import { AdditiveBlending, type Group, type Mesh, type ShaderMaterial, Vector3 } from 'three'
 import { sceneColors } from '@/styles/scene'
 import { type JourneyState, PLACES, WORK } from '../journey/path'
 import fragmentShader from '../shaders/lensShard.frag'
@@ -8,7 +8,7 @@ import vertexShader from '../shaders/glow.vert'
 import { SPIRAL } from './layout'
 
 /** Panel size (world units) and how far in front of the camera's stop it hangs. */
-const SHARD = { width: 1.3, height: 0.85, ahead: 1.35 }
+const SHARD = { width: 1.7, height: 1.1, ahead: 1.7 }
 
 /**
  * Out-of-focus glass panels right in front of the lens (the reference's foreground
@@ -43,7 +43,12 @@ export function LensShards({ journey }: { journey: JourneyState }) {
     [poses],
   )
   const scratch = useMemo(
-    () => ({ camera: new Vector3(), forward: new Vector3(), right: new Vector3() }),
+    () => ({
+      camera: new Vector3(),
+      forward: new Vector3(),
+      right: new Vector3(),
+      screen: new Vector3(),
+    }),
     [],
   )
 
@@ -63,8 +68,16 @@ export function LensShards({ journey }: { journey: JourneyState }) {
       child.position
         .copy(scratch.camera)
         .addScaledVector(scratch.forward, SHARD.ahead)
-        .addScaledVector(scratch.right, pose.side * 0.5)
+        .addScaledVector(scratch.right, pose.side * 1.3)
       child.position.y += pose.lift
+      // Fades as the lens nearly touches it (between stops the camera passes close by):
+      // a soft pane at the edge, never a wash over the frame.
+      const near = child.position.distanceTo(camera.position)
+      const material = (child as Mesh).material as ShaderMaterial
+      // Only at the frame's edges: fades out as it drifts towards the middle.
+      scratch.screen.copy(child.position).project(camera)
+      const edge = Math.min(1, Math.max(0, (Math.abs(scratch.screen.x) - 0.45) / 0.3))
+      material.uniforms.uOpacity!.value = Math.min(1, Math.max(0, (near - 1.1) / 0.6)) * edge
       child.lookAt(camera.position)
       child.rotateZ(pose.side * 0.12)
     })

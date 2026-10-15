@@ -15,8 +15,9 @@ import oilFragment from '../shaders/oil.glsl'
 export function createOilMaterial() {
   const material = new MeshPhysicalMaterial({
     // A hint of violet in the near-black body (Work's accent).
-    color: new Color().copy(sceneColors.bg).lerp(sceneColors.violet, 0.04).multiplyScalar(0.7),
-    metalness: 0.9,
+    // Lighter, lilac (the reference column): a textured body under a soft purple sheen.
+    color: new Color().copy(sceneColors.violet).lerp(sceneColors.glass, 0.35).multiplyScalar(0.32),
+    metalness: 0.75,
     roughness: 0.3,
     clearcoat: 0.25,
     clearcoatRoughness: 0.1,

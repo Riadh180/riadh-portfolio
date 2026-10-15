@@ -75,6 +75,9 @@ export type Job = {
   location: string
   /** Extra detail lines for the CV (from the CV itself). */
   details?: string[]
+  /** The card's big title and small line, when not metric and company. */
+  cardTitle?: string
+  cardSubtitle?: string
   /** A shorter summary for the CV, where the site's wording doesn't fit. */
   cvSummary?: string
   /** More images shown in the opened card's details (public/work/<slug>/…). */
@@ -308,6 +311,8 @@ export const capstone: Job = {
   dates: '04/2026–08/2026',
   location: '',
   metric: 'Bronze → Gold',
+  cardTitle: 'AI × Work',
+  cardSubtitle: 'Capstone · Bronze → Gold',
   summary:
     'A cloud data pipeline (bronze → silver → gold) that measures how AI is changing software development and the German job market, served through a public dashboard.',
   stack: [

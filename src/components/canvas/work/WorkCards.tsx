@@ -40,12 +40,11 @@ import { CardFace } from './cardFace'
 import { FrostField } from './frostField'
 import { type CardScene, createCardScene } from './cardScenes'
 import { COLUMN_SPACING, ORBIT_SPACING, orbitPose } from './layout'
-import { ChipCluster } from './Pebbles'
 
 /** Big, like the reference: the nearest card fills ~45% of the screen width. */
-export const CARD = { width: 2.4, height: 1.5, radius: 0.2 }
-/** One heavy glass block: thick, with a wide bevel that catches the light along its edges. */
-export const BLOCK = { depth: 0.24, bevel: 0.08 }
+export const CARD = { width: 2.4, height: 1.5, radius: 0.1 }
+/** A thin glass pane (seg_44): almost no frame, a narrow bevel that catches the light. */
+export const BLOCK = { depth: 0.06, bevel: 0.02 }
 
 /**
  * Where the cards sit. `orbit` (desktop): a descending helix round the spine, facing out.
@@ -102,7 +101,7 @@ export function createBlock() {
 export function createBlockGlass() {
   const material = new MeshPhysicalMaterial({
     // Dark, cool glass: its body is lit from inside (glassBody), its faces stay glossy.
-    color: new Color().copy(sceneColors.bg).multiplyScalar(0.6),
+    color: new Color().copy(sceneColors.glass).multiplyScalar(0.35),
     metalness: 0.45,
     roughness: 0.12,
     clearcoat: 1,
@@ -126,12 +125,12 @@ export function createBlockGlass() {
         '#include <opaque_fragment>',
         `{
           float grazing = 1.0 - abs(dot(normal, normalize(vViewPosition)));
-          float line = smoothstep(0.62, 0.97, grazing);
+          float line = smoothstep(0.45, 0.95, grazing);
           float hue = fract(atan(normal.y, normal.x) / 6.28318 + 0.5);
           vec3 rim = hue < 0.33 ? mix(uRimColors[0], uRimColors[1], hue * 3.0)
             : hue < 0.66 ? mix(uRimColors[1], uRimColors[2], hue * 3.0 - 1.0)
             : mix(uRimColors[2], uRimColors[0], hue * 3.0 - 2.0);
-          outgoingLight += mix(vec3(1.0), rim, 0.55) * line * 0.7;
+          outgoingLight += mix(vec3(1.0), rim, 0.45) * line * 1.3;
         }
         #include <opaque_fragment>`,
       )
@@ -228,13 +227,6 @@ const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 
 
 /** How long the fly-in and the dissolve take, in seconds (MOTION.md: fly-in ~1s). */
 const OPEN = { fly: 1, dissolve: 0.9 }
-
-/** Chips gathered at a card's edges, in its own space: [x, y, z, spread]. */
-const EDGE_CHIPS: [number, number, number, number][] = [
-  [-CARD.width / 2 - 0.02, -CARD.height / 2 + 0.2, 0.3, 0.32],
-  [CARD.width / 2 + 0.02, CARD.height / 2 - 0.12, 0.28, 0.26],
-  [CARD.width * 0.22, -CARD.height / 2 - 0.04, 0.32, 0.22],
-]
 
 type Props = { layout: CardLayout; clock: SceneClock }
 
@@ -340,7 +332,6 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
   const screenMesh = useRef<Mesh>(null)
   const blockMesh = useRef<Mesh>(null)
   const dustPoints = useRef<Points>(null)
-  const chips = useRef<Group>(null)
   const blockGlass = useMemo(() => createBlockGlass(), [])
   const dustMaterial = useMemo(
     () => (face ? createDustMaterial(face, index * 1.37, live?.target.texture) : null),
@@ -479,16 +470,19 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     const u = screenMaterial.uniforms
     u.uBlur!.value = Math.max(side * (1 - s.focus), s.others * 0.8, s.outside * 0.6)
     u.uBrightness!.value =
-      (0.88 - side * 0.2 + 0.22 * s.focus) * (1 - s.others * 0.65) * (1 - s.outside * 0.6)
+      (1.05 - side * 0.2 + 0.2 * s.focus) * (1 - s.others * 0.65) * (1 - s.outside * 0.6)
+    // Passing right by the lens between stops (not flown in): fade, so a card never
+    // sweeps the frame as a flat wash of colour.
+    const near =
+      flown > 0 ? 1 : Math.min(1, Math.max(0, (g.position.distanceTo(s.eye) - 1.6) / 1.4))
+    u.uBrightness!.value *= near
     u.uDissolve!.value = Math.min(1, s.dissolve)
     // The thick glass block breaks away with the frost.
-    glass.opacity = 1 - Math.min(1, s.dissolve * 1.2)
+    glass.opacity = (1 - Math.min(1, s.dissolve * 1.2)) * near
     glass.visible = glass.opacity > 0.01
     dustShader.uniforms.uDissolve!.value = s.dissolve
     dustShader.uniforms.uPointScale!.value = size.height * viewport.dpr * 0.012
     dustPoints.current!.visible = s.dissolve > 0
-    // Open, the card's own chips step aside (they would sit on the details).
-    if (chips.current) chips.current.visible = flown < 0.3
 
     // The live scene renders only while its card can be seen (and not while another card
     // is open, or once this one has broken away completely).
@@ -553,17 +547,6 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
       {screen && <mesh ref={screenMesh} geometry={plane} material={screen} position-z={front} />}
       {dustMaterial && (
         <points ref={dustPoints} geometry={dust} material={dustMaterial} frustumCulled={false} />
-      )}
-      {layout === 'orbit' && (
-        <group ref={chips}>
-          <ChipCluster
-            clusters={EDGE_CHIPS}
-            count={900}
-            size={2}
-            clock={clock}
-            focusDistance={4.8}
-          />
-        </group>
       )}
     </group>
   )

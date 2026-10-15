@@ -69,7 +69,7 @@ function wing({ length, width, sweep, curl, broken }: Wing) {
     const c = centre(t)
     const taper = Math.pow(1 - t, 0.85)
     const w = width * taper * (0.75 + 0.25 * Math.sin(t * Math.PI))
-    const h = width * 0.3 * taper + 0.008
+    const h = width * 0.16 * taper + 0.006
     for (let k = 0; k < SIDES; k++) {
       const a = (k / SIDES) * Math.PI * 2
       positions.push(c.x, c.y + Math.sin(a) * h, Math.cos(a) * w * 0.5)
@@ -195,9 +195,9 @@ export function createSpineGeometry(edge = 0.13) {
       const kind = pick(i * 7 + k, 10)
       const long = kind < 0.45
       const blade = wing({
-        length: long ? 1.6 + pick(i, 11 + k) * 0.9 : 0.6 + pick(i, 12 + k) * 0.6,
+        length: long ? 0.95 + pick(i, 11 + k) * 0.45 : 0.45 + pick(i, 12 + k) * 0.35,
         width: long ? 0.85 + pick(i, 13 + k) * 0.45 : 0.6 + pick(i, 14 + k) * 0.35,
-        sweep: (pick(i, 15 + k) - 0.35) * 1.6,
+        sweep: (pick(i, 15 + k) - 0.4) * 0.7,
         curl: kind > 0.7 ? 0.8 + pick(i, 16 + k) * 0.6 : 0,
         broken: kind > 0.45 && kind < 0.6,
       })
