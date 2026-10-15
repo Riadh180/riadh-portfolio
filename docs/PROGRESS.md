@@ -485,3 +485,16 @@ System 59, Depth 47, Contact 47.
   open were not done in this pass.
 - Depth: a real dashboard screenshot (`public/work/capstone/dashboard.png`) would read
   better than the medal flow.
+
+---
+# Design + cleanup round (2026-10-15)
+
+## Part 1 — Idle hero performance (fixed)
+- Cause (found with temporary per-subsystem probes on the HD 630): not The Core's shading,
+  refraction or angle, but the hero's **warm light pulse**: every 6–10s the environment
+  cube map re-rendered (and re-filtered) every frame of the pulse. With The Core absent
+  nothing sampled it, which is why removing The Core "fixed" it.
+- Fix: environment resolution 256 → 128 (both tiers; reflections look the same, the
+  light-formers are soft), and no hero warm pulse in the lite tier (Contact's warmth stays).
+- Idle hero, 60s, prod, Retina: HD 630 lite 60.2 in every 5s window after the first
+  (tier switch); AMD full 60.2 in every window (was 53–59).

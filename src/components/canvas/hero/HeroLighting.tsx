@@ -11,6 +11,7 @@ import {
 import { sceneColors, sceneConfig } from '@/styles/scene'
 import type { SceneClock } from '../useSceneClock'
 import { type GlassLook, lightKey } from './glassLook'
+import { useTier } from '@/stores/tier'
 import { warmPulse } from './motion'
 
 /**
@@ -92,7 +93,11 @@ export function HeroLighting({ look, clock, calm, warmHold }: Props) {
   useFrame(() => {
     const { warmPeriod, warmth } = sceneConfig.light
     const warm = Math.max(
-      warmPulse(clock.time, warmPeriod) * warmth * (1 - (calm?.() ?? 0)),
+      // Lite tier: no hero pulse (re-baking the cube map every frame of it stalled
+      // integrated GPUs); Contact's held warmth still comes in.
+      (useTier.getState().tier === 'lite' ? 0 : warmPulse(clock.time, warmPeriod)) *
+        warmth *
+        (1 - (calm?.() ?? 0)),
       (warmHold?.() ?? 0) * warmth,
     )
 
@@ -127,7 +132,7 @@ export function HeroLighting({ look, clock, calm, warmHold }: Props) {
   })
 
   return (
-    <Environment resolution={256} frames={live ? Infinity : 1}>
+    <Environment resolution={128} frames={live ? Infinity : 1}>
       <Lightformer
         ref={(mesh) => {
           meshes.current[0] = mesh
