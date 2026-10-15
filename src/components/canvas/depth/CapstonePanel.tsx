@@ -14,7 +14,7 @@ import {
   type ShaderMaterial,
 } from 'three'
 import { capstone } from '@/content/site'
-import { sceneColors } from '@/styles/scene'
+import { depthPalette } from './depthPalette'
 import { loadAssets } from '../assets'
 import edgeFragment from '../shaders/skillEdge.frag'
 import edgeVertex from '../shaders/skillEdge.vert'
@@ -50,7 +50,7 @@ function createLattice() {
   const colors: number[] = []
   const phases: number[] = []
   const lit: number[] = []
-  const color = sceneColors.emerald
+  const color = depthPalette.gem
   nodes.forEach((a, i) => {
     nodes.forEach((b, j) => {
       if (j <= i || a.distanceTo(b) > 1.0 || Math.random() > 0.7) return
@@ -100,15 +100,15 @@ export function CapstonePanel({ clock }: Props) {
   const gemMaterial = useMemo(
     () =>
       new MeshPhysicalMaterial({
-        color: sceneColors.emerald,
+        color: depthPalette.gem,
         metalness: 1,
         roughness: 0.1,
         clearcoat: 1,
         flatShading: true,
         envMapIntensity: 3,
         // A faint light of their own: the deep is too dark for reflections alone.
-        emissive: sceneColors.emerald,
-        emissiveIntensity: 0.35,
+        emissive: depthPalette.tip,
+        emissiveIntensity: 0.12,
       }),
     [],
   )

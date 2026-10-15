@@ -524,3 +524,11 @@ System 59, Depth 47, Contact 47.
   pass); unchanged here.
 - FPS (prod, Retina) down the cards: AMD 60.3; HD 630 lite 60.3.
 - Strip: `docs/screens/round5-work-dolly.jpg` (seg_44 above).
+
+## Part 4 — Depth: darker, richer colour
+- `depth/depthPalette.ts`: all Depth colours in one place (gems / lattice / roots a deep dark
+  emerald, aqua only at tips and pulses, water much darker, caustics pale aqua-white,
+  backdrop almost black at the bottom; no flat neon green).
+- Two variants compared (`docs/screens/round5-depth-variants.jpg`): A "deep emerald",
+  B "deep teal-blue". Chose **B**: closer to the reference Lab's cold, dark mood.
+- The capstone panel already uses the job cards' glass and lit edge.

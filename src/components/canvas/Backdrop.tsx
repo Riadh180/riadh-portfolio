@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import { Color, type ShaderMaterial } from 'three'
+import { depthPalette } from './depth/depthPalette'
 import { sceneColors, sceneConfig } from '@/styles/scene'
 import type { JourneyState } from './journey/path'
 import fragmentShader from './shaders/backdrop.frag'
@@ -20,7 +21,7 @@ function accentOf(journey: JourneyState) {
   const ease = (x: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, x)))) / 2
   const system = ease(journey.toSystem) * (1 - ease(journey.toDepth))
   const depth = ease(journey.toDepth) * (1 - ease(journey.toContact))
-  if (depth > 0.01) return { color: sceneColors.emerald, amount: depth * 0.3 }
+  if (depth > 0.01) return { color: depthPalette.accent, amount: depth * 0.3 }
   if (system > 0.01) return { color: sceneColors.blue, amount: system * 0.3 }
   return null
 }

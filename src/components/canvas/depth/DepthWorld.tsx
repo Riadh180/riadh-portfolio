@@ -23,6 +23,7 @@ import waterFragment from '../shaders/water.frag'
 import waterVertex from '../shaders/water.vert'
 import type { SceneClock } from '../useSceneClock'
 import { CapstonePanel, PANEL } from './CapstonePanel'
+import { depthPalette } from './depthPalette'
 
 /** The surface's height above the place's origin. */
 export const SURFACE = 4
@@ -43,7 +44,7 @@ function createRoots(count: number) {
   const colors: number[] = []
   const phases: number[] = []
   const lit: number[] = []
-  const color = new Color().copy(sceneColors.emerald)
+  const color = new Color().copy(depthPalette.gem)
   for (let r = 0; r < count; r++) {
     // Right of the text column.
     const x0 = (r / (count - 1)) * 9 - 1.5 + gaussian() * 0.4
@@ -117,21 +118,9 @@ export function DepthWorld({ clock, fog }: Props) {
       water: {
         uTime: { value: 0 },
         uCameraPosition: { value: new Vector3() },
-        uDeep: { value: new Color().copy(sceneColors.teal).multiplyScalar(0.07) },
-        uShallow: {
-          value: new Color()
-            .copy(sceneColors.teal)
-            .lerp(sceneColors.emerald, 0.4)
-            .lerp(sceneColors.glass, 0.3)
-            .multiplyScalar(0.24),
-        },
-        // Caustic light: the glow colour, softened towards white so it isn't neon.
-        uGlow: {
-          value: new Color()
-            .copy(sceneColors.glow)
-            .lerp(sceneColors.glass, 0.45)
-            .multiplyScalar(0.7),
-        },
+        uDeep: { value: depthPalette.deepWater },
+        uShallow: { value: depthPalette.shallow },
+        uGlow: { value: depthPalette.caustic },
         uIntensity: { value: 1 },
         uFog: { value: fog },
       },
@@ -139,9 +128,9 @@ export function DepthWorld({ clock, fog }: Props) {
         uTime: { value: 0 },
         uSeed: { value: seed },
         uOpacity: { value: 0.08 },
-        uColor: { value: sceneColors.glow },
+        uColor: { value: depthPalette.caustic },
       })),
-      plankton: createMotesUniforms([sceneColors.emerald, sceneColors.teal, sceneColors.glow]),
+      plankton: createMotesUniforms([depthPalette.gem, sceneColors.teal, depthPalette.tip]),
       roots: { uTime: { value: 0 } },
     }),
     [fog],

@@ -8,16 +8,13 @@ import {
   type ShaderMaterial,
   SrcAlphaFactor,
 } from 'three'
-import { sceneColors } from '@/styles/scene'
+import { depthPalette } from './depthPalette'
 import fragmentShader from '../shaders/depthBackdrop.frag'
 import vertexShader from '../shaders/depthBackdrop.vert'
 
 /** The colours of Depth's darkness, from the tokens. */
-export const DEPTH_TOP = new Color()
-  .copy(sceneColors.teal)
-  .multiplyScalar(0.07)
-  .lerp(sceneColors.bg, 0.8)
-export const DEPTH_BOTTOM = new Color().copy(sceneColors.bg).multiplyScalar(0.8)
+export const DEPTH_TOP = depthPalette.top
+export const DEPTH_BOTTOM = depthPalette.bottom
 /** What the far water fades into (about the middle of the gradient). */
 export const DEPTH_FOG = new Color().copy(DEPTH_TOP).lerp(DEPTH_BOTTOM, 0.35)
 
