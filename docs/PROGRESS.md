@@ -593,3 +593,14 @@ System 59, Depth 47, Contact 47.
   palette pink / violet / teal.
 - Hero: grains only behind The Core and at its sides (three clusters), never in front.
 - Sheet: `docs/screens/round6-beads.jpg`.
+
+## Part 2 — Background at Work
+- `backdrop.frag`: slow two-layer fbm fog (darker charcoal and lighter teal haze drifting
+  at different speeds) when at Work; the corner bleeds step back 55% there. Off on the lite
+  tier (full-screen noise).
+- `WorkHaze` narrowed 10 → 4.6 wide and dimmer (0.16): purple only as a glow hugging the
+  column, no flat lavender third of the frame.
+- Beads use a 20-face icosahedron (80 faces cost the HD 630 15 fps; at their size they
+  read the same).
+- FPS (prod, Retina) down the Work cards: AMD 60.3; HD 630 lite 60.3.
+- Sheet: `docs/screens/round6-background.jpg`.

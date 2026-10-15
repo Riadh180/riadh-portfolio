@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import { Color, type ShaderMaterial } from 'three'
+import { useTier } from '@/stores/tier'
 import { depthPalette } from './depth/depthPalette'
 import { sceneColors, sceneConfig } from '@/styles/scene'
 import type { JourneyState } from './journey/path'
@@ -38,6 +39,11 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
       uLowerLeft: { value: new Color().copy(sceneColors.violet) },
       uUpperRight: { value: new Color().copy(sceneColors.teal) },
       uStrength: { value: 0 },
+      uFog: { value: 0 },
+      uTime: { value: 0 },
+      uFogColor: {
+        value: new Color().copy(sceneColors.teal).lerp(sceneColors.bg, 0.55).multiplyScalar(0.18),
+      },
       uAspect: { value: 1 },
     }),
     [],
@@ -61,12 +67,17 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
       const ease = (x: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, x)))) / 2
       const work = journey ? ease(journey.toWork) * (1 - ease(journey.toSystem)) : 0
       lowerLeft.lerp(sceneColors.teal, work * 0.65)
+      // Lite tier: no fog (a full-screen noise pass).
+      u.uFog!.value = useTier.getState().tier === 'lite' ? 0 : work
+      u.uTime!.value = performance.now() / 1000
+      // At Work the corner bleeds step back: the darkness is textured fog instead.
+      u.uStrength!.value *= 1 - work * 0.55
     }
     upperRight.copy(sceneColors.teal).lerp(sceneColors.glass, 0.35)
     if (accent) upperRight.lerp(accent.color, accent.amount)
     // Contact: one soft warm bleed from the upper right; the violet lower left stays.
     upperRight.lerp(sceneColors.warm, warm * 0.85)
-    u.uStrength!.value = sceneConfig.light.corners * (1 + warm * 0.6)
+    u.uStrength!.value *= 1 + warm * 0.6
     material.current.uniforms.uAspect!.value = size.width / size.height
   })
 

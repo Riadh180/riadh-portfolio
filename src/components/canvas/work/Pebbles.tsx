@@ -14,8 +14,8 @@ import fragmentShader from '../shaders/glassChip.frag'
 import vertexShader from '../shaders/glassChip.vert'
 import type { SceneClock } from '../useSceneClock'
 
-/** The bead every grain is drawn from: a faceted near-sphere (icosahedron, 80 faces). */
-const SHARD = new IcosahedronGeometry(1, 1)
+/** The bead every grain is drawn from: a faceted near-sphere (icosahedron, 20 faces). */
+const SHARD = new IcosahedronGeometry(1, 0)
 
 /** Instanced chips: one shard, per-chip orbit / cloud / seed (positions come from the shader). */
 function chipGeometry(orbit: Float32Array, cloud: Float32Array, seed: Float32Array, count: number) {

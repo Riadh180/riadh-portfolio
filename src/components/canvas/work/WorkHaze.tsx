@@ -23,11 +23,11 @@ export function WorkHaze({ journey }: { journey: JourneyState }) {
     const amount = ease((journey.toWork - 0.6) / 0.4) * (1 - ease(journey.toSystem * 1.5))
     m.visible = amount > 0.01
     m.position.y = journey.y - PLACES.work
-    ;(m.material as ShaderMaterial).uniforms.uOpacity!.value = amount * 0.22
+    ;(m.material as ShaderMaterial).uniforms.uOpacity!.value = amount * 0.16
   })
 
   return (
-    <mesh ref={mesh} position={[0, 0, -2.4]} scale={[10, 14, 1]} visible={false}>
+    <mesh ref={mesh} position={[0, 0, -2.4]} scale={[4.6, 14, 1]} visible={false}>
       <planeGeometry args={[1, 1]} />
       <shaderMaterial
         vertexShader={vertexShader}
