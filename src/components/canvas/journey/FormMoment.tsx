@@ -27,8 +27,8 @@ export function FormMoment({ journey, simSize, clock }: Props) {
     if (near && s.armed) {
       s.armed = false
       s.startedAt = clock.time
-      // About 40% of the dust; the rest stays free around it.
-      const count = Math.floor(simSize * simSize * 0.4)
+      // About 65% of the dust (fine grain: more of it keeps the outline readable).
+      const count = Math.floor(simSize * simSize * 0.65)
       const distance = 6
       const scale = size.width < 700 ? 0.55 : 0.7
       formParticles(

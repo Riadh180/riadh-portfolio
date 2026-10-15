@@ -736,3 +736,105 @@ System 59, Depth 47, Contact 47.
    costly).
 5. Volumetric light: their shafts and halation are richer; ours are fog layers, halation
    and corner bleeds (no god rays yet).
+
+---
+# Design round (2026-10-15) — "from rendered to art-directed"
+
+## What changed
+1. **A1 Spine: one sculpted organism** (`work/spineGeometry.ts`, `work/oilMaterial.ts`).
+   The column is now one continuous surface: a tube whose cross-section is sculpted. Width
+   swells and pinches (0.6–1.4×), two- and three-fold lobes twist slowly round it, ridged
+   folds and broad noise carve it, it follows an S-curve, and it has rounded ends. Laplacian
+   relax plus smooth normals mean no facets and no blades. Unlike the merged-sphere attempt,
+   nothing intersects, so there are no seams and no hidden inner faces. Material: roughness
+   0.2, clearcoat 1 (0.06), iridescence only at grazing angles, crevice glow, and glitter
+   inside the material (two parallax layers). On phones it is narrower (0.5×) and stretched
+   to run the whole card column. Sheet: `docs/screens/spine-sculpt.jpg` (concept, at_05,
+   before, after, five orbit angles).
+2. **A2 Atmosphere.** No starfield at Work: the atmosphere drops to 10% there. Backdrop fbm
+   fog layers (4 octaves on full, 2 on lite, so lite gets fog too) and a backlight haze
+   behind the column. Grains: 14 foam pockets (8 on the spine's surface, 6 at the cards'
+   inner edges, never on a card face), each with its own muted hue, plus a sparse silver
+   dust.
+3. **A3 No hard-edged colour planes.** The lens shards (`LensShards`, `lensShard.frag`)
+   are removed. 12 orbit angles checked: `docs/screens/work-12-angles.jpg`.
+4. **A4 Cards** (`shaders/frost.frag`, `work/cardFace.ts`):
+   - Family grade: saturation ×0.82, cool-violet shadow lift, highlights compressed below
+     the spine's highlight.
+   - A continuous bevel edge line (fwidth-based, lit from the top left, with a travelling
+     glint) instead of dots.
+   - The frost smear is capped and the per-channel copies are replaced by one fixed fringe,
+     so there are no ghost doubles.
+   - Titles: centred, fitted to the room (never clipped), on a feathered scrim whose
+     strength is measured from the media's luminance in the title band (≥ 4.5:1).
+   - Bliggit: wine/plum ground, phones on the right; the title band stays off the white
+     screens.
+   - Cards close to the lens fade.
+   - Sheet: `docs/screens/card-family.jpg`.
+5. **A5 3D words** (`sceneWord.frag`): a lit gradient, a chromatic fringe and a halo in the
+   place's accent (violet at Work, blue at System, teal at Depth). They are never brighter
+   than the cards.
+6. **B1 Wireframe:** finer grain (hot-core sprite, size 0.008); 65% of the dust forms the
+   phone wireframe.
+7. **B2 Scramble** (`lib/scramble.ts`): 0.6s, left to right, look-alike glyphs, with every
+   letter but the last two resolved by 60%. "LET'S TALK" no longer scrambles: it arrives
+   with a 450ms slice glitch, then 0.2s every 8–12s.
+8. **B3 Depth → Contact:** the ember trail now overlaps The Core's descent (until
+   toContact 0.97), and The Core descends from above. The Core and the tagline no longer
+   swing sideways on phones: their idle drift is translation only (`Drift rotate={false}`),
+   because the rotation pivoted on the world origin, about 105 units away. Strip (0.25s,
+   desktop full, desktop lite, phone): `docs/screens/final-transitions-2.jpg`. No empty
+   frame on any of the three.
+9. **C1 Phone Work:** one centred card at about 86% width, never clipped. The narrow spine
+   runs behind the whole column, neighbours show as small hints, and the bottom 22% stays
+   clear. Checked at 390×844, 375×667 and 430×932: `docs/screens/phone-work.jpg`.
+10. **C2 Mobile start** (`SceneLoader.tsx`): see deviations.
+
+## Deviations from the brief (please confirm)
+- **Mobile start on first interaction, not at idle.** Starting the 3D at the first idle
+  moment was measured and didn't help: GPU and shader start-up still blocked ~1.3s under
+  the 4× CPU throttle (Lighthouse mobile ~70). On constrained devices (coarse pointer,
+  width < 700, or ≤ 4 cores AND ≤ 4 GB memory) the static glass Core shows first, and the
+  3D starts on the first touch, wheel, key or scroll. The static Core stays under the
+  canvas until the canvas has faded in, so there is no empty frame. The memory condition
+  was added because "≤ 4 cores" alone caught 4-core laptops and headless Chrome.
+- **Grain split 90/10 instead of 65/35.** With 35% silver, the dust read as a starfield at
+  Work, which the brief also rules out. 10% sparse silver matches "about 10% sparse dust".
+
+## Quality gate (production build, Retina)
+| | AMD (full) | HD 630 (lite) |
+|---|---|---|
+| Hero / statement / Work / System / Depth / Contact | 60.2 at every place | 60.2 at every place |
+| Down the Work cards | 60.3 every card | 60.3 every card |
+| Idle hero, 60s (5s windows) | 60.2 in all 12 | 54.4 first (tier switch), then 60.2 |
+| Fast scroll, 2 loops (1s windows) | median 60, p10 55, min 13 (first second after load) | median 60, p10 56, min 14 (first second) |
+| Phone 390×844, fast scroll (emulated on the AMD, not a real phone) | median 60, p10 57, min 14 (first second) | — |
+
+The dip on first arriving at Work is gone; the only slow windows are in the first second
+after load.
+
+- **Lighthouse mobile:** 95 / 94 / 94 (TBT 170–180ms, LCP 2.5–2.6s, CLS 0).
+- **Lighthouse desktop:** 92 / 91 / 93 (TBT 170–190ms, LCP 0.6s, CLS 0).
+- Accessibility, Best Practices and SEO are 100 in every run.
+- **Reduced motion:** clean (Work flight at 60.1 fps, no errors).
+- **No-WebGL:** the static world renders, with no canvas and no errors.
+- **Phone number:** only in /impressum's page and its server-only chunk. It is not in
+  `.next/static`, and not on /, /cv, /datenschutz, /work/bliggit, /lab/work or the 404.
+  The CV PDF text (extracted with PDFKit) contains no phone digits.
+- No console errors or warnings in any production run.
+- **Journey** (desktop full, desktop lite, phone 390×844): `docs/screens/final-journey-5.jpg`.
+- **Work vs reference:** `docs/screens/work-vs-reference.jpg`.
+
+## What still differs from the reference
+1. **Spine richness.** Their column is a dense, glittering, iridescent scanned mass; ours is
+   now smooth and seamless but reads as a plain violet trunk with a marbled film. Side by
+   side (`work-vs-reference.jpg`), the previous crystal column was closer in sparkle.
+   A sculpted model (`public/models/spine.glb`) or stronger in-material glitter and colour
+   flecks would close this.
+2. **Card media.** Theirs is art-directed photo and video; ours is screenshots, a dashboard
+   and abstract live scenes.
+3. **Grain refraction.** Their grains bend what's behind them; ours are additive sprites.
+4. **Volumetric light.** Their shafts and halation are richer; ours are fog layers,
+   halation and corner bleeds (no god rays).
+5. **Phones start static.** The 3D begins on the first touch (see deviations). Until then
+   the static Core is beautiful, but nothing moves.

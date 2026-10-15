@@ -142,7 +142,7 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     tilt.current.y += (tiltY - tilt.current.y) * ease
     // At Contact The Core rises out of the dark (from ~30% into the leg) and spins again,
     // posed exactly as on the hero, so the loop back to the hero is seamless.
-    const contact = journey && !anchored ? smooth01((journey.toContact - 0.3) / 0.7) : 0
+    const contact = journey && !anchored ? smooth01((journey.toContact - 0.12) / 0.6) : 0
     // Travels with the objects' slower settle, so it trails the camera down the path.
     const objects = journey ? journey.objects : 0
     const travel = objects * objects * (3 - 2 * objects) * (1 - contact)

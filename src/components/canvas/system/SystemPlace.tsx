@@ -50,6 +50,7 @@ export function SystemPlace({ journey, clock, look, pointer, reducedMotion }: Pr
         color={INK}
         clock={clock}
         reducedMotion={reducedMotion}
+        accent={sceneColors.blue}
         fit={0.95}
         billboard
         // Phones: the graph fills the screen, no clear space above it: the HTML heading

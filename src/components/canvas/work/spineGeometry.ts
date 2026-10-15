@@ -1,119 +1,8 @@
-import {
-  BufferGeometry,
-  Euler,
-  ExtrudeGeometry,
-  Float32BufferAttribute,
-  LatheGeometry,
-  Matrix4,
-  Quaternion,
-  Vector2,
-  Vector3,
-} from 'three'
-import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js'
-import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import { BufferGeometry, Float32BufferAttribute } from 'three'
 import { sceneConfig } from '@/styles/scene'
-import { roundedRectShape } from '../hero/bandGeometry'
-import { hash, valueNoise3 } from '../noise'
+import { valueNoise3 } from '../noise'
 
-/** Deterministic 0..1 per segment / feature. */
-const pick = (i: number, seed: number) => hash(i, seed, 3)
-
-/** A vertebra body: a thick rounded-square block, centred, lying flat. */
-function body(width: number, depth: number, thickness: number) {
-  const bevel = thickness * 0.22
-  const geometry = new ExtrudeGeometry(
-    roundedRectShape(width, depth, Math.min(width, depth) * 0.3),
-    {
-      depth: Math.max(0.01, thickness - bevel * 2),
-      bevelEnabled: true,
-      bevelThickness: bevel,
-      bevelSize: bevel * 0.8,
-      bevelSegments: 4,
-      curveSegments: 10,
-    },
-  )
-  geometry.center()
-  geometry.rotateX(-Math.PI / 2)
-  return geometry
-}
-
-type Wing = { length: number; width: number; sweep: number; curl: number; broken: boolean }
-
-/**
- * A wing: a curved, tapered blade sweeping out sideways (along +x), lens-shaped in
- * section, thinning to a point; it rises or droops (`sweep`), its tip can curl over
- * (`curl`) or end blunt where it broke off.
- */
-function wing({ length, width, sweep, curl, broken }: Wing) {
-  const STEPS = 22
-  const SIDES = 10
-  const end = broken ? 0.55 + curl * 0.1 : 1
-  const positions: number[] = []
-  const indices: number[] = []
-  const centre = (t: number) => {
-    const x = t * length
-    // Sweep up or down along the blade, then the curl turns the tip over.
-    let y = sweep * t * t * length * 0.6
-    let tipX = x
-    if (curl > 0 && t > 0.65) {
-      const a = ((t - 0.65) / 0.35) * Math.PI * curl
-      const r = length * 0.12
-      tipX = 0.65 * length + Math.sin(a) * r * 2.2
-      y += (1 - Math.cos(a)) * r * Math.sign(sweep || 1)
-    }
-    return new Vector3(tipX, y, 0)
-  }
-  for (let s = 0; s <= STEPS; s++) {
-    const t = (s / STEPS) * end
-    const c = centre(t)
-    const taper = Math.pow(1 - t, 0.85)
-    const w = width * taper * (0.75 + 0.25 * Math.sin(t * Math.PI))
-    const h = width * 0.16 * taper + 0.006
-    for (let k = 0; k < SIDES; k++) {
-      const a = (k / SIDES) * Math.PI * 2
-      positions.push(c.x, c.y + Math.sin(a) * h, Math.cos(a) * w * 0.5)
-    }
-  }
-  for (let s = 0; s < STEPS; s++) {
-    for (let k = 0; k < SIDES; k++) {
-      const a = s * SIDES + k
-      const b = s * SIDES + ((k + 1) % SIDES)
-      indices.push(a, a + SIDES, b, b, a + SIDES, b + SIDES)
-    }
-  }
-  // Close both ends (a fan): the root sits inside the body; a broken tip shows a facet.
-  const cap = (ring: number, flip: boolean) => {
-    const centreIndex = positions.length / 3
-    const c = centre((ring / STEPS) * end)
-    positions.push(c.x, c.y, 0)
-    for (let k = 0; k < SIDES; k++) {
-      const a = ring * SIDES + k
-      const b = ring * SIDES + ((k + 1) % SIDES)
-      if (flip) indices.push(centreIndex, b, a)
-      else indices.push(centreIndex, a, b)
-    }
-  }
-  cap(0, true)
-  cap(STEPS, false)
-  const geometry = new BufferGeometry()
-  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
-  geometry.setIndex(indices)
-  return geometry
-}
-
-/** A drip: a thin tapered strand ending in a small bead, hanging straight down. */
-function drip(length: number, radius: number) {
-  const points: Vector2[] = []
-  for (let i = 0; i <= 12; i++) {
-    const t = i / 12
-    const bead = Math.exp(-((t - 0.88) ** 2) / 0.006) * 1.6
-    points.push(new Vector2(radius * (0.35 + 0.4 * (1 - t) + bead) * (t < 1 ? 1 : 0), -t * length))
-  }
-  const geometry = new LatheGeometry(points, 10)
-  return geometry
-}
-
-/** Marks every vertex of a part as smooth glossy oil (1) or carved crystal (0). */
+/** Marks every vertex as smooth glossy oil (1) or carved crystal (0). */
 function mark(geometry: BufferGeometry, smooth: number) {
   const count = geometry.getAttribute('position').count
   geometry.setAttribute(
@@ -123,152 +12,128 @@ function mark(geometry: BufferGeometry, smooth: number) {
   return geometry
 }
 
-/** Keeps only positions (and the smooth flag), so the parts can be merged. */
-function clean(geometry: BufferGeometry) {
-  for (const name of Object.keys(geometry.attributes)) {
-    if (name !== 'position' && name !== 'oilSmooth') geometry.deleteAttribute(name)
+/** Laplacian smoothing on an indexed mesh: each vertex moves towards its neighbours' mean. */
+function relax(geometry: BufferGeometry, passes: number, amount: number) {
+  const position = geometry.getAttribute('position')
+  const index = geometry.getIndex()
+  if (!index) return
+  const count = position.count
+  const neighbours: Set<number>[] = Array.from({ length: count }, () => new Set())
+  for (let t = 0; t < index.count; t += 3) {
+    const a = index.getX(t)
+    const b = index.getX(t + 1)
+    const c = index.getX(t + 2)
+    neighbours[a]?.add(b).add(c)
+    neighbours[b]?.add(a).add(c)
+    neighbours[c]?.add(a).add(b)
   }
-  return geometry
+  const next = new Float32Array(count * 3)
+  for (let pass = 0; pass < passes; pass++) {
+    for (let i = 0; i < count; i++) {
+      const set = neighbours[i]
+      let x = 0
+      let y = 0
+      let z = 0
+      for (const n of set ?? []) {
+        x += position.getX(n)
+        y += position.getY(n)
+        z += position.getZ(n)
+      }
+      const k = Math.max(1, set?.size ?? 1)
+      next[i * 3] = position.getX(i) + (x / k - position.getX(i)) * amount
+      next[i * 3 + 1] = position.getY(i) + (y / k - position.getY(i)) * amount
+      next[i * 3 + 2] = position.getZ(i) + (z / k - position.getZ(i)) * amount
+    }
+    for (let i = 0; i < count; i++)
+      position.setXYZ(i, next[i * 3]!, next[i * 3 + 1]!, next[i * 3 + 2]!)
+  }
 }
 
 /**
- * The spine (docs/spine-concept.png): 12–16 fused vertebrae up a slightly wobbling column.
- * Each body is a thick rounded-square block of its own size, tilt and turn, carved with
- * bulges and crystalline facets, overlapping so they fuse into one mass; from each body
- * curved, tapered wings sweep out sideways (long, short, curled, broken), with a few
- * drips hanging from wing edges and rims. Bodies and glossy parts are built apart (the
- * bodies tessellated and carved, the wings smooth), then merged into one mesh with a
- * `oilSmooth` attribute the oil shader reads. `edge` is the bodies' tessellation (lite: 0.24).
+ * The spine: one sculpted, glossy organism, built as a single continuous surface (a tube
+ * whose cross-section is sculpted), so nothing intersects and nothing seams. Its width
+ * swells and pinches up the column (~0.6×–1.4×), its lobes twist slowly round it, ridged
+ * folds and broad noise carve it, and it follows a gentle S-curve off the axis, with rounded
+ * ends. Relaxed, then smooth vertex normals: no facets; fine detail lives in the shader's
+ * normal field. `edge` sets the mesh density (lite: coarser).
  */
 export function createSpineGeometry(edge = 0.13) {
-  const { height, twist, tilt, bulge } = sceneConfig.spine
-  const segments = 14
-  const spacing = height / segments
-  const euler = new Euler()
-  const rotation = new Quaternion()
-  const position = new Vector3()
-  const scale = new Vector3(1, 1, 1)
-  const matrix = new Matrix4()
-  const place = (
-    geometry: BufferGeometry,
-    x: number,
-    y: number,
-    z: number,
-    rx: number,
-    ry: number,
-    rz: number,
-  ) => {
-    euler.set(rx, ry, rz)
-    rotation.setFromEuler(euler)
-    position.set(x, y, z)
-    matrix.compose(position, rotation, scale)
-    return geometry.applyMatrix4(matrix)
-  }
+  const { height, twist, bulge } = sceneConfig.spine
+  const rings = Math.round(height / (edge * 0.55))
+  const sides = Math.round((Math.PI * 2) / (edge * 0.75))
+  const turn = twist * 6
+  const positions = new Float32Array((rings * sides + 2) * 3)
+  const set = (i: number, x: number, y: number, z: number) => positions.set([x, y, z], i * 3)
 
-  const bodies: BufferGeometry[] = []
-  const glossy: BufferGeometry[] = []
-  for (let i = 0; i < segments; i++) {
-    const y = (i + 0.5) * spacing - height / 2
-    // The column wobbles: each vertebra a little off the axis, tilted its own way.
-    const wx = Math.sin(i * 0.9) * 0.12 + (pick(i, 1) - 0.5) * 0.1
-    const wz = Math.cos(i * 0.7) * 0.1 + (pick(i, 2) - 0.5) * 0.1
-    const rx = (pick(i, 3) - 0.5) * tilt
-    const rz = (pick(i, 4) - 0.5) * tilt
-    const ry = i * twist + pick(i, 5) * 0.8
-    const width = 0.95 + pick(i, 6) * 0.5
-    const depth = 0.85 + pick(i, 7) * 0.4
-    // Thicker than the spacing: neighbours overlap and fuse into one mass.
-    const thickness = spacing * (1.25 + pick(i, 8) * 0.2)
-    bodies.push(clean(place(body(width, depth, thickness), wx, y, wz, rx, ry, rz)))
-
-    // Wings: one or two per vertebra, each its own kind.
-    const count = pick(i, 9) < 0.8 ? 2 : 1
-    for (let k = 0; k < count; k++) {
-      const kind = pick(i * 7 + k, 10)
-      const long = kind < 0.45
-      const blade = wing({
-        length: long ? 0.55 + pick(i, 11 + k) * 0.25 : 0.3 + pick(i, 12 + k) * 0.2,
-        width: long ? 0.85 + pick(i, 13 + k) * 0.45 : 0.6 + pick(i, 14 + k) * 0.35,
-        sweep: (pick(i, 15 + k) - 0.4) * 0.7,
-        curl: kind > 0.4 ? 0.7 + pick(i, 16 + k) * 0.7 : 0,
-        broken: false,
-      })
-      // Out from the body's side, alternating sides up the column.
-      const side = (k === 0 ? 0 : Math.PI) + (i % 2) * Math.PI + (pick(i, 17 + k) - 0.5) * 1.2
-      const root = width * 0.38
-      blade.translate(root, 0, 0)
-      glossy.push(
-        clean(
-          mark(
-            place(
-              blade,
-              wx,
-              y + (pick(i, 18 + k) - 0.5) * spacing * 0.4,
-              wz,
-              (pick(i, 19 + k) - 0.5) * 0.4,
-              ry + side,
-              (pick(i, 20 + k) - 0.5) * 0.3,
-            ),
-            1,
-          ),
-        ),
-      )
-
-      // A drip or two hanging from the wing's underside.
-      if (pick(i, 21 + k) < 0.6) {
-        const along = root + 0.3 + pick(i, 22 + k) * 0.5
-        const strand = drip(0.18 + pick(i, 23 + k) * 0.25, 0.028)
-        strand.translate(along, -0.04, 0)
-        glossy.push(clean(mark(place(strand, wx, y, wz, 0, ry + side, 0), 1)))
-      }
+  for (let j = 0; j < rings; j++) {
+    const v = (j + 0.5) / rings
+    const y = (v - 0.5) * height
+    // A gentle S-curve off the axis.
+    const cx = Math.sin((v - 0.5) * Math.PI * 1.6) * 0.32
+    const cz = Math.cos((v - 0.5) * Math.PI * 1.1) * 0.18 - 0.09
+    // Swells and pinches (~0.6×–1.4×), with a rounded cap at each end.
+    const swell =
+      1 + 0.3 * Math.sin(v * Math.PI * 2 * 2.3 + 0.6) + 0.1 * Math.sin(v * Math.PI * 2 * 5.1 + 1.7)
+    const end = Math.min(v, 1 - v) * height
+    const cap = end < 0.5 ? Math.sqrt(1 - (1 - end / 0.5) ** 2) : 1
+    const spin = v * turn
+    for (let k = 0; k < sides; k++) {
+      const a = (k / sides) * Math.PI * 2
+      const local = a - spin
+      // Lobes: two and three-fold bulges whose phases drift with height.
+      const lobes =
+        0.2 * Math.max(0, Math.cos(2 * local + Math.sin(v * 7) * 0.8)) ** 3 +
+        0.14 * Math.max(0, Math.cos(3 * local - v * 9 + 1.2)) ** 4
+      const ux = Math.cos(a)
+      const uz = Math.sin(a)
+      const broad = valueNoise3(ux * 1.2, y * 0.7, uz * 1.2, 11) - 0.5
+      const medium = valueNoise3(ux * 2.6, y * 1.8, uz * 2.6, 12) - 0.5
+      // Sculpted folds: ridged noise along the height.
+      const ridge = 1 - Math.abs(valueNoise3(ux * 3.4, y * 2.6, uz * 3.4, 13) * 2 - 1)
+      const carve = (broad * 2.6 + medium * 1.2 + ridge ** 3 * 0.9) * bulge * 2.2
+      const r = (0.64 * swell * (1 + lobes * 1.3) + carve) * cap
+      // Elliptical section, wider across than deep.
+      set(j * sides + k, cx + ux * r * 1.12, y, cz + uz * r * 0.88)
     }
   }
-
-  // Bodies: tessellated, welded, carved along their normals, faceted (crystal chips).
-  const merged = mergeGeometries(bodies)
-  bodies.forEach((part) => part.dispose())
-  const dense = new TessellateModifier(edge, 6).modify(merged)
-  merged.dispose()
-  const carved = mergeVertices(dense)
-  dense.dispose()
-  carved.computeVertexNormals()
-  const positions = carved.getAttribute('position')
-  const normals = carved.getAttribute('normal')
-  for (let i = 0; i < positions.count; i++) {
-    const x = positions.getX(i)
-    const y = positions.getY(i)
-    const z = positions.getZ(i)
-    const broad = valueNoise3(x * 1.1, y * 0.9, z * 1.1, 11) - 0.5
-    const ridge = 1 - Math.abs(valueNoise3(x * 5, y * 5, z * 5, 12) * 2 - 1)
-    const grain = valueNoise3(x * 9, y * 9, z * 9, 13) - 0.5
-    const amount = (broad * 3.2 + ridge ** 3 * 0.9 - 0.3 + grain * 0.6) * bulge * 1.5
-    positions.setXYZ(
-      i,
-      x + normals.getX(i) * amount,
-      y + normals.getY(i) * amount,
-      z + normals.getZ(i) * amount,
-    )
-  }
-  const faceted = carved.toNonIndexed()
-  carved.dispose()
-  faceted.deleteAttribute('normal')
-  faceted.computeVertexNormals()
-  mark(faceted, 0)
-
-  // Glossy parts: smooth shading.
-  const smoothParts = mergeGeometries(
-    glossy.map((part) => (part.index ? part.toNonIndexed() : part)),
+  // The poles close each end.
+  const bottom = rings * sides
+  const top = bottom + 1
+  set(
+    bottom,
+    Math.sin(-0.5 * Math.PI * 1.6) * 0.32,
+    -height / 2,
+    Math.cos(-0.5 * Math.PI * 1.1) * 0.18 - 0.09,
   )
-  glossy.forEach((part) => part.dispose())
-  const welded = mergeVertices(smoothParts, 1e-4)
-  smoothParts.dispose()
-  welded.computeVertexNormals()
-  const glossyFlat = welded.toNonIndexed()
-  welded.dispose()
+  set(
+    top,
+    Math.sin(0.5 * Math.PI * 1.6) * 0.32,
+    height / 2,
+    Math.cos(0.5 * Math.PI * 1.1) * 0.18 - 0.09,
+  )
 
-  const spine = mergeGeometries([faceted, glossyFlat])
-  faceted.dispose()
-  glossyFlat.dispose()
+  const index: number[] = []
+  for (let j = 0; j < rings - 1; j++) {
+    for (let k = 0; k < sides; k++) {
+      const a = j * sides + k
+      const b = j * sides + ((k + 1) % sides)
+      const c = a + sides
+      const d = b + sides
+      index.push(a, c, b, b, c, d)
+    }
+  }
+  for (let k = 0; k < sides; k++) {
+    index.push(bottom, k, (k + 1) % sides)
+    const last = (rings - 1) * sides
+    index.push(top, last + ((k + 1) % sides), last + k)
+  }
+
+  const spine = new BufferGeometry()
+  spine.setAttribute('position', new Float32BufferAttribute(positions, 3))
+  spine.setIndex(index)
+  relax(spine, 2, 0.35)
+  spine.computeVertexNormals()
+  mark(spine, 0)
 
   // uv1 wraps round the column (angle, height): the oily film flows over the bulges.
   const all = spine.getAttribute('position')

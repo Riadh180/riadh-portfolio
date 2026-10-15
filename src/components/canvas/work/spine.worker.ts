@@ -1,5 +1,5 @@
-// Builds the procedural spine off the main thread (it takes ~0.6s: merging, tessellating,
-// welding and carving), so the page and the hero never wait for it.
+// Builds the procedural spine off the main thread (sculpting and relaxing the mesh),
+// so the page and the hero never wait for it.
 import { createSpineGeometry } from './spineGeometry'
 
 self.onmessage = ({ data }: MessageEvent<{ edge: number }>) => {

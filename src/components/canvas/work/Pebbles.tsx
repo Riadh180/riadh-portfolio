@@ -9,7 +9,8 @@ import {
 } from 'three'
 import { useTier } from '@/stores/tier'
 import { sceneColors, sceneConfig } from '@/styles/scene'
-import { gaussian } from '../journey/motes'
+import { jobs } from '@/content/site'
+import { orbitPose, SPIRAL } from './layout'
 import fragmentShader from '../shaders/glitter.frag'
 import vertexShader from '../shaders/glitter.vert'
 import type { SceneClock } from '../useSceneClock'
@@ -24,63 +25,98 @@ function chipGeometry(orbit: Float32Array, cloud: Float32Array, seed: Float32Arr
   return geometry
 }
 
-/**
- * Loose drifting clouds round the column and between the cards: [x, y, z, spread], at
- * the cards' heights and in the gaps between them, spread through depth.
- */
-const CLOUDS: [number, number, number, number][] = Array.from({ length: 14 }, (_, k) => {
-  const angle = k * 2.4
-  // Tight clouds near the column (and the cards' inner edges), not open space.
-  const near = 1.2 + (k % 3) * 0.35
-  return [Math.cos(angle) * near, 3 - k * 0.95, Math.sin(angle) * near, 0.45 + (k % 4) * 0.12]
-})
+/** One pocket of grains: centre, spread and its own hue (a bucket of the palette). */
+type Pocket = { x: number; y: number; z: number; spread: number; hue: number }
+
+/** Hue buckets in the glitter palette: violet/pink, teal, green-gold. */
+const HUES = [0.7, 0.8, 0.9, 0.97]
 
 /**
- * Most chips sit in dense clusters strung up the spine (each cluster rises as one, since
- * they share a speed); some drift loose round it; a share sit in the small clouds.
- * Each gets its orbit (angle, reach, start height, speed), its cloud, and a seed.
+ * 14 compact "foam pockets": 8 hugging the spine's surface at different heights, 6 at the
+ * inner edges of the cards (between each card and the column), each its own muted hue.
+ */
+function createPockets(): Pocket[] {
+  const pockets: Pocket[] = []
+  for (let k = 0; k < 8; k++) {
+    const angle = k * 2.3 + 0.4
+    pockets.push({
+      x: Math.cos(angle) * 1.15,
+      y: 4.2 - k * 1.25,
+      z: Math.sin(angle) * 1.15,
+      spread: 0.32 + (k % 3) * 0.08,
+      hue: HUES[k % HUES.length] ?? 0.7,
+    })
+  }
+  for (let i = 0; i < jobs.length; i++) {
+    const pose = orbitPose(i, jobs.length)
+    // Between the card and the column, a little to the column's side of the card.
+    const angle = pose.angle - Math.sign(pose.angle - (i / (jobs.length - 1)) * SPIRAL) * 0.35
+    pockets.push({
+      x: Math.sin(angle) * 1.85,
+      y: pose.y - 0.4,
+      z: Math.cos(angle) * 1.85,
+      spread: 0.38,
+      hue: HUES[(i + 1) % HUES.length] ?? 0.8,
+    })
+  }
+  return pockets
+}
+
+/**
+ * ~90% of the grains in the pockets (dense at the core, quick falloff), ~10% as a sparse
+ * silver dust round the column, with real empty space between. Each grain gets its orbit
+ * (angle, reach, start height, speed), its pocket (or none) and a seed.
  */
 function createPebbles() {
-  const { count, hug, clouds } = sceneConfig.pebbles
+  const { count } = sceneConfig.pebbles
   const halfHeight = sceneConfig.spine.height / 2
+  const pockets = createPockets()
   const orbit = new Float32Array(count * 4)
   const cloud = new Float32Array(count * 4)
   const seed = new Float32Array(count * 4)
-  // Dense clusters strung up the column: each column chip belongs to one, at that height.
-  const clusters = Array.from({ length: 16 }, (_, k) => ({
-    y: (k / 15 - 0.5) * halfHeight * 2 + (Math.random() - 0.5) * 0.4,
-    angle: Math.random() * Math.PI * 2,
-  }))
   for (let i = 0; i < count; i++) {
-    const inCloud = Math.random() < clouds
-    const cluster = clusters[i % clusters.length] ?? { y: 0, angle: 0 }
-    // Almost nothing in empty space: few loose chips.
-    const loose = Math.random() < 0.02
-    // Density falls off with distance from the spine: dense close in, wispy outside.
-    // Capped well inside the cards' ring, so grains don't cover a card's face.
-    const reach = inCloud ? 0.2 + Math.random() * 0.8 : 0.9 + Math.random() ** 3 * (1.45 - hug)
-    orbit.set(
-      [
-        loose ? Math.random() * Math.PI * 2 : cluster.angle + gaussian() * 0.8,
-        reach,
-        loose ? (Math.random() * 2 - 1) * halfHeight : cluster.y + gaussian() * 0.22,
-        0.9 + Math.random() * 0.2,
-      ],
-      i * 4,
-    )
-    const home = CLOUDS[i % CLOUDS.length] ?? [0, 0, 0, 0]
-    cloud.set(inCloud ? home : [0, 0, 0, 0], i * 4)
-    seed.set([Math.random(), Math.random(), Math.random(), Math.random()], i * 4)
+    const inPocket = Math.random() < 0.9
+    const pocket = pockets[i % pockets.length]
+    if (inPocket && pocket) {
+      // Dense core: the reach is squared, so most grains sit near the centre.
+      orbit.set(
+        [
+          Math.random() * Math.PI * 2,
+          Math.random() ** 2.2,
+          Math.random() * 6,
+          0.5 + Math.random() * 0.5,
+        ],
+        i * 4,
+      )
+      cloud.set([pocket.x, pocket.y, pocket.z, pocket.spread], i * 4)
+      seed.set(
+        [Math.random(), pocket.hue + (Math.random() - 0.5) * 0.04, Math.random(), Math.random()],
+        i * 4,
+      )
+    } else {
+      // Sparse silver dust round the column.
+      orbit.set(
+        [
+          Math.random() * Math.PI * 2,
+          0.9 + Math.random() ** 2 * 0.6,
+          (Math.random() * 2 - 1) * halfHeight,
+          0.9 + Math.random() * 0.2,
+        ],
+        i * 4,
+      )
+      cloud.set([0, 0, 0, 0], i * 4)
+      seed.set([Math.random(), Math.random() * 0.6, Math.random(), Math.random()], i * 4)
+    }
   }
   return chipGeometry(orbit, cloud, seed, count)
 }
 
-/** Muted glitter: mostly silver-lilac, some violet/pink, a little teal and gold. */
+/** Muted glitter: silver-lilac dust, violet/pink, teal and a little gold (pocket hues). */
 const GLITTER = [
   sceneColors.glass.clone().lerp(sceneColors.violet, 0.45),
   sceneColors.violet.clone().lerp(sceneColors.pink, 0.4),
   sceneColors.teal.clone(),
-  sceneColors.warm.clone(),
+  sceneColors.emerald.clone().lerp(sceneColors.warm, 0.6),
 ]
 
 /** World size of a tiny grain at the focus (1–2 px at 1×). */

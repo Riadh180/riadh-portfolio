@@ -11,6 +11,11 @@ type Props = {
   seed: number
   /** Scales the idle drift (big, heavy things move less). */
   weight?: number
+  /**
+   * Idle rotation too (default). Off for subjects placed far from the world origin (The Core,
+   * the tagline): the group pivots on the origin, so a tiny sway would swing them sideways.
+   */
+  rotate?: boolean
   children: ReactNode
 }
 
@@ -19,7 +24,7 @@ type Props = {
  * springs back after (the slower secondary settle, overshooting slightly), and it breathes
  * with a slow idle drift in position and rotation, so it never comes to a dead stop.
  */
-export function Drift({ journey, seed, weight = 1, children }: Props) {
+export function Drift({ journey, seed, weight = 1, rotate = true, children }: Props) {
   const enabled = !useReducedMotion()
   const group = useRef<Group>(null)
   const lag = useRef(new Spring3(MOTION.lag))
@@ -38,7 +43,7 @@ export function Drift({ journey, seed, weight = 1, children }: Props) {
     l.step(0, pull, 0, Math.min(delta, 1 / 30))
     const t = clock.elapsedTime
     const p = MOTION.idle.position / weight
-    const r = MOTION.idle.rotation / weight
+    const r = rotate ? MOTION.idle.rotation / weight : 0
     g.position.set(drift(t, seed) * p, l.y.value + drift(t, seed + 9) * p, drift(t, seed + 17) * p)
     g.rotation.set(
       drift(t, seed + 3) * r,

@@ -10,7 +10,7 @@ export const ORBIT_SPACING = 2.1
 export const SPIRAL = (Math.PI * 2 * 5) / 6
 
 /** Phones: one card above the other in front of the spine. */
-export const COLUMN_SPACING = 1.9
+export const COLUMN_SPACING = 2.4
 
 /**
  * Each card's own pose, so six don't repeat: angle offset from the camera's line of sight
@@ -21,12 +21,12 @@ export const COLUMN_SPACING = 1.9
  * it, overlapping the right ones behind the column, as in the reference (seg_44).
  */
 const POSES = [
-  { angle: 0.72, radius: 2.6, dy: 0.0, pitch: 0.04, roll: -0.03, face: 0.55 },
-  { angle: -0.72, radius: 2.6, dy: 0.2, pitch: -0.08, roll: 0.07, face: 0.5 },
-  { angle: 0.78, radius: 2.65, dy: -0.1, pitch: 0.08, roll: -0.08, face: 0.55 },
-  { angle: -0.76, radius: 2.6, dy: 0.25, pitch: -0.05, roll: 0.1, face: 0.5 },
-  { angle: 0.7, radius: 2.55, dy: -0.15, pitch: 0.09, roll: -0.05, face: 0.55 },
-  { angle: -0.74, radius: 2.6, dy: 0.15, pitch: -0.07, roll: 0.06, face: 0.5 },
+  { angle: 0.58, radius: 2.6, dy: 0.0, pitch: 0.04, roll: -0.03, face: 0.55 },
+  { angle: -0.58, radius: 2.6, dy: 0.2, pitch: -0.08, roll: 0.07, face: 0.5 },
+  { angle: 0.58, radius: 2.65, dy: -0.1, pitch: 0.08, roll: -0.08, face: 0.55 },
+  { angle: -0.58, radius: 2.6, dy: 0.25, pitch: -0.05, roll: 0.1, face: 0.5 },
+  { angle: 0.58, radius: 2.55, dy: -0.15, pitch: 0.09, roll: -0.05, face: 0.55 },
+  { angle: -0.58, radius: 2.6, dy: 0.15, pitch: -0.07, roll: 0.06, face: 0.5 },
 ]
 
 export function orbitPose(index: number, count: number) {

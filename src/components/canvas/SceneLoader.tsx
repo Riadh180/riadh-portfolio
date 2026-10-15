@@ -73,9 +73,42 @@ function warmGpu(): Promise<Worker | null> {
   })
 }
 
+/**
+ * Phones and low-core devices: the HTML hero (with the static glass Core) is complete and
+ * interactive first; the 3D starts on the first touch, scroll or key. (Starting at an idle
+ * moment instead was measured: the GPU start-up still blocked ~1.3s under a throttled CPU.)
+ * Elsewhere: at once.
+ */
+/** Set when the 3D waits for the visitor (the static Core shows meanwhile). */
+let constrainedStart = false
+
+function whenReady(): Promise<void> {
+  const constrained =
+    window.matchMedia('(pointer: coarse)').matches ||
+    window.innerWidth < 700 ||
+    // Low-end: few cores AND little memory (cores alone would catch 4-core laptops,
+    // and headless Chrome, which reports 4 here).
+    ((navigator.hardwareConcurrency ?? 8) <= 4 &&
+      ((navigator as { deviceMemory?: number }).deviceMemory ?? 8) <= 4)
+  if (!constrained) return Promise.resolve()
+  constrainedStart = true
+  return new Promise((resolve) => {
+    const events = ['touchstart', 'pointerdown', 'wheel', 'keydown', 'scroll'] as const
+    let done = false
+    const go = () => {
+      if (done) return
+      done = true
+      events.forEach((name) => window.removeEventListener(name, go))
+      resolve()
+    }
+    events.forEach((name) => window.addEventListener(name, go, { passive: true, once: true }))
+  })
+}
+
 export function SceneLoader() {
   // Decided after mount (the server can't know), so hydration matches.
   const [webgl, setWebgl] = useState<boolean | null>(null)
+  const [waiting, setWaiting] = useState(false)
 
   useEffect(() => {
     const supported = hasWebGL()
@@ -88,9 +121,18 @@ export function SceneLoader() {
     }
     let cancelled = false
     let warm: Worker | null = null
-    void warmGpu().then((worker) => {
+    const ready = whenReady()
+    if (constrainedStart) {
+      // No preloader on this path: the static Core is already the first frame.
+      settle()
+      setWaiting(true)
+    }
+    let handover = 0
+    void ready.then(warmGpu).then((worker) => {
       warm = worker
       if (!cancelled) setWebgl(true)
+      // The static Core stays under the canvas while it fades in (no empty frame).
+      if (constrainedStart) handover = window.setTimeout(() => setWaiting(false), 2500)
       // Our own context exists by now: let the worker's go.
       window.setTimeout(() => {
         warm?.postMessage('release')
@@ -99,15 +141,20 @@ export function SceneLoader() {
     })
     return () => {
       cancelled = true
+      window.clearTimeout(handover)
       warm?.terminate()
     }
   }, [])
 
-  if (webgl === null) return null
+  // Waiting for the first touch on a phone: the static glass Core meanwhile.
+  if (webgl === null) return waiting ? <StaticWorld /> : null
   if (!webgl) return <StaticWorld />
   return (
-    <SceneBoundary>
-      <SceneCanvas />
-    </SceneBoundary>
+    <>
+      {waiting && <StaticWorld />}
+      <SceneBoundary>
+        <SceneCanvas />
+      </SceneBoundary>
+    </>
   )
 }

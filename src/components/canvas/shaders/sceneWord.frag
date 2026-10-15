@@ -13,6 +13,8 @@ uniform float uTime;
 uniform float uRipple;
 uniform float uOpacity;
 uniform vec3 uColor;
+/** The place's accent: a soft glow round the letters. */
+uniform vec3 uAccent;
 
 varying vec2 vUv;
 
@@ -55,5 +57,18 @@ void main() {
   if (uRipple > 0.0) {
     shimmer = 0.75 + 0.5 * pow(0.5 + 0.5 * sin(st.x * 23.0 + st.y * 11.0 - uTime * 1.3) * sin(st.x * 7.0 - st.y * 17.0 + uTime * 0.9), 2.0) * uRipple;
   }
-  gl_FragColor = vec4(uColor * cover * shimmer * uOpacity, 1.0);
+  // Part of the light: lit at the top of each line, darker at the bottom; a faint
+  // chromatic fringe at the edges; a soft glow in the place's accent.
+  float within = fract(row);
+  float lit = mix(1.25, 0.6, within);
+  float red = texture2D(uMap, uv + vec2(0.003, 0.0)).r;
+  float blue = texture2D(uMap, uv - vec2(0.003, 0.0)).r;
+  vec3 ink = uColor * lit * vec3(max(cover, red * 0.6), cover, max(cover, blue * 0.6));
+  float halo = 0.0;
+  for (int i = 0; i < 6; i++) {
+    float a = float(i) * 1.047;
+    halo += texture2D(uMap, uv + vec2(cos(a), sin(a) * 2.5) * 0.012).r;
+  }
+  vec3 glow = uAccent * (halo / 6.0) * 0.22;
+  gl_FragColor = vec4((ink + glow) * shimmer * uOpacity, 1.0);
 }

@@ -26,6 +26,15 @@ uniform float uSweep;
 uniform float uShade;
 /** 0..1: lighter frost (live scenes, the capstone's dashboard) so the media read. */
 uniform float uClarity;
+/** Seconds, for the glint travelling round the edge line. */
+uniform float uTime;
+/** The pane's size (world units) and corner radius: for the edge line. */
+uniform vec3 uPane;
+
+float roundedBox(vec2 p, vec2 halfSize, float r) {
+  vec2 q = abs(p) - halfSize + r;
+  return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+}
 
 varying vec2 vUv;
 varying vec3 vNormal;
@@ -46,13 +55,16 @@ void main() {
   float ripple = relief.z;
   float swell = relief.w;
   // Readable through the glass: the relief bends the image, it doesn't shatter it.
-  vec2 shift = relief.xy * glass * 0.6 * (1.0 - uClarity * 0.45);
+  // Capped, so text and logos bend and smear but never show as a crisp second copy.
+  vec2 shift = relief.xy * glass * 0.32 * (1.0 - uClarity * 0.45);
   vec2 uv = vUv + shift;
 
   // Smear along the streaks: a few taps along the slant, longer out of focus. Each channel
   // bends by a slightly different amount (dispersion), so fringes appear wherever the
   // shift jumps, at the fragments' edges.
-  vec2 along = normalize(vec2(0.35, 1.0)) * (0.012 + abs(ripple) * 0.02 + uBlur * 0.05) * glass;
+  vec2 along = normalize(vec2(0.35, 1.0)) * (0.006 + abs(ripple) * 0.01 + uBlur * 0.05) * glass;
+  // A small, fixed dispersion along the bend (never a second offset image).
+  vec2 fringe = length(shift) > 0.0001 ? normalize(shift) * 0.0022 * glass : vec2(0.0);
   // Lite tier (integrated GPUs): fewer taps along the smear.
 #ifdef LITE
   const int TAPS = 2;
@@ -62,9 +74,9 @@ void main() {
   vec3 color = vec3(0.0);
   for (int i = 0; i < TAPS; i++) {
     vec2 tap = uv + along * (float(i) / float(TAPS - 1) - 0.5);
-    color.r += texture2D(uImage, tap + shift * 0.22).r;
+    color.r += texture2D(uImage, tap + fringe).r;
     color.g += texture2D(uImage, tap).g;
-    color.b += texture2D(uImage, tap - shift * 0.22).b;
+    color.b += texture2D(uImage, tap - fringe).b;
   }
   color /= float(TAPS);
   color *= 1.0 - uShade * 0.75 * smoothstep(0.55, 0.0, vUv.y);
@@ -73,8 +85,12 @@ void main() {
   // where the glass swells and at grazing angles, a little brighter towards the top (lit
   // from above).
   float grazing = 1.0 - abs(dot(normalize(vNormal), normalize(vView)));
-  // Saturated media under the glass (the reference's cards pop), then the milky body.
-  color = mix(vec3(dot(color, vec3(0.299, 0.587, 0.114))), color, 1.3);
+  // The card family's shared grade: saturation held back, a cool violet lift in the
+  // shadows, highlights kept but compressed (never brighter than the spine's highlights).
+  float luma = dot(color, vec3(0.299, 0.587, 0.114));
+  color = mix(vec3(luma), color, 0.82);
+  color += vec3(0.03, 0.022, 0.055) * (1.0 - smoothstep(0.0, 0.35, luma));
+  color = color / (1.0 + color * 0.3);
   float milk = (0.26 + swell * 0.08 + grazing * 0.3 + (vUv.y - 0.5) * 0.1) * (1.0 - uClarity * 0.4);
   color = mix(color, uHaze, clamp(milk, 0.0, 0.85) * glass);
   // The cast glass catches a little light along each ripple crest.
@@ -85,6 +101,18 @@ void main() {
   color = mix(color, title.rgb, title.a * (1.0 - uBlur * 0.6) * glass);
   // The seam takes the image's own colour, lifted: the card burns away into its dust.
   color = color * mix(uBrightness, 1.05, clear) * (1.0 + seam * 0.8);
+  // The glass edge: one continuous thin bright line just inside the pane's outline,
+  // brighter on the side facing the light (top left), with a glint travelling round it.
+  {
+    vec2 p = (vUv - 0.5) * uPane.xy;
+    float d = roundedBox(p, uPane.xy * 0.5, uPane.z) + 0.014;
+    float w = fwidth(d) * 1.2;
+    float edgeLine = 1.0 - smoothstep(0.0, w + 0.004, abs(d));
+    float lit = 0.45 + 0.55 * clamp(dot(normalize(p), normalize(vec2(-0.6, 0.8))) * 0.5 + 0.5, 0.0, 1.0);
+    float around = atan(p.y, p.x);
+    float glint = pow(0.5 + 0.5 * sin(around - uTime * 0.9), 40.0);
+    color += vec3(0.9, 0.95, 1.0) * edgeLine * (lit * 0.55 + glint * 1.2) * (1.0 - clear);
+  }
   // The opening sweep: one soft diagonal band of light.
   float band = vUv.x + vUv.y * 0.35 - uSweep;
   color += vec3(1.0) * exp(-band * band * 90.0) * 0.22 * step(-0.5, uSweep) * clear;

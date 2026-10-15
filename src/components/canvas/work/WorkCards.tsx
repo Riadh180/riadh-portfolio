@@ -56,7 +56,7 @@ export const BLOCK = { depth: 0.06, bevel: 0.02 }
 export type CardLayout = 'orbit' | 'column'
 
 /** Phones: smaller cards, so one fits the narrow screen with margin. */
-const COLUMN_SCALE = 0.62
+const COLUMN_SCALE = 0.74
 
 type Home = { position: Vector3; turn: number; pitch: number; roll: number; face: number }
 
@@ -137,11 +137,11 @@ export function createBlockGlass() {
           vec3 rim = hue < 0.33 ? mix(uRimColors[0], uRimColors[1], hue * 3.0)
             : hue < 0.66 ? mix(uRimColors[1], uRimColors[2], hue * 3.0 - 1.0)
             : mix(uRimColors[2], uRimColors[0], hue * 3.0 - 2.0);
-          outgoingLight += mix(vec3(1.0), rim, 0.45) * line * 1.3;
+          outgoingLight += mix(vec3(1.0), rim, 0.45) * line * 0.35;
           // A glint travelling round the edge as the card turns.
           float around = atan(normal.y, normal.x);
           float glint = pow(0.5 + 0.5 * sin(around * 2.0 - uTime * 0.9), 60.0);
-          outgoingLight += vec3(1.0) * glint * line * 2.2;
+          outgoingLight += vec3(1.0) * glint * line * 0.4;
         }
         #include <opaque_fragment>`,
       )
@@ -198,6 +198,8 @@ export function createScreenMaterial(
       uCursor: { value: new Vector2(0.5, 0.5) },
       uHover: { value: 0 },
       uSweep: { value: -1 },
+      uTime: { value: 0 },
+      uPane: { value: [CARD.width, CARD.height, CARD.radius] },
     },
     toneMapped: false,
   })
@@ -486,10 +488,12 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     // Depth: the cards swung out to the side sit out of focus, until focused; while
     // another card is open, the rest recede into the dark.
     // Cards away from the camera's height drift out of focus (depth of field).
+    // Phones: the cards above and below the focused one are only hints (dimmer, smaller).
     const side =
       layout === 'orbit'
         ? Math.min(1, Math.max(0, Math.abs(target.position.y - s.eye.y) / ORBIT_SPACING - 0.35))
-        : 0
+        : Math.min(1, Math.abs(target.position.y - (s.eye.y + 0.6)) / COLUMN_SPACING)
+    if (layout === 'column') g.scale.multiplyScalar(1 - side * 0.3 * (1 - flown))
     const u = screenMaterial.uniforms
     u.uBlur!.value = Math.max(side * (1 - s.focus), s.others * 0.8, s.outside * 0.6)
     u.uBrightness!.value =
@@ -501,6 +505,7 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     u.uBrightness!.value *= near
     u.uDissolve!.value = Math.min(1, s.dissolve)
     ;(glass.userData.time as { value: number }).value = clock.time
+    u.uTime!.value = clock.time
     s.hover += ((isFocused && !isOpen ? 1 : 0) - s.hover) * ease
     u.uHover!.value = s.hover
     ;(u.uCursor!.value as Vector2).lerp(s.cursorUv, ease)

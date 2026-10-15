@@ -28,7 +28,6 @@ import { Effects } from './post/Effects'
 import type { Pointer } from './usePointer'
 import { useSceneClock } from './useSceneClock'
 import { SystemPlace } from './system/SystemPlace'
-import { LensShards } from './work/LensShards'
 import { WorkPlace } from './work/WorkPlace'
 
 type Props = {
@@ -82,7 +81,7 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
       />
       <CameraRig pointer={pointer} journey={journey} enabled={!reducedMotion} />
       <Backdrop journey={journey} />
-      <Drift journey={journey} seed={3} weight={1.3}>
+      <Drift journey={journey} seed={3} weight={1.3} rotate={false}>
         <Emblem
           look={look}
           pointer={pointer}
@@ -98,7 +97,7 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
       <Deferred>
         <GoldCloud journey={journey} clock={clock} reducedMotion={reducedMotion} />
         <DustSheet clock={clock} journey={journey} />
-        <Drift journey={journey} seed={7} weight={2}>
+        <Drift journey={journey} seed={7} weight={2} rotate={false}>
           <Tagline clock={clock} reducedMotion={reducedMotion} journey={journey} />
         </Drift>
       </Deferred>
@@ -110,7 +109,6 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
       </Deferred>
       <Deferred>
         <WorkPlace journey={journey} clock={clock} />
-        <LensShards journey={journey} />
       </Deferred>
       <Deferred>
         <SystemPlace

@@ -16,17 +16,17 @@ export function createOilMaterial() {
   const material = new MeshPhysicalMaterial({
     // A hint of violet in the near-black body (Work's accent).
     // Lighter, lilac (the reference column): a textured body under a soft purple sheen.
-    color: new Color().copy(sceneColors.violet).lerp(sceneColors.glass, 0.12).multiplyScalar(0.22),
-    metalness: 0.85,
-    roughness: 0.3,
-    clearcoat: 0.25,
-    clearcoatRoughness: 0.1,
+    color: new Color().copy(sceneColors.violet).lerp(sceneColors.glass, 0.08).multiplyScalar(0.14),
+    // Wet, polished stone-glass: glossy body under a full clear coat.
+    metalness: 0.7,
+    roughness: 0.2,
+    clearcoat: 1,
+    clearcoatRoughness: 0.06,
     iridescence: 1,
     iridescenceIOR: 2.1,
     iridescenceThicknessRange: [380, 820],
     // Lifted towards the studio-lit concept (docs/spine-concept.png).
     envMapIntensity: 1.35,
-    flatShading: true,
   })
   material.userData.time = { value: 0 }
   material.onBeforeCompile = (shader) => {
@@ -82,8 +82,8 @@ export function createOilMaterial() {
         #ifdef USE_IRIDESCENCE
           oilStreaks(material.iridescence, material.iridescenceThickness, vSpinePosition,
             iridescenceThicknessMinimum, iridescenceThicknessMaximum);
-          // The oily rainbow lives on the wings' edges and collars.
-          material.iridescence = mix(material.iridescence * 0.45, min(1.0, material.iridescence * 2.2), vOilSmooth);
+          // Thin film strongest at grazing angles (violet → teal → gold).
+          material.iridescence *= 0.35 + 0.65 * pow(1.0 - abs(dot(normal, normalize(vViewPosition))), 1.5);
         #endif`,
       )
       .replace(
@@ -94,14 +94,28 @@ export function createOilMaterial() {
           float rimLight = pow(1.0 - abs(dot(normal, normalize(vViewPosition))), 2.5);
           outgoingLight += mix(uOilViolet, vec3(1.0), 0.35) * rimLight * 0.3;
         }
-        // Wings: the body's lilac, lit, never a black mirror.
-        outgoingLight += uOilViolet * 0.16 * vOilSmooth;
-        // Inner glitter: tiny bright points twinkling inside the bodies (not the wings).
+        // A soft inner glow in the crevices (where the surface faces away, low ambient):
+        // a subsurface feel.
         {
-          vec3 cell = floor(vSpinePosition * 46.0);
-          float h = fract(sin(dot(cell, vec3(12.99, 78.23, 37.71))) * 43758.55);
-          float twinkle = 0.5 + 0.5 * sin(h * 80.0 + uOilTime * (1.0 + h * 2.0));
-          outgoingLight += vec3(1.0, 0.86, 1.0) * step(0.992, h) * twinkle * 1.6 * (1.0 - vOilSmooth);
+          float crevice = smoothstep(0.35, 0.0, abs(dot(normal, normalize(vViewPosition))));
+          outgoingLight += uOilViolet * 0.08 * (1.0 - crevice);
+        }
+        // Glitter inside the material: round sparks on two depth layers seen through the
+        // surface (parallax with the view), each its own size and twinkle.
+        {
+          vec3 view = normalize(vViewPosition);
+          for (int layer = 0; layer < 2; layer++) {
+            float d = 0.05 + float(layer) * 0.07;
+            vec3 q = (vSpinePosition + view * d) * (34.0 + float(layer) * 14.0);
+            vec3 cell = floor(q);
+            float h = fract(sin(dot(cell, vec3(12.99, 78.23, 37.71))) * 43758.55);
+            vec3 centre = vec3(fract(h * 7.1), fract(h * 13.7), fract(h * 3.3)) * 0.6 + 0.2;
+            float r = length(fract(q) - centre);
+            float size = 0.05 + fract(h * 31.0) * 0.1;
+            float spark = step(0.975, h) * smoothstep(size, 0.0, r);
+            float twinkle = 0.35 + 0.65 * pow(0.5 + 0.5 * sin(h * 80.0 + uOilTime * (0.6 + h * 1.5)), 4.0);
+            outgoingLight += vec3(1.0, 0.88, 1.0) * spark * twinkle * (1.2 - float(layer) * 0.5);
+          }
         }
         outgoingLight += oilStreakGlow(normal, normalize(vViewPosition), uOilTeal, uOilGreen,
           uOilViolet, uOilGlow * (0.6 + 1.6 * vOilSmooth));

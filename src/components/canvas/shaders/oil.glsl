@@ -9,9 +9,9 @@ float oilRoughness(float roughness, vec3 p) {
 
 /** Fine grain in the normals (view space): the surface reads crumbly, not moulded. */
 vec3 oilGrain(vec3 n, vec3 p) {
-  vec3 q = p * 30.0;
+  vec3 q = p * 16.0;
   vec3 grain = vec3(snoise(q), snoise(q.yzx + 17.3), snoise(q.zxy - 9.1));
-  return normalize(n + grain * 0.28);
+  return normalize(n + grain * 0.1);
 }
 
 float oilStreakMask = 0.0;

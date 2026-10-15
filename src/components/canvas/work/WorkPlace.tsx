@@ -8,6 +8,7 @@ import { SceneWord } from '../journey/SceneWord'
 import { PLACES, WORK, type JourneyState } from '../journey/path'
 import { Drift } from '../motion/Drift'
 import type { SceneClock } from '../useSceneClock'
+import { COLUMN_SPACING } from './layout'
 import { Pebbles } from './Pebbles'
 import { Spine } from './Spine'
 import { WorkCards } from './WorkCards'
@@ -56,9 +57,17 @@ export function WorkPlace({ journey, clock }: Props) {
         }
       />
       <Drift journey={journey} seed={11} weight={1.4}>
-        <Spine clock={clock} />
+        {/* Phones: the column is context behind the cards, narrower and further back, and
+            stretched to run the whole length of the card column. */}
+        <group
+          scale={column ? [0.5, 1.3, 0.5] : 1}
+          position={column ? [0, -2.5 * COLUMN_SPACING + 0.5, -2.4] : [0, 0, 0]}
+        >
+          <Spine clock={clock} />
+          {column && <Pebbles clock={clock} focusDistance={6} />}
+        </group>
         {/* Focus on the card the camera holds at (dollied in, card in front of the column). */}
-        <Pebbles clock={clock} focusDistance={column ? 6 : WORK.distance - WORK.dolly - 2} />
+        {!column && <Pebbles clock={clock} focusDistance={WORK.distance - WORK.dolly - 2} />}
         <WorkCards layout={column ? 'column' : 'orbit'} clock={clock} />
       </Drift>
     </group>

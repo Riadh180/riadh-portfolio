@@ -25,13 +25,13 @@ export type SceneColor = keyof typeof sceneColors
 
 export const sceneConfig = {
   particles: {
-    /** World-space size of an in-focus particle. */
-    size: 0.022,
+    /** World-space size of an in-focus particle: fine grain, like everything else. */
+    size: 0.008,
     /** Depth-of-field strength: how fast particles blur away from the focus plane. */
-    aperture: 1.2,
+    aperture: 0.45,
     focusDistance: 10,
     /** Low: the screen stays mostly dark; the dust lives in the slab and the opening cloud. */
-    brightness: 0.2,
+    brightness: 0.45,
   },
   flow: {
     speed: 0.12,
@@ -101,7 +101,7 @@ export const sceneConfig = {
     turn: 0.05,
     /** Oily sheen strength and how glossy the dark body is. */
     sheen: 0.85,
-    gloss: 0.72,
+    gloss: 0.82,
   },
   /**
    * Work's own, much darker light rig (the hero's is built for thin glass and would turn a
@@ -115,7 +115,7 @@ export const sceneConfig = {
   },
   /** Work: round coloured pebbles clumped round the spine and in a few small clouds. */
   pebbles: {
-    count: 14000,
+    count: 10000,
     size: 0.022,
     brightness: 1,
     /** Distance from the axis where they gather. */

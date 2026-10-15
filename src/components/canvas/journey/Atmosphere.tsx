@@ -174,7 +174,10 @@ export function Atmosphere({ journey, clock }: { journey: JourneyState; clock: S
       u.uFocus!.value = journey.distance
       // Desktop: the left column; phones: the lower part of the screen.
       u.uTextZone!.value = size.width < 700 ? [-2, -0.15] : [-0.3, -2]
-      u.uOpacity!.value = layer.opacity * (key === 'back' ? 1 : presence)
+      // Work: no starfield, only a very sparse dust (~10%); its depth comes from fog.
+      const ease = (x: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, x)))) / 2
+      const atWork = ease(journey.toWork) * (1 - ease(journey.toSystem))
+      u.uOpacity!.value = layer.opacity * (key === 'back' ? 1 : presence) * (1 - atWork * 0.9)
     })
   })
 

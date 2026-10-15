@@ -1,10 +1,12 @@
 'use client'
 
 import { type CSSProperties, useEffect, useState } from 'react'
-import { useScramble } from '@/hooks/useScramble'
 
-/** One glitch as it settles on arrival, then a rare 0.2s one every 8–12s. */
-const GLITCH = { length: 200, first: 1500, calm: 8000, jitter: 4000 }
+/**
+ * Arrival: the correct word with a few slices offset, settling (0.45s); then a rare 0.2s
+ * glitch every 8–12s. Large type never shows a random state.
+ */
+const GLITCH = { arrival: 450, length: 200, calm: 8000, jitter: 4000 }
 
 type Slice = { top: number; bottom: number; shift: number }
 
@@ -21,27 +23,26 @@ const roll = (): [Slice, Slice] => {
 }
 
 /**
- * Display text that scrambles in when it becomes `active`, then glitches now and then:
+ * Display text that arrives as itself with a few slices offset, then glitches now and then:
  * two horizontal slices of it slip sideways for a moment (letters double), in the text's
  * own colour (no chromatic split on HTML). Screen readers get the clean text only.
  */
 export function GlitchText({ text, active }: { text: string; active: boolean }) {
-  const shown = useScramble(text, active)
   const [slices, setSlices] = useState<[Slice, Slice] | null>(null)
 
   useEffect(() => {
     if (!active || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     let timer = 0
-    const next = (delay: number) => {
+    const next = (delay: number, length: number) => {
       timer = window.setTimeout(() => {
         setSlices(roll())
         timer = window.setTimeout(() => {
           setSlices(null)
-          next(GLITCH.calm + Math.random() * GLITCH.jitter)
-        }, GLITCH.length)
+          next(GLITCH.calm + Math.random() * GLITCH.jitter, GLITCH.length)
+        }, length)
       }, delay)
     }
-    next(GLITCH.first)
+    next(0, GLITCH.arrival)
     return () => {
       window.clearTimeout(timer)
       setSlices(null)
@@ -51,7 +52,7 @@ export function GlitchText({ text, active }: { text: string; active: boolean }) 
   return (
     <span className="relative inline-block">
       <span className="sr-only">{text}</span>
-      <span aria-hidden>{shown}</span>
+      <span aria-hidden>{text}</span>
       {slices?.map((slice, i) => (
         <span
           key={i}

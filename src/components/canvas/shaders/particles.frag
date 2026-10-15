@@ -10,8 +10,9 @@ void main() {
   float disc = 1.0 - smoothstep(1.0 - aa, 1.0, r);
   if (disc <= 0.0) discard;
 
-  // In focus: a soft core. Out of focus: a flat bokeh disc with a faint brighter rim.
-  float core = exp(-r * r * 5.0);
+  // In focus: fine grain with a hot core. Out of focus: a flat bokeh disc with a faint
+  // brighter rim.
+  float core = exp(-r * r * 9.0) * 1.4 + (1.0 - smoothstep(0.2, 1.0, r)) * 0.2;
   float bokeh = disc * mix(0.72, 1.0, smoothstep(0.55, 0.95, r));
   float shape = mix(core, bokeh, vBlur);
 

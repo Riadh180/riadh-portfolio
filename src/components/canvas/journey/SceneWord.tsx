@@ -8,6 +8,7 @@ import {
   type Texture,
   Vector3,
 } from 'three'
+import { sceneColors } from '@/styles/scene'
 import fragmentShader from '../shaders/sceneWord.frag'
 import vertexShader from '../shaders/tagline.vert'
 import type { SceneClock } from '../useSceneClock'
@@ -32,6 +33,8 @@ type Props = {
   ripple?: boolean
   /** Share of the visible width it may take at most (it shrinks on narrow screens). */
   fit?: number
+  /** The place's accent (a soft glow round the letters). */
+  accent?: Color
   /** Always turned to face the camera (for places the camera swings round). */
   billboard?: boolean
 }
@@ -53,6 +56,7 @@ export function SceneWord({
   ripple = false,
   fit = 0.9,
   billboard = false,
+  accent = sceneColors.violet,
 }: Props) {
   const mesh = useRef<Mesh>(null)
   const material = useRef<ShaderMaterial>(null)
@@ -90,8 +94,9 @@ export function SceneWord({
       uRipple: { value: ripple ? 1 : 0 },
       uOpacity: { value: 0 },
       uColor: { value: color },
+      uAccent: { value: accent },
     }),
-    [lines, ripple, color],
+    [lines, ripple, color, accent],
   )
 
   useFrame(({ camera, viewport }) => {

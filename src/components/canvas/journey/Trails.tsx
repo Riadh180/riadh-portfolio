@@ -110,7 +110,8 @@ export function Trails({ journey, clock }: { journey: JourneyState; clock: Scene
         depth={1.5}
         count={4200}
         colors={[...colors.embers]}
-        amount={() => band(journey.toContact, 0.05, 0.75, 0.15)}
+        // Overlaps The Core's descent: the embers thin out only as it fills the frame.
+        amount={() => band(journey.toContact, 0.05, 0.97, 0.22)}
         brightness={2.6}
       />
     </>

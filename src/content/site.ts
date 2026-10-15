@@ -75,6 +75,8 @@ export type Job = {
   location: string
   /** Extra detail lines for the CV (from the CV itself). */
   details?: string[]
+  /** Where the card title is centred (0..1 of the card width; default the middle). */
+  titleX?: number
   /** The card's big title and small line, when not metric and company. */
   cardTitle?: string
   cardSubtitle?: string
@@ -114,6 +116,7 @@ export const jobs: Job[] = [
     ],
     gallery: [{ src: '/work/bliggit/login.png', alt: 'Treuewelt Wuppertal app: login screen' }],
     clearCover: true,
+    titleX: 0.3,
     metric: '>99% crash-free',
     summary:
       'Led the Treuewelt Wuppertal app (React Native / Expo) for Stadtsparkasse Wuppertal, used by tens of thousands of bank customers. Apple Pay & PayPal integration, ~30% faster screen loads, >99% crash-free sessions, weekly releases with zero rollbacks.',

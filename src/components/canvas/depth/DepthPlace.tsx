@@ -48,6 +48,7 @@ export function DepthPlace({ journey, clock }: Props) {
         color={INK}
         clock={clock}
         reducedMotion={reducedMotion}
+        accent={sceneColors.teal}
         ripple
         amount={() =>
           short ? 0 : ease((journey.toDepth - 0.35) / 0.45) * (1 - ease(journey.toContact * 2.5))

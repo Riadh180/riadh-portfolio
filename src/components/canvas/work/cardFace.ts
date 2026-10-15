@@ -59,6 +59,8 @@ export class CardFace {
   /** The card titles' display face (General Sans Light). */
   private display: string
   private hasCover = false
+  /** Luminance of the media under the title (cached; reset when the media changes). */
+  private scrimBand: number | null = null
 
   constructor(
     private job: Job,
@@ -163,6 +165,8 @@ export class CardFace {
       // Darken the title's corner so it always reads.
       this.shade(context)
       this.image.needsUpdate = true
+      this.scrimBand = null
+      this.draw(Infinity)
     }
     image.src = url
   }
@@ -185,9 +189,10 @@ export class CardFace {
       return `rgb(${r}, ${g}, ${b})`
     }
     const gradient = c.createLinearGradient(0, 0, WIDTH, HEIGHT)
-    gradient.addColorStop(0, mix(palette.bg, '#7a1020', 0.9))
-    gradient.addColorStop(0.55, mix(palette.bg, '#2a1a4a', 0.8))
-    gradient.addColorStop(1, mix(palette.bg, '#123a7a', 0.85))
+    // Deep wine → plum (the app's red, held back for the card family).
+    gradient.addColorStop(0, mix(palette.bg, '#5a1426', 0.75))
+    gradient.addColorStop(0.55, mix(palette.bg, '#3a1838', 0.7))
+    gradient.addColorStop(1, mix(palette.bg, '#24204a', 0.7))
     c.fillStyle = gradient
     c.fillRect(0, 0, WIDTH, HEIGHT)
     // A soft glow of the app's own top colour behind the phones.
@@ -223,9 +228,31 @@ export class CardFace {
       c.drawImage(image, -w / 2, -h / 2, w, h)
       c.restore()
     }
-    phone(second, WIDTH * 0.38, -0.09, 0.98)
-    phone(first, WIDTH * 0.64, 0.07, 1.04)
+    // On the right, so the title (left) crosses no white screen area.
+    phone(second, WIDTH * 0.66, -0.08, 0.92)
+    phone(first, WIDTH * 0.84, 0.07, 0.98)
     this.image.needsUpdate = true
+    this.scrimBand = null
+    this.draw(Infinity)
+  }
+
+  /** Mean relative luminance (0..1) of the media in a box centred on (x, y). */
+  private luminance(x: number, y: number, w: number, h: number) {
+    const c = this.background.getContext('2d')
+    if (!c) return 0.3
+    const left = Math.max(0, Math.round(x - w / 2))
+    const top = Math.max(0, Math.round(y - h / 2))
+    const width = Math.max(1, Math.min(WIDTH - left, Math.round(w)))
+    const height = Math.max(1, Math.min(HEIGHT - top, Math.round(h)))
+    const data = c.getImageData(left, top, width, height).data
+    let sum = 0
+    let n = 0
+    for (let i = 0; i < data.length; i += 4 * 16) {
+      sum +=
+        (0.2126 * (data[i] ?? 0) + 0.7152 * (data[i + 1] ?? 0) + 0.0722 * (data[i + 2] ?? 0)) / 255
+      n++
+    }
+    return n ? sum / n : 0.3
   }
 
   /** Redraws the title layer, `elapsed` seconds into its scramble. */
@@ -248,13 +275,42 @@ export class CardFace {
     const display = TITLE_STYLE === 'pixel' ? this.family : this.display
     const weight = TITLE_STYLE === 'pixel' ? '' : '300 '
     const title = (this.job.cardTitle ?? this.job.metric).toUpperCase()
+    const centre = (this.job.titleX ?? 0.5) * WIDTH
+    // Room: to the nearer card edge, both sides.
+    const room = Math.min(centre, WIDTH - centre) * 2 * 0.9
     let size = 92
     c.font = `${weight}${size}px ${display}`
-    while (c.measureText(title).width > WIDTH * 0.84 && size > 40) {
+    while (c.measureText(title).width > room && size > 34) {
       size -= 4
       c.font = `${weight}${size}px ${display}`
     }
     const baseline = HEIGHT * 0.56
+    // A soft, feathered scrim under the title, as strong as the media there needs for
+    // ≥ 4.5:1 contrast (measured from the media's luminance in the title band).
+    const band = this.luminance(
+      centre,
+      baseline - size * 0.5,
+      c.measureText(title).width,
+      size * 1.6,
+    )
+    const scrim = Math.min(0.78, Math.max(0.2, (band - 0.08) * 1.9))
+    const glow = c.createRadialGradient(
+      centre,
+      baseline - size * 0.45,
+      0,
+      centre,
+      baseline - size * 0.45,
+      Math.max(room * 0.55, size * 2.2),
+    )
+    glow.addColorStop(0, rgba(palette.bg, scrim))
+    glow.addColorStop(0.6, rgba(palette.bg, scrim * 0.55))
+    glow.addColorStop(1, rgba(palette.bg, 0))
+    c.save()
+    c.scale(1, 0.55)
+    c.translate(0, (baseline - size * 0.45) * (1 / 0.55 - 1))
+    c.fillStyle = glow
+    c.fillRect(0, 0, WIDTH, HEIGHT / 0.55)
+    c.restore()
     c.textAlign = 'center'
     c.font = `${weight}26px ${display}`
     c.fillStyle = rgba(palette.text, 0.8)
@@ -269,7 +325,7 @@ export class CardFace {
     c.font = `${weight}${size}px ${display}`
     const chars = scramble(title, elapsed)
     const total = c.measureText(title).width
-    let x = WIDTH / 2 - total / 2
+    let x = centre - total / 2
     c.textAlign = 'left'
     for (const { char, ghost } of chars) {
       const width = c.measureText(char).width

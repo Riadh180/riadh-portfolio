@@ -39,8 +39,8 @@ export const WORK = {
   /** Camera distance from the spine, and how far it turns round it on the way down. */
   distance: 6.8,
   /** How far the camera dollies in at each card stop, and how far it aims towards it. */
-  dolly: 1.3,
-  aim: 0.22,
+  dolly: 0.95,
+  aim: 0.65,
 }
 
 /**
@@ -149,12 +149,12 @@ export class JourneyState {
     else if (camera < 0.35) this.heading = 0
     // At Contact The Core is back in its hero pose: reset, so the loop's return to the top
     // finds it at the hero, not on its way back from the statement.
-    if (toContact > 0.3) {
+    if (toContact > 0.1) {
       this.heading = 0
       this.objects = 0
     }
     const step = Math.min(delta, 1 / 30) / OBJECTS_TRAVEL
-    if (toContact <= 0.3) {
+    if (toContact <= 0.1) {
       this.objects = reducedMotion
         ? this.heading
         : this.objects + Math.max(-step, Math.min(step, this.heading - this.objects))

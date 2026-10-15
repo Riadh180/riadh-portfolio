@@ -10,7 +10,8 @@ import vertexShader from './shaders/backdrop.vert'
 
 /** 0..1: Contact's warm moment, risen with The Core and gone again by the end of the loop. */
 export function warmth(journey: JourneyState) {
-  const rise = Math.min(1, Math.max(0, (journey.toContact - 0.3) / 0.7))
+  // Early: overlaps Depth's exit (bubbles, data dust) instead of following it.
+  const rise = Math.min(1, Math.max(0, (journey.toContact - 0.1) / 0.6))
   return rise * rise * (3 - 2 * rise) * (1 - journey.loop)
 }
 
@@ -40,6 +41,13 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
       uUpperRight: { value: new Color().copy(sceneColors.teal) },
       uStrength: { value: 0 },
       uFog: { value: 0 },
+      uOctaves: { value: 4 },
+      uBacklight: {
+        value: new Color()
+          .copy(sceneColors.violet)
+          .lerp(sceneColors.teal, 0.35)
+          .multiplyScalar(0.07),
+      },
       uViolet: { value: 0 },
       uVioletColor: { value: new Color().copy(sceneColors.violet).multiplyScalar(0.16) },
       uTime: { value: 0 },
@@ -69,10 +77,12 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
       const ease = (x: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, x)))) / 2
       const work = journey ? ease(journey.toWork) * (1 - ease(journey.toSystem)) : 0
       lowerLeft.lerp(sceneColors.teal, work * 0.65)
-      // Lite tier: no fog (a full-screen noise pass).
-      u.uFog!.value = useTier.getState().tier === 'lite' ? 0 : work
+      // Lite tier: the same fog, cheaper (two octaves).
+      u.uFog!.value = work
+      u.uOctaves!.value = useTier.getState().tier === 'lite' ? 2 : 4
       u.uTime!.value = performance.now() / 1000
-      u.uViolet!.value = work
+      // Portrait: the corner bleed would cover half the frame; much weaker there.
+      u.uViolet!.value = work * (size.width < size.height ? 0.25 : 1)
       // At Work the corner bleeds step back: the darkness is textured fog instead.
       u.uStrength!.value *= 1 - work * 0.55
     }
