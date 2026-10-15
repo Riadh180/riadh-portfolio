@@ -14,7 +14,7 @@ import vertexShader from '../shaders/introBurst.vert'
 
 const COUNT = 2200
 /** The Core's outline on screen at the hero (world units), and its centre. */
-const OUTLINE = { side: 1.5, radius: 0.42, y: 0.15 }
+const OUTLINE = { side: 2.25, radius: 0.63, y: 0.45 }
 /** Seconds the condensing takes. */
 export const BURST = 1.3
 

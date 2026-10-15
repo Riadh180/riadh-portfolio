@@ -394,3 +394,14 @@ System 59, Depth 47, Contact 47.
   System/Depth/Contact 60.2. HD 630 lite — hero 57.4, statement 56.0, Work 60.3,
   System/Depth/Contact 60.2.
 - Strip: `docs/screens/round4-work.jpg` (seg_44 above, ours below).
+
+---
+# Final art-direction pass (2026-10-15)
+
+## Hero — "mystery"
+- The Core 1.5× at the hero, slightly above centre (pose y 0.15 → 0.45); the statement
+  keeps its size; at Contact it returns to base size and grows back over the loop (the
+  looped view still matches the hero). Intro burst outline scaled to match.
+- `hero/HeroAura.tsx`: a soft teal halo behind it breathing every ~6s, and 70 glass chips
+  orbiting it at different depths (`ChipCluster`), hero only (and the loop's return).
+- Sheet: `docs/screens/final-hero.jpg`.

@@ -33,7 +33,8 @@ type Props = {
  * front of the tagline's right end, so its glass bends the type behind it.
  */
 const POSES = {
-  hero: new Vector3(0, 0.15, 0),
+  /** Slightly above centre: the first frame's undeniable subject. */
+  hero: new Vector3(0, 0.45, 0),
   statement: new Vector3(-0.2, PLACES.statement - 0.65, 3),
 }
 
@@ -43,6 +44,12 @@ const POSES = {
  * three tagline lines.
  */
 const STATEMENT = { scale: 1.45, edge: 1.1 }
+/**
+ * The hero shows The Core 1.5× larger than its base size. Relative to that, the statement
+ * keeps its size (1.45 base); at Contact it is back to base, growing again over the loop,
+ * so the view that loops to the top matches the hero.
+ */
+const HERO = 1.5
 
 /** The held angle nearest `angle`: kπ ± the edge angle (either side, either face). */
 function nearestEdge(angle: number) {
@@ -165,7 +172,11 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     if (contact > 0) g.position.y += PLACES.contact - (1 - contact) * 3.5
     // Portrait screens see a narrower slice of the world: keep the emblem's share of width.
     const portrait = Math.min(1, Math.max(0.55, (size.width / size.height) * 0.9))
-    g.scale.setScalar(emblem.scale * portrait * (1 + (STATEMENT.scale - 1) * travel))
+    const loop = journey ? smooth01(journey.loop) : 0
+    const heroScale = HERO - (HERO - 1) * contact * (1 - loop)
+    g.scale.setScalar(
+      emblem.scale * portrait * (heroScale + (STATEMENT.scale - heroScale) * travel),
+    )
     if (anchored) {
       g.position.set(0, Math.sin(t * 0.5) * emblem.float, 0)
       g.scale.setScalar(anchored.scale)

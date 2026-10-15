@@ -19,6 +19,7 @@ import { type JourneyState, useJourneyState } from './journey/path'
 import { Tagline } from './journey/Tagline'
 import { Trails } from './journey/Trails'
 import { HeroLighting } from './hero/HeroLighting'
+import { HeroAura } from './hero/HeroAura'
 import { IntroBurst } from './hero/IntroBurst'
 import { Warmup } from './hero/Warmup'
 import { ParticleField } from './particles/ParticleField'
@@ -89,6 +90,7 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
           journey={journey}
         />
       </Drift>
+      <HeroAura journey={journey} clock={clock} />
       <IntroBurst reducedMotion={reducedMotion} />
       <Warmup />
       {/* Further down the path: built lazily, on engagement (see Deferred). */}
