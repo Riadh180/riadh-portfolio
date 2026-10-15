@@ -39,12 +39,15 @@ export abstract class CardScene {
       vertexShader: skyVertex,
       fragmentShader: skyFragment,
       uniforms: {
-        uBase: { value: sceneColors.bg.clone().multiplyScalar(1.2) },
+        uBase: { value: sceneColors.bg.clone().lerp(lowerLeft, 0.12).multiplyScalar(1.6) },
         uLowerLeft: { value: lowerLeft },
         uUpperRight: { value: upperRight },
       },
       depthWrite: false,
     })
+    // Closer: the subject fills more of the card.
+    this.camera.zoom = 1.3
+    this.camera.updateProjectionMatrix()
     const backdrop = new Mesh(this.own(new PlaneGeometry(2, 2)), this.own(sky))
     backdrop.frustumCulled = false
     backdrop.renderOrder = -1
@@ -90,7 +93,7 @@ export abstract class CardScene {
         uniforms: {
           uBase: { value: sceneColors.bg.clone().multiplyScalar(1.6) },
           uRim: { value: rim },
-          uGlow: { value: glow },
+          uGlow: { value: glow * 1.5 },
           uTime: { value: 0 },
         },
       }),

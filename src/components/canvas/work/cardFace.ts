@@ -21,6 +21,23 @@ const mix = (a: string, b: string, amount: number) => {
   return `#${hex(16)}${hex(8)}${hex(0)}`
 }
 
+/** Card title style: 'light' (Martian Mono 300, chosen) or 'pixel' (Departure Mono). */
+const TITLE_STYLE: 'light' | 'pixel' =
+  typeof window !== 'undefined' &&
+  new URLSearchParams(window.location.search).get('type') === 'pixel'
+    ? 'pixel'
+    : 'light'
+
+/** Loads an image (resolves once decoded). */
+function loadImage(url: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => resolve(image)
+    image.onerror = reject
+    image.src = url
+  })
+}
+
 const WIDTH = 1024
 const HEIGHT = 640
 
@@ -39,6 +56,8 @@ export class CardFace {
   private context: CanvasRenderingContext2D
   private background = document.createElement('canvas')
   private family: string
+  /** The card titles' display face (Martian Mono, light). */
+  private display: string
   private hasCover = false
 
   constructor(
@@ -55,6 +74,9 @@ export class CardFace {
     this.family =
       getComputedStyle(document.documentElement).getPropertyValue('--font-departure').trim() ||
       'monospace'
+    this.display =
+      getComputedStyle(document.documentElement).getPropertyValue('--font-martian').trim() ||
+      'monospace'
     this.texture = new CanvasTexture(this.canvas)
     this.texture.colorSpace = SRGBColorSpace
     this.texture.minFilter = LinearMipmapLinearFilter
@@ -63,14 +85,29 @@ export class CardFace {
     this.image.colorSpace = SRGBColorSpace
     this.drawPlaceholder()
     // The mock screen's labels use the font too: redraw it once loaded (unless a cover came).
-    void document.fonts.load(`64px ${this.family}`).then(() => {
+    void Promise.all([
+      document.fonts.load(`64px ${this.family}`),
+      document.fonts.load(`300 64px ${this.display}`),
+    ]).then(() => {
       if (this.hasCover) this.draw(Infinity)
       else this.drawPlaceholder()
     })
   }
 
-  /** Uses the real cover once it has loaded. */
-  setCover(url: string) {
+  /** Lighter frost for this card's media (see Job.clearCover). */
+  get clear() {
+    return !!this.job.clearCover
+  }
+
+  /**
+   * Uses the real cover once it has loaded; with a `second` portrait screenshot, the two
+   * are composed as a product shot (two phones side by side).
+   */
+  setCover(url: string, second?: string) {
+    if (second) {
+      void Promise.all([url, second].map(loadImage)).then((images) => this.drawPhones(images))
+      return
+    }
     const image = new Image()
     image.onload = () => {
       this.hasCover = true
@@ -130,6 +167,67 @@ export class CardFace {
     image.src = url
   }
 
+  /**
+   * Two phone screenshots as a product shot: large, side by side, slightly angled, in dark
+   * bezels with a soft shadow, on a rich gradient from the app's own colours (sampled from
+   * the first screenshot's top and bottom).
+   */
+  private drawPhones(images: HTMLImageElement[]) {
+    const c = this.background.getContext('2d')
+    const [first, second] = images
+    if (!c || !first || !second) return
+    this.hasCover = true
+    const sample = (image: HTMLImageElement, y: number) => {
+      const probe = document.createElement('canvas').getContext('2d')
+      if (!probe) return palette.bg
+      probe.drawImage(image, 0, -y * image.height, image.width, image.height)
+      const [r = 0, g = 0, b = 0] = probe.getImageData(image.width / 2, 0, 1, 1).data
+      return `rgb(${r}, ${g}, ${b})`
+    }
+    const gradient = c.createLinearGradient(0, 0, WIDTH, HEIGHT)
+    gradient.addColorStop(0, mix(palette.bg, '#7a1020', 0.9))
+    gradient.addColorStop(0.55, mix(palette.bg, '#2a1a4a', 0.8))
+    gradient.addColorStop(1, mix(palette.bg, '#123a7a', 0.85))
+    c.fillStyle = gradient
+    c.fillRect(0, 0, WIDTH, HEIGHT)
+    // A soft glow of the app's own top colour behind the phones.
+    const glow = c.createRadialGradient(
+      WIDTH * 0.55,
+      HEIGHT * 0.45,
+      0,
+      WIDTH * 0.55,
+      HEIGHT * 0.45,
+      WIDTH * 0.45,
+    )
+    glow.addColorStop(0, sample(first, 0.05).replace('rgb', 'rgba').replace(')', ', 0.45)'))
+    glow.addColorStop(1, 'rgba(0, 0, 0, 0)')
+    c.fillStyle = glow
+    c.fillRect(0, 0, WIDTH, HEIGHT)
+    const phone = (image: HTMLImageElement, cx: number, angle: number, scale: number) => {
+      const h = HEIGHT * scale
+      const w = (image.width / image.height) * h
+      c.save()
+      c.translate(cx, HEIGHT * 0.5)
+      c.rotate(angle)
+      c.shadowColor = 'rgba(0, 0, 0, 0.6)'
+      c.shadowBlur = 40
+      c.shadowOffsetY = 18
+      c.fillStyle = '#05070a'
+      c.beginPath()
+      c.roundRect(-w / 2 - 9, -h / 2 - 9, w + 18, h + 18, 40)
+      c.fill()
+      c.shadowColor = 'transparent'
+      c.beginPath()
+      c.roundRect(-w / 2, -h / 2, w, h, 32)
+      c.clip()
+      c.drawImage(image, -w / 2, -h / 2, w, h)
+      c.restore()
+    }
+    phone(second, WIDTH * 0.38, -0.09, 0.98)
+    phone(first, WIDTH * 0.64, 0.07, 1.04)
+    this.image.needsUpdate = true
+  }
+
   /** Redraws the title layer, `elapsed` seconds into its scramble. */
   draw(elapsed: number) {
     const c = this.context
@@ -137,31 +235,56 @@ export class CardFace {
 
     const left = 64
     c.textBaseline = 'alphabetic'
-    c.font = `30px ${this.family}`
+    c.font = `26px ${this.family}`
     c.fillStyle = palette.muted
     c.fillText(
       this.kicker ?? `${String(this.index + 1).padStart(2, '0')} / ${this.job.years}`,
       left,
-      84,
+      78,
     )
 
-    c.font = `34px ${this.family}`
-    c.fillStyle = palette.text
-    c.fillText((this.job.cardSubtitle ?? this.job.company).toUpperCase(), left, HEIGHT - 150)
+    // Editorial: the company small and spaced above, the title large, light and centred
+    // over the media, white with a soft glow.
+    const display = TITLE_STYLE === 'pixel' ? this.family : this.display
+    const weight = TITLE_STYLE === 'pixel' ? '' : '300 '
+    const title = (this.job.cardTitle ?? this.job.metric).toUpperCase()
+    let size = 92
+    c.font = `${weight}${size}px ${display}`
+    while (c.measureText(title).width > WIDTH * 0.84 && size > 40) {
+      size -= 4
+      c.font = `${weight}${size}px ${display}`
+    }
+    const baseline = HEIGHT * 0.56
+    c.textAlign = 'center'
+    c.font = `${weight}26px ${display}`
+    c.fillStyle = rgba(palette.text, 0.8)
+    if ('letterSpacing' in c) (c as { letterSpacing: string }).letterSpacing = '6px'
+    c.fillText(
+      (this.job.cardSubtitle ?? this.job.company).toUpperCase(),
+      WIDTH / 2,
+      baseline - size - 14,
+    )
+    if ('letterSpacing' in c) (c as { letterSpacing: string }).letterSpacing = '0px'
 
-    // The metric, scrambling: ghosted, doubled letters that resolve left to right.
-    c.font = `78px ${this.family}`
-    let x = left
-    const title = this.job.cardTitle ?? this.job.metric
-    for (const { char, ghost } of scramble(title.toUpperCase(), elapsed)) {
+    c.font = `${weight}${size}px ${display}`
+    const chars = scramble(title, elapsed)
+    const total = c.measureText(title).width
+    let x = WIDTH / 2 - total / 2
+    c.textAlign = 'left'
+    for (const { char, ghost } of chars) {
       const width = c.measureText(char).width
       if (ghost > 0) {
-        c.fillStyle = rgba(palette.text, 0.35 * ghost)
-        c.fillText(char, x + ghost * 26, HEIGHT - 64)
-        c.fillText(char, x - ghost * 14, HEIGHT - 64)
+        // Chromatic doubled letters (the reference's "SUSSTAINABLE"), settling.
+        c.fillStyle = rgba(palette.pink, 0.55 * ghost)
+        c.fillText(char, x + ghost * 22, baseline)
+        c.fillStyle = rgba(palette.teal, 0.55 * ghost)
+        c.fillText(char, x - ghost * 14, baseline)
       }
+      c.shadowColor = rgba(palette.glow, 0.55)
+      c.shadowBlur = 24
       c.fillStyle = palette.text
-      c.fillText(char, x, HEIGHT - 64)
+      c.fillText(char, x, baseline)
+      c.shadowBlur = 0
       x += width
     }
     this.texture.needsUpdate = true

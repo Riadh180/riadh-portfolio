@@ -604,3 +604,23 @@ System 59, Depth 47, Contact 47.
   read the same).
 - FPS (prod, Retina) down the Work cards: AMD 60.3; HD 630 lite 60.3.
 - Sheet: `docs/screens/round6-background.jpg`.
+
+## Part 3 — Card media
+- Bliggit: `CardFace.drawPhones`: home + login screenshots as two large, slightly angled
+  phones in dark bezels with soft shadows, on a deep red → violet → blue gradient (the
+  app's colours) with a glow sampled from the screenshot. `clearCover` (lighter frost).
+- Live scenes: camera zoom 1.3 (subject bigger), richer card backgrounds (stronger corner
+  bleeds, base tinted by the scene's colour), rim glow ×1.5; lighter frost (`uClarity`:
+  relief shift −45%, milk −40%).
+- Capstone: the dashboard chart with its title and axes (crop [40, 500, 1720, 1118]),
+  lighter frost.
+- Sheets: `docs/screens/round6-bliggit.jpg`.
+
+## Part 4 — Card typography
+- Titles centred over the media, large (fit to 84% width), light, white with a soft glow;
+  company small and letter-spaced above; index / years small top-left. On hover the
+  scramble shows chromatic doubled letters (pink and teal ghosts) that settle.
+- Two options compared (`docs/screens/round6-type-options.jpg`): A Departure Mono (pixel),
+  B Martian Mono 300. Chose **B** (thinner, cleaner, closer to the reference's light
+  display titles); pixel stays for the small UI and the 3D words.
+- FPS (prod, Retina) down the Work cards: AMD 60.3; HD 630 lite 60.3.

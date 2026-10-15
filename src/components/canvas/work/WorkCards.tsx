@@ -181,6 +181,7 @@ export function createScreenMaterial(
       uTitle: { value: face.texture },
       uField: { value: field.target.texture },
       uShade: { value: live ? 1 : 0 },
+      uClarity: { value: live || face.clear ? 1 : 0 },
       uBrightness: { value: 1 },
       uBlur: { value: 0 },
       uSeed: { value: seed },
@@ -276,7 +277,9 @@ export function WorkCards({ layout, clock }: Props) {
     void loadAssets().then(({ work }) => {
       jobs.forEach((job, i) => {
         const cover = work[job.slug]
-        if (cover && !scenes[i]) faces[i]?.setCover(cover)
+        if (cover && !scenes[i]) {
+          faces[i]?.setCover(cover, job.gallery?.[0]?.src)
+        }
       })
     })
   }, [faces, scenes])

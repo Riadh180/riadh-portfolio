@@ -24,6 +24,8 @@ uniform float uHover;
 uniform float uSweep;
 /** 1 for live scenes: darken the lower part here, where the title sits (covers are pre-shaded). */
 uniform float uShade;
+/** 0..1: lighter frost (live scenes, the capstone's dashboard) so the media read. */
+uniform float uClarity;
 
 varying vec2 vUv;
 varying vec3 vNormal;
@@ -44,7 +46,7 @@ void main() {
   float ripple = relief.z;
   float swell = relief.w;
   // Readable through the glass: the relief bends the image, it doesn't shatter it.
-  vec2 shift = relief.xy * glass * 0.6;
+  vec2 shift = relief.xy * glass * 0.6 * (1.0 - uClarity * 0.45);
   vec2 uv = vUv + shift;
 
   // Smear along the streaks: a few taps along the slant, longer out of focus. Each channel
@@ -73,7 +75,7 @@ void main() {
   float grazing = 1.0 - abs(dot(normalize(vNormal), normalize(vView)));
   // Saturated media under the glass (the reference's cards pop), then the milky body.
   color = mix(vec3(dot(color, vec3(0.299, 0.587, 0.114))), color, 1.3);
-  float milk = 0.26 + swell * 0.08 + grazing * 0.3 + (vUv.y - 0.5) * 0.1;
+  float milk = (0.26 + swell * 0.08 + grazing * 0.3 + (vUv.y - 0.5) * 0.1) * (1.0 - uClarity * 0.4);
   color = mix(color, uHaze, clamp(milk, 0.0, 0.85) * glass);
   // The cast glass catches a little light along each ripple crest.
   color += uEdgeGlow * smoothstep(0.55, 0.95, ripple) * 0.035 * glass;

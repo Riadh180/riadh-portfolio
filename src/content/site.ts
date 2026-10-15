@@ -86,6 +86,8 @@ export type Job = {
   repo?: string
   /** A part of the cover to show (source pixels: x, y, width, height). */
   coverCrop?: [number, number, number, number]
+  /** Lighter frost over the cover (a dashboard, where detail matters). */
+  clearCover?: boolean
   /** A cover with its own file name in public/work/<slug>/ (otherwise cover.webp|jpg|png). */
   coverFile?: string
   /** The card title: company · metric. */
@@ -111,6 +113,7 @@ export const jobs: Job[] = [
       'CI/CD with GitLab and EAS: weekly releases, zero rollbacks',
     ],
     gallery: [{ src: '/work/bliggit/login.png', alt: 'Treuewelt Wuppertal app: login screen' }],
+    clearCover: true,
     metric: '>99% crash-free',
     summary:
       'Led the Treuewelt Wuppertal app (React Native / Expo) for Stadtsparkasse Wuppertal, used by tens of thousands of bank customers. Apple Pay & PayPal integration, ~30% faster screen loads, >99% crash-free sessions, weekly releases with zero rollbacks.',
@@ -330,7 +333,8 @@ export const capstone: Job = {
   repo: 'https://github.com/Riadh180/data-engineering-capstone',
   // The live dashboard (Streamlit): its AI-exposure bubble chart.
   coverFile: 'dashboard.png',
-  // The bubble cloud only (source pixels of the 2312×1618 screenshot).
-  coverCrop: [380, 800, 1240, 740],
+  clearCover: true,
+  // The chart with its title and axes (source pixels of the 2312×1618 screenshot).
+  coverCrop: [40, 500, 1720, 1118],
   filters: ['Data'],
 }
