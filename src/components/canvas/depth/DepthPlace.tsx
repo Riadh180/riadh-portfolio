@@ -25,8 +25,8 @@ const INK = new Color().copy(sceneColors.glass).lerp(sceneColors.glow, 0.45).mul
 export function DepthPlace({ journey, clock }: Props) {
   const group = useRef<Group>(null)
   const column = useThree((state) => state.size.width < 700)
-  // Short phones: the HTML heading sits where the word would be; it says the same.
-  const short = useThree((state) => state.size.width < 700 && state.size.height < 760)
+  // Phones: the HTML heading sits where the word would be; it says the same.
+  const short = useThree((state) => state.size.width < 700)
   const reducedMotion = useReducedMotion()
 
   useFrame(() => {

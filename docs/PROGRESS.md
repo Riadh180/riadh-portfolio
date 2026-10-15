@@ -557,3 +557,25 @@ System 59, Depth 47, Contact 47.
 - Hero: the orbiting chips are now crystal grains, 90 of them at ×2.4, catching the light
   (Part 2). Contact: embers are warm faceted grains (`ember.frag`); face-on Core and warm
   arrival kept.
+
+## Final checks (this round)
+- Full journey at normal wheel speed, desktop full tier, desktop lite tier (HD 630) and
+  phone 390×844: `docs/screens/final-journey-2.jpg` (three strips, top to bottom).
+- Phones: Depth's 3D words are off on every phone now (they doubled the HTML heading at
+  390×844).
+- FPS (prod, Retina, after arriving by nav): AMD full and HD 630 lite — every place 60.2.
+  Idle hero 60s on the HD 630: 60.2 in every 5s window after the first (55.0 while the tier
+  switches).
+- Lighthouse (desktop, prod): Performance 92, Accessibility 100, Best Practices 100, SEO 100.
+
+## Next session
+- Start of the loop: The Core rises through "LET'S TALK" for about a second while the
+  Contact text fades (desktop and phone). Fade the text sooner or start the Core's move
+  later.
+- Freelance card → System: about one second of thin frame (only faint grains).
+
+## Later (nice-to-haves, not started)
+- Wireframe glow pulse and shatter into Work's grain clouds.
+- Work's chips streaming down into the first skill nodes.
+- System hover: connections lighting in sequence, "used at" scramble.
+- Cursor label ("EXPLORE"), sound tone shift between places, glass "tink" on open.
