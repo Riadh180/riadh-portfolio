@@ -183,7 +183,8 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     // shrinks into a sliver of light instead of being cut off by the frame's top edge.
     const leave = journey && !anchored ? smooth01(journey.toWork / 0.32) * (1 - contact) : 0
     if (leave > 0) g.position.y += (journey!.y - PLACES.statement) * 0.8 * leave
-    const loop = journey ? smooth01(journey.loop) : 0
+    // Grows back to hero size only once Contact's text has gone (it would cover it).
+    const loop = journey ? smooth01((journey.loop - 0.35) / 0.65) : 0
     const heroScale = HERO - (HERO - 1) * contact * (1 - loop)
     g.scale.setScalar(
       emblem.scale *

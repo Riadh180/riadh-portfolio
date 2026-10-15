@@ -55,7 +55,7 @@ function createDust({ texture, aspect }: { texture: Texture; aspect: number }) {
     const { width, height } = canvas
     const data = context.getImageData(0, 0, width, height).data
     const width3d = HEIGHT * aspect
-    for (let tries = 0; tries < 60000 && rows.length < 5000; tries++) {
+    for (let tries = 0; tries < 40000 && rows.length < 2500; tries++) {
       const x = Math.floor(Math.random() * width)
       const y = Math.floor(Math.random() * height)
       if ((data[(y * width + x) * 4] ?? 0) < 128) continue

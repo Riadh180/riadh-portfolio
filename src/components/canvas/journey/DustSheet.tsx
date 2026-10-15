@@ -1,6 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { AdditiveBlending, Color, type Group, type ShaderMaterial } from 'three'
+import { useTier } from '@/stores/tier'
 import { sceneColors, sceneConfig } from '@/styles/scene'
 import particlesFragment from '../shaders/particles.frag'
 import motesVertex from '../shaders/motes.vert'
@@ -51,6 +52,7 @@ const GONE = 0.85
 export function DustSheet({ clock, journey }: Props) {
   const group = useRef<Group>(null)
   const material = useRef<ShaderMaterial>(null)
+  const frame = useRef(0)
   const gl = useThree((state) => state.gl)
   const geometry = useMemo(() => createSlab(), [])
   const field = useMemo(() => new SlabField(EXTENT, CENTER_Z), [])
@@ -88,7 +90,13 @@ export function DustSheet({ clock, journey }: Props) {
     if (!material.current || !group.current) return
     group.current.visible = journey.toWork < GONE
     if (!group.current.visible) return
-    field.update(gl, clock.time)
+    // Lite tier: the smoke field updates every other frame, and one smoke layer is drawn.
+    const lite = useTier.getState().tier === 'lite'
+    frame.current++
+    if (!lite || frame.current % 2 === 0) field.update(gl, clock.time)
+    smoke.current.forEach((layer, i) => {
+      if (layer) layer.visible = !lite || i === 0
+    })
     const u = material.current.uniforms
     u.uTime!.value = clock.time
     u.uOpacity!.value = 4.5
