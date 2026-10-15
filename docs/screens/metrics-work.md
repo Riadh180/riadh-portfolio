@@ -20,16 +20,18 @@ the air are measured: ~31% of the cropped reference frame, ~59% of ours (our car
 
 ## Table: baseline → stage 1 → stage 2 → final (value, difference to the reference)
 
-| Metric | Reference | Baseline (6e1a45d) | Stage 1 | Stage 2 | Final (stage 3) |
+"Final" is the shipped code (stage 3 plus the two invisible gate fixes), re-recorded.
+
+| Metric | Reference | Baseline (6e1a45d) | Stage 1 | Stage 2 | Final |
 |---|---|---|---|---|---|
-| Mean luminance (0–255) | 28.4 | 43.3 (+52% ✗) | 39.3 (+38% ✗) | 36.4 (+28% ✗) | 33.4 (+18% ✗) |
-| Contrast (luma std dev) | 21.2 | 19.2 (-9% ✓) | 20.1 (-5% ✓) | 26.9 (+27% ✗) | 25.4 (+20% ✗) |
+| Mean luminance (0–255) | 28.4 | 43.3 (+52% ✗) | 39.3 (+38% ✗) | 36.4 (+28% ✗) | 33.7 (+19% ✗) |
+| Contrast (luma std dev) | 21.2 | 19.2 (-9% ✓) | 20.1 (-5% ✓) | 26.9 (+27% ✗) | 25.8 (+22% ✗) |
 | 5th percentile | 10.8 | 23.3 (+116% ✗) | 17.5 (+62% ✗) | 15.1 (+40% ✗) | 13.4 (+24% ✗) |
-| 95th percentile | 70.8 | 77.6 (+10% ✓) | 71.7 (+1% ✓) | 94.2 (+33% ✗) | 87.1 (+23% ✗) |
+| 95th percentile | 70.8 | 77.6 (+10% ✓) | 71.7 (+1% ✓) | 94.2 (+33% ✗) | 87.9 (+24% ✗) |
 | Mean saturation | 0.427 | 0.435 (+2% ✓) | 0.405 (-5% ✓) | 0.424 (-1% ✓) | 0.442 (+4% ✓) |
-| EMPTY AREA (% tiles) | 51.1 | 18.0 (-65% ✗) | 18.5 (-64% ✗) | 35.8 (-30% ✗) | 35.9 (-30% ✗) |
-| SPARKLE (points / MP) | 341 | 949 (+178% ✗) | 1242 (+264% ✗) | 1079 (+216% ✗) | 1038 (+204% ✗) |
-| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.38 ✗ | 0.45 ✗ | 0.19 ✗ | 0.17 ✗ |
+| EMPTY AREA (% tiles) | 51.1 | 18.0 (-65% ✗) | 18.5 (-64% ✗) | 35.8 (-30% ✗) | 36.4 (-29% ✗) |
+| SPARKLE (points / MP) | 341 | 949 (+178% ✗) | 1242 (+264% ✗) | 1079 (+216% ✗) | 1072 (+214% ✗) |
+| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.38 ✗ | 0.45 ✗ | 0.19 ✗ | 0.18 ✗ |
 
 Hue shares (%, 12 bins of 30° from red: red, orange, yellow, … cyan 180°, blue 210°, blue-violet 240°, violet 270°, magenta 300°):
 
@@ -37,31 +39,32 @@ Hue shares (%, 12 bins of 30° from red: red, orange, yellow, … cyan 180°, bl
 - Baseline (6e1a45d): 0 · 0 · 0 · 0 · 0 · 0 · 24 · 55 · 21 · 0 · 0 · 0
 - Stage 1: 0 · 0 · 0 · 0 · 0 · 0 · 24 · 62 · 12 · 1 · 1 · 0
 - Stage 2: 0 · 1 · 1 · 0 · 0 · 2 · 38 · 33 · 19 · 5 · 1 · 0
-- Final (stage 3): 0 · 1 · 1 · 0 · 0 · 2 · 45 · 24 · 21 · 5 · 1 · 0
+- Final: 0 · 1 · 1 · 0 · 0 · 2 · 45 · 25 · 20 · 5 · 1 · 0
 
 ## Still outside ±15% after three tuning passes (open points)
-- Mean luminance +18%, contrast +20%, p5 +24%, p95 +23%: our measured area includes much
+- Mean luminance +19%, contrast +22%, p5 +24%, p95 +24%: our measured area includes much
   more of the lit column than theirs (their cards cover more of the frame; 59% vs 31% of the
   cropped frame is measured), and our beads and column glints are a little brighter.
-- EMPTY AREA −30% (36% vs 51%): same cause in part (the column is never empty), and our air
+- EMPTY AREA −29% (36% vs 51%): same cause in part (the column is never empty), and our air
   is evenly sprinkled where theirs leaves larger black areas. Emptying it further would
   contradict the brief (Work must feel full); left open.
 - SPARKLE ~3× the reference: on our column (the inner glitter, kept as asked, and the facet
   glints); theirs sits mostly in the pockets. See PROGRESS.md, "Decisions I made".
-- Hue distance 0.17 (target ≤ 0.15): ours still has a little more azure (210–240°) and less
+- Hue distance 0.18 (target ≤ 0.15): ours still has a little more azure (210–240°) and less
   blue-violet (240–270°) than theirs.
 
 ## Other runs
-| Metric | Reference | b27333c spine as is | Stage 3 pass 1 | Stage 3 pass 2 (reverted) |
-|---|---|---|---|---|
-| Mean luminance (0–255) | 28.4 | 42.7 (+50% ✗) | 34.0 (+20% ✗) | 33.4 (+18% ✗) |
-| Contrast (luma std dev) | 21.2 | 20.7 (-2% ✓) | 25.7 (+21% ✗) | 25.7 (+22% ✗) |
-| 5th percentile | 10.8 | 22.2 (+105% ✗) | 13.6 (+26% ✗) | 13.3 (+23% ✗) |
-| 95th percentile | 70.8 | 76.7 (+8% ✓) | 87.9 (+24% ✗) | 87.5 (+24% ✗) |
-| Mean saturation | 0.427 | 0.418 (-2% ✓) | 0.446 (+4% ✓) | 0.442 (+3% ✓) |
-| EMPTY AREA (% tiles) | 51.1 | 17.3 (-66% ✗) | 35.6 (-30% ✗) | 35.7 (-30% ✗) |
-| SPARKLE (points / MP) | 341 | 1424 (+318% ✗) | 1113 (+226% ✗) | 1135 (+233% ✗) |
-| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.38 ✗ | 0.19 ✗ | 0.22 ✗ |
+
+| Metric | Reference | b27333c spine as is | Stage 3 pass 1 | Stage 3 pass 2 (reverted) | Stage 3 pass 3 |
+|---|---|---|---|---|---|
+| Mean luminance (0–255) | 28.4 | 42.7 (+50% ✗) | 34.0 (+20% ✗) | 33.4 (+18% ✗) | 33.4 (+18% ✗) |
+| Contrast (luma std dev) | 21.2 | 20.7 (-2% ✓) | 25.7 (+21% ✗) | 25.7 (+22% ✗) | 25.4 (+20% ✗) |
+| 5th percentile | 10.8 | 22.2 (+105% ✗) | 13.6 (+26% ✗) | 13.3 (+23% ✗) | 13.4 (+24% ✗) |
+| 95th percentile | 70.8 | 76.7 (+8% ✓) | 87.9 (+24% ✗) | 87.5 (+24% ✗) | 87.1 (+23% ✗) |
+| Mean saturation | 0.427 | 0.418 (-2% ✓) | 0.446 (+4% ✓) | 0.442 (+3% ✓) | 0.442 (+4% ✓) |
+| EMPTY AREA (% tiles) | 51.1 | 17.3 (-66% ✗) | 35.6 (-30% ✗) | 35.7 (-30% ✗) | 35.9 (-30% ✗) |
+| SPARKLE (points / MP) | 341 | 1424 (+318% ✗) | 1113 (+226% ✗) | 1135 (+233% ✗) | 1038 (+204% ✗) |
+| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.38 ✗ | 0.19 ✗ | 0.22 ✗ | 0.17 ✗ |
 
 Hue shares (%, 12 bins of 30° from red: red, orange, yellow, … cyan 180°, blue 210°, blue-violet 240°, violet 270°, magenta 300°):
 
@@ -69,3 +72,4 @@ Hue shares (%, 12 bins of 30° from red: red, orange, yellow, … cyan 180°, bl
 - b27333c spine as is: 0 · 0 · 0 · 0 · 0 · 0 · 21 · 55 · 24 · 0 · 0 · 0
 - Stage 3 pass 1: 0 · 1 · 0 · 0 · 0 · 2 · 36 · 34 · 21 · 5 · 1 · 0
 - Stage 3 pass 2 (reverted): 0 · 1 · 1 · 0 · 0 · 2 · 32 · 37 · 21 · 5 · 1 · 0
+- Stage 3 pass 3: 0 · 1 · 1 · 0 · 0 · 2 · 45 · 24 · 21 · 5 · 1 · 0

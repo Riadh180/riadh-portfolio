@@ -1,6 +1,6 @@
 // Surface detail for the Work spine, mixed into three's physical shader (oilMaterial.ts).
 // Positions are the mesh's own (object space), so the detail turns with the column.
-// Kept to ~6 noise evaluations and one 27-cell facet lookup per pixel.
+// Kept to ~6 noise evaluations and one 8-cell facet lookup per pixel.
 
 /** Patchy roughness: glossy where the surface is polished, matte in dull patches. */
 float oilRoughness(float roughness, vec3 p) {
@@ -10,8 +10,9 @@ float oilRoughness(float roughness, vec3 p) {
 /**
  * The crystal crust (view-space normal): the surface is split into small cells in object
  * space (so they turn with the column), and each cell's facet is tilted its own way, so
- * every few pixels a facet catches the light or doesn't. Full: the nearest of 27 jittered
- * cells (irregular facets); lite: one cube cell per pixel (cheaper, more regular).
+ * every few pixels a facet catches the light or doesn't. Full: the nearest of the 8 jittered
+ * cells round the pixel (irregular facets); lite: one cube cell per pixel (cheaper, more
+ * regular).
  */
 vec3 oilHash3(vec3 c) {
   return fract(sin(vec3(dot(c, vec3(127.1, 311.7, 74.7)), dot(c, vec3(269.5, 183.3, 246.1)),
@@ -23,17 +24,18 @@ float oilFacet = 0.0;
 
 vec3 oilFacets(vec3 n, vec3 p) {
   vec3 q = p * 21.0;
-  vec3 base = floor(q);
   #ifdef OIL_LITE
+    vec3 base = floor(q);
     vec3 tilt = oilHash3(base) * 2.0 - 1.0;
     oilFacet = oilHash3(base + 7.3).x;
   #else
     vec3 tilt = vec3(0.0);
     float best = 8.0;
-    for (int z = -1; z <= 1; z++) {
-      for (int y = -1; y <= 1; y++) {
-        for (int x = -1; x <= 1; x++) {
-          vec3 c = base + vec3(float(x), float(y), float(z));
+    vec3 near = floor(q - 0.5);
+    for (int z = 0; z <= 1; z++) {
+      for (int y = 0; y <= 1; y++) {
+        for (int x = 0; x <= 1; x++) {
+          vec3 c = near + vec3(float(x), float(y), float(z));
           vec3 d = c + oilHash3(c) - q;
           float dist = dot(d, d);
           if (dist < best) {

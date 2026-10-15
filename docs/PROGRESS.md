@@ -913,6 +913,23 @@ only on /impressum.
   fewer glints.
 - **Phones: Work stays drawn a little longer** (to toSystem 0.65 instead of 0.55): the
   longer column's dissolving foot is still leaving the frame there. Desktop unchanged.
+- **Haze strength.** The first backlight washed the whole frame teal (the scene colours are
+  linear, so 8% of teal in the base was a big lift). I kept the backlight subtle (a halo
+  round the column) rather than "clearly visible", because the reference's darks are near
+  black and every brighter version measured and looked further from at_05/at_06.
+- **Gate fixes (after `final-stage-3`, both invisible):** the spine's material is now
+  compiled asynchronously as soon as its mesh exists (it appears after the start-up warm-up,
+  so its first frame at Work used to compile it synchronously: 49 fps on arrival); and the
+  facet search on full looks at the 8 nearest cells instead of 27 (same irregular facets;
+  the first card stops had dipped to ~55 at Retina).
+- **Console warnings left alone.** Two warnings show in every production run, before and
+  after this round: "THREE.Clock is deprecated" (raised inside React Three Fiber's own store,
+  a library upgrade) and Chrome's "willReadFrequently" hint (the card faces' and tagline's 2D
+  canvases, locked). Neither is from this round's changes; fixing them means touching locked
+  code or upgrading a dependency, so they are listed instead.
+- **"Lite" FPS.** The tier drops to lite only when the measured frame rate stays below 55.
+  On the HD 630 at Retina it held 60, so those runs may have stayed on the full tier: the
+  full look holds 60 on the integrated GPU too.
 
 ## Stage 1 — spine (tag `final-stage-1`)
 **Path taken:** the main path (restore b27333c, then refine). No fallback was needed.
@@ -1017,3 +1034,97 @@ each; numbers in `docs/screens/metrics-work.md`.
 
 Still outside ±15% after three passes (listed as open points): luminance, contrast, p5,
 p95, EMPTY AREA (−30%), SPARKLE (~3×) and the hue distance (0.17).
+
+
+## Final gate (production build, Retina, `scripts/fps.mjs`)
+| | Discrete GPU (full), DPR 2 | HD 630, DPR 2 | Phone 390×844, DPR 3 (emulated on the discrete GPU) |
+|---|---|---|---|
+| Hero / statement / Work / System / Depth / Contact | 60 / 60 / 59.9 / 60 / 60 / 60.2 | 60.2 / 59.7 / 60 / 60 / 60 / 60.2 | 60.2 / 60 / 60 / 60 / 60 / 60.2 |
+| Down the Work cards (7 windows) | 59.9–60.3 | 59.9–60.3 | 59.9–60.3 |
+| Idle hero, 60 s (5 s windows) | 60 in all 12 | 59.9–60.2 in all 12 | 60–60.2 in all 12 |
+| Fast scroll, 2 loops (1 s windows) | median 59.9, p10 58.8, min 57.8 | median 59.8, p10 56.8, min 56.8 | median 59.9, p10 59.8, min 59.8 |
+
+Every scene ≥ 55. Notes: one earlier full run had a single 1 s fast-scroll window at 46.9
+(the others ≥ 55); a full run straight after an HD 630 run showed one 10.9 fps idle window
+(the Mac switching GPUs; it did not repeat when run alone). One phone run lost its page
+frame (a harness error); the rerun was clean.
+
+- **Lighthouse** (3 runs): mobile 94 / 93 / 96 (TBT 207–223 ms, LCP 1.9–2.6 s, CLS 0);
+  desktop 90 / 93 / 93 (TBT 170–203 ms, LCP 0.5–0.6 s, CLS 0). Accessibility, Best Practices
+  and SEO 100 in every run.
+- **Reduced motion:** Work renders (calm), no errors. **No-WebGL:** the static world, no
+  canvas, no errors.
+- **Phone number:** only in /impressum (its HTML/RSC and its server chunk); not in
+  `.next/static`; not on /, /datenschutz, /cv, /work/bliggit or the 404; not in the CV PDF's
+  text (PDFKit).
+- **Console:** no errors. Two pre-existing warnings (see "Decisions I made").
+- Sheets: `docs/screens/final-journey-6.jpg` (desktop full, HD 630, phone; progress 0–7 in
+  0.5 steps; the phone's 0.50 tile shows the hero: the scripted-jump quirk noted in Stage 2)
+  and `docs/screens/work-vs-reference-2.jpg` (8 matched frames).
+
+## Final report
+**1. Per stage**
+- Stage 1, `final-stage-1`: spine restored from b27333c (main path, no fallback) and refined:
+  facet field on a smooth-shaded mesh, 0.7–1.3× silhouette with twist and S-curve, lumps
+  instead of blades, indigo gemstone body with per-facet coloured glints, tips dissolving
+  into grains, a wider phone column. Files: `work/spineGeometry.ts`, `work/oilMaterial.ts`,
+  `work/spine.worker.ts`, `shaders/oil.glsl`, `work/Spine.tsx`, `work/WorkPlace.tsx`,
+  `styles/scene.ts`.
+- Stage 2, `final-stage-2`: 20 big foam pockets of coloured beads, a dark teal-charcoal
+  ground and a backlight behind the column. Files: `work/Pebbles.tsx`,
+  `shaders/glitter.vert/.frag`, `shaders/backdrop.frag`, `canvas/Backdrop.tsx`,
+  `work/WorkPlace.tsx`, `lab/WorkLab.tsx`, `styles/scene.ts`.
+- Stage 3, `final-stage-3`: three tuning passes (pass 2 reverted). Files:
+  `work/oilMaterial.ts`, `shaders/glitter.vert`, `canvas/Backdrop.tsx`,
+  `shaders/backdrop.frag`.
+- Gate: `work/Spine.tsx` (async compile), `shaders/oil.glsl` (8-cell facets).
+- Tooling: `scripts/h264.mjs`, `extract-frames.mjs`, `hand-masks.mjs`, `record-work.mjs`,
+  `compare-frames.mjs`, `metrics-report.mjs`, `capture-stops.mjs`, `capture-progress.mjs`,
+  `sheet.mjs`, `fps.mjs`; a measurement-only corner export in `work/WorkCards.tsx` (active
+  only when the recorder sets `window.__cardCorners`).
+
+**2. Metrics** (full table and hue shares: `docs/screens/metrics-work.md`; "Final" is the
+shipped code, re-recorded after the gate fixes)
+
+| Metric | Reference | Baseline (6e1a45d) | Stage 1 | Stage 2 | Final |
+|---|---|---|---|---|---|
+| Mean luminance (0–255) | 28.4 | 43.3 (+52% ✗) | 39.3 (+38% ✗) | 36.4 (+28% ✗) | 33.7 (+19% ✗) |
+| Contrast (luma std dev) | 21.2 | 19.2 (-9% ✓) | 20.1 (-5% ✓) | 26.9 (+27% ✗) | 25.8 (+22% ✗) |
+| 5th percentile | 10.8 | 23.3 (+116% ✗) | 17.5 (+62% ✗) | 15.1 (+40% ✗) | 13.4 (+24% ✗) |
+| 95th percentile | 70.8 | 77.6 (+10% ✓) | 71.7 (+1% ✓) | 94.2 (+33% ✗) | 87.9 (+24% ✗) |
+| Mean saturation | 0.427 | 0.435 (+2% ✓) | 0.405 (-5% ✓) | 0.424 (-1% ✓) | 0.442 (+4% ✓) |
+| EMPTY AREA (% tiles) | 51.1 | 18.0 (-65% ✗) | 18.5 (-64% ✗) | 35.8 (-30% ✗) | 36.4 (-29% ✗) |
+| SPARKLE (points / MP) | 341 | 949 (+178% ✗) | 1242 (+264% ✗) | 1079 (+216% ✗) | 1072 (+214% ✗) |
+| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.38 ✗ | 0.45 ✗ | 0.19 ✗ | 0.18 ✗ |
+
+**3. Decisions I made:** see "Decisions I made" above.
+
+**4. Gate:** see "Final gate" above. All scenes ≥ 55 on both GPUs and the phone; Lighthouse
+≥ 90 on both (3 runs); reduced motion, no-WebGL and the phone-number check pass; no console
+errors, two pre-existing warnings.
+
+**5. What still differs from the reference**
+1. Their pockets are bigger, denser clusters with more pink/magenta and green, and real
+   out-of-focus foreground clouds; ours are smaller and lean violet/teal. *Code can fix.*
+2. Their column is large, smooth, organic glossy lobes with flowing iridescent bands; ours
+   is a fine crystal crust everywhere (less contrast between smooth and crusty areas).
+   *Needs art* (a sculpted model); code can only approximate it.
+3. Card media: theirs are art-directed photo and video; ours are screenshots, a dashboard and
+   abstract live scenes. *Needs art.*
+4. Numbers still outside ±15%: brightness (+19–24%), EMPTY AREA (−29%), SPARKLE (~3×), hue
+   distance (see table). Partly structural (their cards cover more of the frame, our column is
+   always lit). *Code can fix* in part.
+5. Their corner light and halation are richer (teal from the left in at_06); ours are kept
+   subtle. *Code can fix.*
+
+**6. Sheets made this round**
+- `docs/screens/spine-final.jpg` (Stage 1)
+- `docs/screens/work-air.jpg` (Stage 2)
+- `docs/screens/final-journey-6.jpg` (gate)
+- `docs/screens/work-vs-reference-2.jpg` (gate)
+- `docs/screens/metrics/masks-reference.jpg`, `metrics/masks-ours-baseline.jpg` (the masks
+  used by the metrics)
+
+**7. Vercel preview:** every push to `final-round` builds a preview, but neither the GitHub
+CLI nor a Vercel project link is available here, so I couldn't read its URL. It is on the
+branch's latest commit in GitHub (deployment status) or in the Vercel dashboard.

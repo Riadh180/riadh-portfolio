@@ -19,6 +19,8 @@ type Props = { clock: SceneClock }
 export function Spine({ clock }: Props) {
   const mesh = useRef<Mesh>(null)
   const gl = useThree((state) => state.gl)
+  const scene = useThree((state) => state.scene)
+  const camera = useThree((state) => state.camera)
   const lite = useTier((state) => state.tier === 'lite')
   const standIn = useStandIn(lite ? 0.2 : 0.1)
   const material = useMemo(() => createOilMaterial(), [])
@@ -50,6 +52,13 @@ export function Spine({ clock }: Props) {
   }, [gl, material])
 
   useEffect(() => () => standIn?.dispose(), [standIn])
+
+  // The mesh appears after the start-up warm-up (its geometry comes from a worker), so its
+  // material is compiled here, off the frame, rather than on the first frame Work is drawn.
+  const geometry = model ?? standIn
+  useEffect(() => {
+    if (mesh.current) void gl.compileAsync(mesh.current, camera, scene).catch(() => undefined)
+  }, [geometry, gl, camera, scene])
   useEffect(() => () => disposeOilMaterial(material), [material])
 
   useFrame(() => {
@@ -69,7 +78,6 @@ export function Spine({ clock }: Props) {
     ;(oil.userData.time as { value: number }).value = clock.time
   })
 
-  const geometry = model ?? standIn
   return geometry ? <mesh ref={mesh} geometry={geometry} material={material} /> : null
 }
 
