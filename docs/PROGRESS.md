@@ -538,3 +538,10 @@ System 59, Depth 47, Contact 47.
   media: `coverFile: 'dashboard.png'`, `coverCrop` on the bubble cloud only; cover-fit
   now honours crops. The medallion SVG stays in the folder, unused.
 - Shot: `docs/screens/round5-capstone-dashboard.png`.
+
+## Part 6 — System
+- `SceneWord`: rises in 0.8s, then stays fully readable for 4s before a rare glitch (every
+  4–7s, 0.3s). "SYSTEM" lowered (y 5.3 → 4.7) for clear space below the top bar.
+- The large blurry blobs were the atmosphere's bokeh discs: now glass grains (Part 2).
+  Nodes are the faceted glass gems; filaments keep their travelling pulses.
+- Sheet: `docs/screens/round5-system.jpg`.

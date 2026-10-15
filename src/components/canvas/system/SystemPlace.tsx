@@ -45,7 +45,7 @@ export function SystemPlace({ journey, clock, look, pointer, reducedMotion }: Pr
         lines={WORD}
         height={column ? 3.4 : 2.2}
         // Above the graph, never behind a label; The Core's glass is below it.
-        position={column ? [0, 4.2, -5.5] : [-1, 5.3, -4]}
+        position={column ? [0, 4.2, -5.5] : [-1, 4.7, -4]}
         color={INK}
         clock={clock}
         reducedMotion={reducedMotion}
