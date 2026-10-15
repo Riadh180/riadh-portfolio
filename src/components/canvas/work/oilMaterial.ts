@@ -28,11 +28,13 @@ export function createOilMaterial() {
     envMapIntensity: 1.35,
     flatShading: true,
   })
+  material.userData.time = { value: 0 }
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uOilTeal = { value: sceneColors.teal }
     shader.uniforms.uOilGreen = { value: sceneColors.emerald }
     shader.uniforms.uOilViolet = { value: sceneColors.violet }
     shader.uniforms.uOilGlow = { value: 0.7 }
+    shader.uniforms.uOilTime = material.userData.time
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
@@ -53,6 +55,7 @@ export function createOilMaterial() {
         uniform vec3 uOilGreen;
         uniform vec3 uOilViolet;
         uniform float uOilGlow;
+        uniform float uOilTime;
         ${noise}
         ${oilFragment}`,
       )
@@ -80,12 +83,19 @@ export function createOilMaterial() {
           oilStreaks(material.iridescence, material.iridescenceThickness, vSpinePosition,
             iridescenceThicknessMinimum, iridescenceThicknessMaximum);
           // The oily rainbow lives on the wings' edges and collars.
-          material.iridescence = mix(material.iridescence * 0.45, min(1.0, material.iridescence * 1.6), vOilSmooth);
+          material.iridescence = mix(material.iridescence * 0.45, min(1.0, material.iridescence * 2.2), vOilSmooth);
         #endif`,
       )
       .replace(
         '#include <opaque_fragment>',
-        `outgoingLight += oilStreakGlow(normal, normalize(vViewPosition), uOilTeal, uOilGreen,
+        `// Inner glitter: tiny bright points twinkling inside the bodies (not the wings).
+        {
+          vec3 cell = floor(vSpinePosition * 46.0);
+          float h = fract(sin(dot(cell, vec3(12.99, 78.23, 37.71))) * 43758.55);
+          float twinkle = 0.5 + 0.5 * sin(h * 80.0 + uOilTime * (1.0 + h * 2.0));
+          outgoingLight += vec3(1.0, 0.86, 1.0) * step(0.992, h) * twinkle * 1.6 * (1.0 - vOilSmooth);
+        }
+        outgoingLight += oilStreakGlow(normal, normalize(vViewPosition), uOilTeal, uOilGreen,
           uOilViolet, uOilGlow * (0.6 + 1.6 * vOilSmooth));
         #include <opaque_fragment>`,
       )

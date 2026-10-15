@@ -62,7 +62,9 @@ export function LensShards({ journey }: { journey: JourneyState }) {
       if (!pose) return
       const y = PLACES.work + journey.cardY(pose.index)
       const { angle } = pose
-      scratch.camera.set(Math.sin(angle) * WORK.distance, y, Math.cos(angle) * WORK.distance)
+      // Where the camera holds at this stop (dollied in).
+      const held = WORK.distance - WORK.dolly
+      scratch.camera.set(Math.sin(angle) * held, y, Math.cos(angle) * held)
       scratch.forward.set(-Math.sin(angle), 0, -Math.cos(angle))
       scratch.right.set(Math.cos(angle), 0, -Math.sin(angle))
       child.position

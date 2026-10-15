@@ -24,6 +24,7 @@ import {
 import { type Job, jobs } from '@/content/site'
 import { SCRAMBLE_DURATION } from '@/lib/scramble'
 import { useCursor } from '@/stores/cursor'
+import { useJourney } from '@/stores/journey'
 import { useTier } from '@/stores/tier'
 import { useWork } from '@/stores/work'
 import { sceneColors } from '@/styles/scene'
@@ -461,7 +462,10 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     s.look.copy(g.quaternion)
     // At rest a card leans its own way towards the viewer (some most of the way, some kept
     // turned along the spiral so their side walls show); focused or open, it turns fully.
-    const facing = target.face + (1 - target.face) * Math.max(s.focus, flown)
+    // The card at the camera's stop leans a little towards it.
+    const stop = (useJourney.getState().progress - 2) * (jobs.length - 1)
+    const atStop = layout === 'orbit' ? Math.max(0, 1 - Math.abs(stop - index) / 0.45) : 0
+    const facing = target.face + (1 - target.face) * Math.max(s.focus, flown, atStop * 0.45)
     g.quaternion.copy(s.rest).slerp(s.look, facing)
     // Never perfectly flat: a few degrees of slow drift, and a little pull towards the
     // cursor, so the glass thickness and its lit edges always show.

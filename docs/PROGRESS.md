@@ -510,3 +510,17 @@ System 59, Depth 47, Contact 47.
   larger (×2.4) and 90 of them. `ChipCluster` takes a `palette`.
 - FPS (prod, Retina) down the Work cards: AMD 60.3; HD 630 lite 60.0–60.3.
 - Sheets: `docs/screens/round5-grains.jpg` (seg_44 above), `round5-grains-detail.jpg`.
+
+## Part 3 — Work: dolly-in, cards, spine, light
+- `path.ts`: orbit → approach → hold → release. Near each card's stop the camera dollies
+  in by `WORK.dolly` (1.3) with an eased hold window (±0.42 of a card), and aims a little
+  towards the focused card (`aim`, spring in `CameraRig`; 0.22). The focused card fills
+  ~55% of the frame with the column at its edge; between stops the camera eases out while
+  orbiting. Lens shards follow the held distance.
+- The card at the stop leans 45% further towards the camera (`atStop` in `WorkCards`).
+- Spine: inner glitter (sparse twinkling points inside the bodies, not the wings), wing /
+  collar iridescence ×2.2. Grain clouds wrap the column (Part 2).
+- Light: purple glow round the column (WorkHaze) and dark teal elsewhere (from the final
+  pass); unchanged here.
+- FPS (prod, Retina) down the cards: AMD 60.3; HD 630 lite 60.3.
+- Strip: `docs/screens/round5-work-dolly.jpg` (seg_44 above).

@@ -66,6 +66,7 @@ export function Spine({ clock }: Props) {
       oil.needsUpdate = true
     }
     oil.roughness = 1 - gloss
+    ;(oil.userData.time as { value: number }).value = clock.time
   })
 
   const geometry = model ?? standIn

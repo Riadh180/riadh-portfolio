@@ -38,6 +38,9 @@ export const WORK = {
   x: 0,
   /** Camera distance from the spine, and how far it turns round it on the way down. */
   distance: 6.8,
+  /** How far the camera dollies in at each card stop, and how far it aims towards it. */
+  dolly: 1.3,
+  aim: 0.22,
 }
 
 /**
@@ -89,6 +92,8 @@ export class JourneyState {
   velocity = 0
   /** How far above its focus the camera looks (Depth looks up at the surface). */
   lookUp = 0
+  /** Sideways aim (world units along the camera's right): turns a little towards a card. */
+  aim = 0
   /**
    * Phones: how far the picture is shifted up (fraction of the screen height), so a
    * scene's subject sits in the upper part and the text below never covers it.
@@ -167,6 +172,20 @@ export class JourneyState {
     const workDistance = column ? 7.2 : WORK.distance
     this.distance = 10 + (workDistance - 10) * arrive
     this.angle = column ? 0 : inWork * SPIRAL * arrive
+    // Orbit → approach → hold → release: near each card's stop the camera dollies in, so
+    // the focused card fills ~55–60% of the frame, and aims a little towards it.
+    this.aim = 0
+    if (!column && arrive > 0) {
+      const stop = inWork * (WORK.cards - 1)
+      const nearest = Math.round(stop)
+      const hold = 1 - smooth(Math.min(1, Math.abs(stop - nearest) / 0.42))
+      const dolly = hold * arrive * (1 - smooth(toSystem * 3))
+      this.distance -= WORK.dolly * dolly
+      this.aim =
+        Math.sign(orbitPose(nearest, WORK.cards).angle - (nearest / (WORK.cards - 1)) * SPIRAL) *
+        WORK.aim *
+        dolly
+    }
 
     // On down from the last card to the skills graph, then a slow swing round it.
     if (toSystem > 0) {

@@ -24,6 +24,7 @@ export function CameraRig({ pointer, journey, enabled }: Props) {
     distance: new Spring(journey.distance, MOTION.camera),
     angle: new Spring(journey.angle, MOTION.camera),
     lookUp: new Spring(journey.lookUp, MOTION.camera),
+    aim: new Spring(journey.aim, MOTION.camera),
     px: new Spring(0, MOTION.pointer),
     py: new Spring(0, MOTION.pointer),
   })
@@ -36,6 +37,7 @@ export function CameraRig({ pointer, journey, enabled }: Props) {
       s.distance.set(journey.distance)
       s.angle.set(journey.angle)
       s.lookUp.set(journey.lookUp)
+      s.aim.set(journey.aim)
     } else {
       s.y.step(journey.y, dt)
       s.distance.step(journey.distance, dt)
@@ -45,6 +47,7 @@ export function CameraRig({ pointer, journey, enabled }: Props) {
       if (turns !== 0) s.angle.value += turns * Math.PI * 2
       s.angle.step(journey.angle, dt)
       s.lookUp.step(journey.lookUp, dt)
+      s.aim.step(journey.aim, dt)
     }
     journey.setVelocity(enabled ? s.y.velocity : 0)
 
@@ -63,7 +66,9 @@ export function CameraRig({ pointer, journey, enabled }: Props) {
       y + py,
       Math.cos(angle) * distance - px * Math.sin(angle),
     )
-    camera.lookAt(0, y + s.lookUp.value, 0)
+    // Aims a little to the side (towards the card in focus at Work).
+    const aim = s.aim.value
+    camera.lookAt(Math.cos(angle) * aim, y + s.lookUp.value, -Math.sin(angle) * aim)
     // A whisper of roll, so the frame never feels locked off.
     camera.rotation.z += enabled ? drift(t, 3) * MOTION.idle.rotation * 0.3 : 0
 
