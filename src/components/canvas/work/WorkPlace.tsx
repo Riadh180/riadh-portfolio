@@ -8,7 +8,6 @@ import { SceneWord } from '../journey/SceneWord'
 import { PLACES, WORK, type JourneyState } from '../journey/path'
 import { Drift } from '../motion/Drift'
 import type { SceneClock } from '../useSceneClock'
-import { COLUMN_SPACING } from './layout'
 import { Pebbles } from './Pebbles'
 import { Spine } from './Spine'
 import { WorkCards } from './WorkCards'
@@ -34,8 +33,9 @@ export function WorkPlace({ journey, clock }: Props) {
     const g = group.current
     if (!g) return
     // Gone once the camera has descended past it (it would still cost the full Work
-    // scene, off screen, for the rest of the flight to System).
-    g.visible = journey.toWork > 0.02 && journey.toSystem < 0.55
+    // scene, off screen, for the rest of the flight to System). Phones a little later:
+    // their column's dissolving foot is still leaving the frame.
+    g.visible = journey.toWork > 0.02 && journey.toSystem < (column ? 0.65 : 0.55)
     g.position.set(WORK.x, PLACES.work, 0)
   })
 
@@ -57,11 +57,11 @@ export function WorkPlace({ journey, clock }: Props) {
         }
       />
       <Drift journey={journey} seed={11} weight={1.4}>
-        {/* Phones: the column is context behind the cards, narrower and further back, and
-            stretched to run the whole length of the card column. */}
+        {/* Phones: the column is a mass behind the cards (~60% of the screen wide), further
+            back, lifted so its dissolving foot clears the frame before System. */}
         <group
-          scale={column ? [0.5, 1.3, 0.5] : 1}
-          position={column ? [0, -2.5 * COLUMN_SPACING + 0.5, -2.4] : [0, 0, 0]}
+          scale={column ? [0.85, 1, 0.85] : 1}
+          position={column ? [0, -1.5, -2.4] : [0, 0, 0]}
         >
           <Spine clock={clock} />
           {column && <Pebbles clock={clock} focusDistance={6} />}

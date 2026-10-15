@@ -84,8 +84,7 @@ function deform(positions: BufferAttribute | InterleavedBufferAttribute) {
  * from above the first card to well below the last). Each body is a thick rounded-square
  * block of its own size, tilt and turn, with one or two small lumps fused to its sides;
  * they overlap into one mass, are tessellated, carved along their normals into a fine
- * crystalline crust, then the whole column is shaped (deform). Flat shaded: every facet
- * catches the light on its own. A `crevice` attribute (0 on the crests, 1 deep in the
+ * crystalline crust, then the whole column is shaped (deform). A `crevice` attribute (0 on the crests, 1 deep in the
  * carving) lets the material keep the hollows near-black. `edge` is the tessellation
  * (lite: coarser).
  */
@@ -180,9 +179,8 @@ export function createSpineGeometry(edge = 0.1) {
   }
   carved.setAttribute('crevice', new Float32BufferAttribute(crevice, 1))
   deform(positions)
-  carved.deleteAttribute('normal')
-  const spine = carved.toNonIndexed()
-  carved.dispose()
-  spine.computeVertexNormals()
-  return spine
+  // Smooth shaded: the facets come from the material's facet field (irregular, small), so
+  // the mesh's own triangles never show.
+  carved.computeVertexNormals()
+  return carved
 }

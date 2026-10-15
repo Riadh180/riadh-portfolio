@@ -898,3 +898,65 @@ only on /impressum.
   4 fps, ~0.8 Mb/s = the reference's bits per frame scaled to 1440×900), then are decoded
   again. Our frames are screenshots at the 4 fps instants (headless capture can't hold
   real-time video at 1440×900 with the GPU busy).
+- **Reference card masks drawn by hand.** Automatic detection (bright, smooth regions) merged
+  the column with the cards and missed the dark cards, so masks are hand-drawn quads, one
+  keyframe per second, grown ~20px for the camera's drift (`work-masks-hand/quads.json`).
+- **Baseline reading.** Against the reference, our Work was not *emptier* by the numbers but
+  *flatter*: a lifted navy (p5 23 vs 11) that is never dark enough to count as empty, while
+  the reference is near-black with dense coloured pockets. So "full" means contrast between
+  dense pockets and black, not a lighter background. Stage 2 follows that.
+- **SPARKLE vs "at least like b27333c".** b27333c's spine alone puts SPARKLE at 4.2× the
+  reference (all on the column: glitter and glints; the reference's points sit mostly in the
+  pockets around its column). Both acceptance lines can't hold. I kept the inner glitter
+  (as asked) and made the facet glints softer, coloured sheen patches; SPARKLE ends Stage 1
+  at 3.6×. It is left open rather than cut further, because the sheet looked worse with
+  fewer glints.
+- **Phones: Work stays drawn a little longer** (to toSystem 0.65 instead of 0.55): the
+  longer column's dissolving foot is still leaving the frame there. Desktop unchanged.
+
+## Stage 1 — spine (tag `final-stage-1`)
+**Path taken:** the main path (restore b27333c, then refine). No fallback was needed.
+
+**Restored from b27333c** with `git checkout b27333c -- …`: `work/spineGeometry.ts`,
+`work/oilMaterial.ts`, `work/spine.worker.ts`, `shaders/oil.glsl`, and the spine's `gloss`
+(0.72) in `styles/scene.ts`. It built and ran against the newer code without conflicts
+(cards, grains, phone layout and the mobile start were untouched and still work; 60 fps).
+**Adapted afterwards:** the same four files, plus `work/Spine.tsx` (tessellation 0.1 / lite
+0.2), `work/WorkPlace.tsx` (phone column size and position, phone hide point) and the spine
+block of `styles/scene.ts` (`top` / `bottom`).
+
+What changed on top of b27333c:
+- **(a) Facets 2–3× smaller, no triangles.** Finer tessellation (0.13 → 0.10), and a facet
+  field in the shader: the surface is split into small jittered cells (21 per unit, the
+  nearest of 27 on full; one cube cell on lite), each tilted its own way. The mesh itself is
+  now smooth shaded (and indexed: ~3× less memory), so no triangle edge shows at 1× or
+  Retina; the facets are irregular polygons.
+- **(b) Silhouette.** The whole carved mass is deformed: width 0.7–1.3× along the height,
+  a slow twist and a gentle S-curve. Wings and drips are gone; one or two small rock lumps
+  are fused to each vertebra instead.
+- **(c) Gemstone value.** Deep indigo body (violet/blue × 0.12), carved hollows down to 18%
+  (a `crevice` attribute from the carving depth), a thin cold rim only on the silhouette.
+  Each facet has its own thin-film thickness, so it glints in its own hue (pink, violet,
+  teal, green-gold) when it turns to the key direction; the film strengthens at grazing
+  angles. The inner glitter is unchanged.
+- **(d) No visible end.** The column now runs from y +10 to −12.2 (it used to end at −6.8,
+  in view from the 4th card on, and was missing behind the last card). Both tips dissolve
+  into glinting grains (the top over 4 units, the foot over 2.5), so the descent shows the
+  column emerging from grains and the exit shows it breaking up before Work is hidden.
+- **Phones:** the column behind the card is ~55–60% of the screen width (scale 0.5 → 0.85),
+  unstretched, lifted so its foot dissolves behind the last card.
+
+Sheet: `docs/screens/spine-final.jpg` (at_04–07; b27333c, 6e1a45d and new at 0°/120°/180°/
+300° on desktop; the same on phones; Retina crops).
+
+Self-review against at_05/at_06:
+- Closer: dark gemstone body with multicoloured flecks and sharp glossy highlights on
+  lobed forms, which is what their column reads as from a distance; no lilac clay, no
+  blades, no end in any frame.
+- Closer: the column reads as one carved mass that swells and pinches, not a pipe.
+- Still different: their column is made of large, glossy, organic lobes with flowing
+  iridescent bands; ours is a finer crust everywhere (less variety between smooth and
+  crusty areas).
+- Still different: their flecks are partly particles *around* the column (the pockets);
+  ours are on the surface. Stage 2 adds the pockets.
+- Metrics: luminance and p5 improved (darker body), SPARKLE rose (see decisions).

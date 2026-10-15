@@ -1,11 +1,11 @@
 import { Color, MeshPhysicalMaterial } from 'three'
-import { sceneColors } from '@/styles/scene'
+import { sceneColors, sceneConfig } from '@/styles/scene'
 import noise from '../shaders/noise.glsl'
 import oilFragment from '../shaders/oil.glsl'
 
 /**
  * The spine's material: a gemstone. A deep indigo body, near-black in the carved hollows,
- * a crust of small facets (a facet-normal field on top of the flat-shaded mesh), each with
+ * a crust of small facets (a facet-normal field on the smooth-shaded mesh), each with
  * its own thin-film colour, that flash as sharp points of pink, violet, teal or green-gold
  * when they turn towards the light, a film that strengthens at grazing angles and along a
  * few oily streaks, and tiny glints twinkling inside. Reflective only, no transmission: one
@@ -25,7 +25,6 @@ export function createOilMaterial() {
     iridescenceIOR: 2.1,
     iridescenceThicknessRange: [380, 820],
     envMapIntensity: 1.6,
-    flatShading: true,
   })
   material.userData.time = { value: 0 }
   material.onBeforeCompile = (shader) => {
@@ -36,6 +35,7 @@ export function createOilMaterial() {
     shader.uniforms.uOilGold = { value: sceneColors.warm }
     shader.uniforms.uOilGlow = { value: 0.8 }
     shader.uniforms.uOilTime = material.userData.time
+    shader.uniforms.uOilEnds = { value: [sceneConfig.spine.top, sceneConfig.spine.bottom] }
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
@@ -59,8 +59,18 @@ export function createOilMaterial() {
         uniform vec3 uOilGold;
         uniform float uOilGlow;
         uniform float uOilTime;
+        uniform vec2 uOilEnds;
         ${noise}
         ${oilFragment}`,
+      )
+      .replace(
+        '#include <clipping_planes_fragment>',
+        `#include <clipping_planes_fragment>
+        // The tips dissolve into grains: small chunks drop out towards each end.
+        float oilTip = max(smoothstep(uOilEnds.x - 4.0, uOilEnds.x, vSpinePosition.y),
+          smoothstep(uOilEnds.y + 2.5, uOilEnds.y, vSpinePosition.y));
+        float oilChunk = oilHash3(floor(vSpinePosition * 34.0)).x;
+        if (oilChunk < oilTip) discard;`,
       )
       .replace(
         '#include <roughnessmap_fragment>',
@@ -97,16 +107,18 @@ export function createOilMaterial() {
           // Facet glints: a facet turned towards the key direction flashes its own colour
           // (pink, violet, teal, green-gold), so the crust sparkles in many hues as it turns.
           vec3 key = normalize(normalize(vec3(-0.45, 0.7, 0.55)) + normalize(vViewPosition));
-          float glint = pow(max(dot(normal, key), 0.0), 64.0);
+          float glint = pow(max(dot(normal, key), 0.0), 24.0);
           vec3 tint = oilFacet < 0.3 ? uOilPink : oilFacet < 0.55 ? uOilViolet
             : oilFacet < 0.8 ? uOilTeal : mix(uOilGreen, uOilGold, 0.6);
-          outgoingLight += mix(tint, vec3(1.0), 0.25) * glint * 1.4 * (1.0 - vCrevice);
+          outgoingLight += mix(tint, vec3(1.0), 0.2) * glint * 0.75 * (1.0 - vCrevice);
           // Inner glitter: tiny bright points twinkling inside the mass.
           vec3 cell = floor(vSpinePosition * 46.0);
           float h = fract(sin(dot(cell, vec3(12.99, 78.23, 37.71))) * 43758.55);
           float twinkle = 0.5 + 0.5 * sin(h * 80.0 + uOilTime * (1.0 + h * 2.0));
           outgoingLight += vec3(1.0, 0.86, 1.0) * step(0.992, h) * twinkle * 1.6 * (1.0 - vCrevice * 0.7);
         }
+        // The dissolving edge glints, like the grains it breaks into.
+        outgoingLight += vec3(0.9, 0.8, 1.0) * oilTip * (1.0 - smoothstep(0.0, 0.06, oilChunk - oilTip)) * 1.5;
         outgoingLight += oilStreakGlow(normal, normalize(vViewPosition), uOilTeal, uOilGreen,
           uOilViolet, uOilGlow);
         #include <opaque_fragment>`,

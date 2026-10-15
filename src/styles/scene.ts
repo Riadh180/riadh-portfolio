@@ -88,9 +88,13 @@ export const sceneConfig = {
     pieces: 72,
     /** Height of the Work span (cards and grains live in it). */
     height: 13,
-    /** Where the column itself starts and ends: beyond the frame at every Work stop. */
+    /**
+     * Where the column itself starts and ends. Both tips dissolve into grains (the top over
+     * 4 units, the bottom over 2.5), so no Work frame shows an end; the bottom has left the
+     * frame before Work is hidden on the way to System.
+     */
     top: 10,
-    bottom: -18,
+    bottom: -12.2,
     /** Turn between one piece and the next, in radians. */
     twist: 0.7,
     /** Sideways wander off the axis and tilt of each piece. */

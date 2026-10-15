@@ -2,7 +2,7 @@
 // camera turns 60° round the column from one stop to the next, so stops 1, 3, 4 and 6 show
 // the column from 0°, 120°, 180° and 300°.
 //
-//   node scripts/capture-stops.mjs <url> <outDir> [phone]      (LOWGPU=1: integrated GPU)
+//   node scripts/capture-stops.mjs <url> <outDir> [phone]   (LOWGPU=1: integrated GPU; DPR=2: Retina)
 //
 // Flies to Work by the nav, then one wheel gesture at a time (the scroll's magnet settles on
 // the next stop); after each settle, the card nearest the frame's centre names the shot.
@@ -35,7 +35,7 @@ const browser = await puppeteer.launch({
 const page = await browser.newPage()
 const width = phone ? 390 : 1440
 const height = phone ? 844 : 900
-await page.setViewport({ width, height, deviceScaleFactor: phone ? 2 : 1, isMobile: phone, hasTouch: phone })
+await page.setViewport({ width, height, deviceScaleFactor: Number(process.env.DPR ?? (phone ? 2 : 1)), isMobile: phone, hasTouch: phone })
 const errors = []
 page.on('pageerror', (e) => errors.push(e.message))
 await page.evaluateOnNewDocument(() => {
