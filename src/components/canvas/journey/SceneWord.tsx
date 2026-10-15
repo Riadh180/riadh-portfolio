@@ -15,7 +15,7 @@ import { createTaglineTexture } from './taglineTexture'
 
 /** Rise-in on arrival (s), and the glitch: one line, ~0.3s, every 1.6–2.6s. */
 const RISE = 0.8
-const GLITCH = 0.3
+const GLITCH = 0.2
 
 type Props = {
   lines: readonly string[]
@@ -108,7 +108,7 @@ export function SceneWord({
     if (s.shownAt < 0) {
       s.shownAt = now
       // Fully readable for a good while after it arrives; then a rare, brief glitch.
-      s.nextGlitch = now + RISE + 4
+      s.nextGlitch = now + RISE + 0.4
     }
 
     if (billboard) m.quaternion.copy(camera.quaternion)
@@ -121,7 +121,7 @@ export function SceneWord({
     if (!reducedMotion && now >= s.nextGlitch) {
       s.glitchStart = now
       s.glitchLine = (s.glitchLine + 1) % lines.length
-      s.nextGlitch = now + 4 + Math.random() * 3
+      s.nextGlitch = now + 8 + Math.random() * 4
     }
     if (s.glitchStart >= 0 && now - s.glitchStart < GLITCH) {
       glitch = Math.sin((Math.PI * (now - s.glitchStart)) / GLITCH)

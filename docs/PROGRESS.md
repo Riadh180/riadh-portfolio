@@ -631,3 +631,9 @@ System 59, Depth 47, Contact 47.
 - Wings: shorter (0.35–1.05), most curled, none broken; same lilac oil, roughness 0.28 and a
   lilac sheen (they reflected the dark world as black mirrors before). Nothing black.
 - Sheet: `docs/screens/round6-spine.jpg`.
+
+## Part 6 — Glitch discipline
+- One rule for "LET'S TALK" (`GlitchText`), "SELECTED WORK" / "SYSTEM" / "BENEATH THE
+  INTERFACE" (`SceneWord`) and the tagline (`Tagline`): one glitch as the text settles on
+  arrival, then 0.2s every 8–12s (readable well over 95% of the time). The scramble-in on
+  arrival (~1.2s) is kept as the reveal.

@@ -38,7 +38,7 @@ const STAGGER = 0.12
 const HIDE = 0.4
 
 /** Glitch: one line at a time, ~0.3s, every 1.5–2s. */
-const GLITCH = 0.3
+const GLITCH = 0.2
 
 const expoOut = (x: number) => (x >= 1 ? 1 : 1 - 2 ** (-10 * x))
 
@@ -153,7 +153,7 @@ export function Tagline({ clock, reducedMotion, journey }: Props) {
 
     if (shown && s.shownAt < 0) {
       s.shownAt = now
-      s.nextGlitch = now + RISE + 1.2
+      s.nextGlitch = now + RISE + 0.5
     }
     if (!shown) s.shownAt = -1
 
@@ -168,7 +168,8 @@ export function Tagline({ clock, reducedMotion, journey }: Props) {
     if (!reducedMotion && shown && now >= s.nextGlitch) {
       s.glitchStart = now
       s.glitchLine = (s.glitchLine + 1 + Math.floor(Math.random() * 2)) % 3
-      s.nextGlitch = now + 1.5 + Math.random() * 0.5
+      // Rare: one glitch on arrival, then every 8–12s (readable ≥ 95% of the time).
+      s.nextGlitch = now + 8 + Math.random() * 4
     }
     if (s.glitchStart >= 0 && now - s.glitchStart < GLITCH) {
       glitch = Math.sin((Math.PI * (now - s.glitchStart)) / GLITCH)

@@ -3,8 +3,8 @@
 import { type CSSProperties, useEffect, useState } from 'react'
 import { useScramble } from '@/hooks/useScramble'
 
-/** One glitch: ~0.3s, then a calm 2.5–4.5s before the next (MOTION.md: error → recovery). */
-const GLITCH = { length: 300, calm: 2500, jitter: 2000 }
+/** One glitch as it settles on arrival, then a rare 0.2s one every 8–12s. */
+const GLITCH = { length: 200, first: 1500, calm: 8000, jitter: 4000 }
 
 type Slice = { top: number; bottom: number; shift: number }
 
@@ -41,7 +41,7 @@ export function GlitchText({ text, active }: { text: string; active: boolean }) 
         }, GLITCH.length)
       }, delay)
     }
-    next(GLITCH.calm)
+    next(GLITCH.first)
     return () => {
       window.clearTimeout(timer)
       setSlices(null)
