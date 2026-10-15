@@ -624,3 +624,10 @@ System 59, Depth 47, Contact 47.
   B Martian Mono 300. Chose **B** (thinner, cleaner, closer to the reference's light
   display titles); pixel stays for the small UI and the 3D words.
 - FPS (prod, Retina) down the Work cards: AMD 60.3; HD 630 lite 60.3.
+
+## Part 5 — Spine
+- One organic mass: bodies 1.25–1.45× the spacing (neighbours overlap and fuse), broader,
+  stronger bulges, no collar rings (they drew the seams).
+- Wings: shorter (0.35–1.05), most curled, none broken; same lilac oil, roughness 0.28 and a
+  lilac sheen (they reflected the dark world as black mirrors before). Nothing black.
+- Sheet: `docs/screens/round6-spine.jpg`.

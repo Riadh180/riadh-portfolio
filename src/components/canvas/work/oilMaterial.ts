@@ -66,7 +66,7 @@ export function createOilMaterial() {
           roughnessFactor = oilRoughness(roughnessFactor, vSpinePosition);
         #endif
         // Wings and collars: wet, near-mirror oil.
-        roughnessFactor = mix(roughnessFactor, 0.06, vOilSmooth);`,
+        roughnessFactor = mix(roughnessFactor, 0.28, vOilSmooth);`,
       )
       .replace(
         '#include <normal_fragment_maps>',
@@ -88,7 +88,9 @@ export function createOilMaterial() {
       )
       .replace(
         '#include <opaque_fragment>',
-        `// Inner glitter: tiny bright points twinkling inside the bodies (not the wings).
+        `// Wings: the body's lilac, lit, never a black mirror.
+        outgoingLight += uOilViolet * 0.16 * vOilSmooth;
+        // Inner glitter: tiny bright points twinkling inside the bodies (not the wings).
         {
           vec3 cell = floor(vSpinePosition * 46.0);
           float h = fract(sin(dot(cell, vec3(12.99, 78.23, 37.71))) * 43758.55);

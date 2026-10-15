@@ -6,7 +6,6 @@ import {
   LatheGeometry,
   Matrix4,
   Quaternion,
-  TorusGeometry,
   Vector2,
   Vector3,
 } from 'three'
@@ -135,7 +134,7 @@ function clean(geometry: BufferGeometry) {
 /**
  * The spine (docs/spine-concept.png): 12–16 fused vertebrae up a slightly wobbling column.
  * Each body is a thick rounded-square block of its own size, tilt and turn, carved with
- * bulges and crystalline facets; between them run smooth oily collars; from each body
+ * bulges and crystalline facets, overlapping so they fuse into one mass; from each body
  * curved, tapered wings sweep out sideways (long, short, curled, broken), with a few
  * drips hanging from wing edges and rims. Bodies and glossy parts are built apart (the
  * bodies tessellated and carved, the wings smooth), then merged into one mesh with a
@@ -178,16 +177,9 @@ export function createSpineGeometry(edge = 0.13) {
     const ry = i * twist + pick(i, 5) * 0.8
     const width = 0.95 + pick(i, 6) * 0.5
     const depth = 0.85 + pick(i, 7) * 0.4
-    const thickness = spacing * (0.78 + pick(i, 8) * 0.12)
+    // Thicker than the spacing: neighbours overlap and fuse into one mass.
+    const thickness = spacing * (1.25 + pick(i, 8) * 0.2)
     bodies.push(clean(place(body(width, depth, thickness), wx, y, wz, rx, ry, rz)))
-
-    // The collar between this vertebra and the next: a smooth, slightly squashed ring.
-    if (i < segments - 1) {
-      const collar = new TorusGeometry(Math.max(width, depth) * 0.46, 0.07, 8, 40)
-      collar.rotateX(Math.PI / 2)
-      collar.scale(1, 1, depth / width)
-      glossy.push(clean(mark(place(collar, wx, y + spacing * 0.5, wz, rx * 0.5, ry, rz * 0.5), 1)))
-    }
 
     // Wings: one or two per vertebra, each its own kind.
     const count = pick(i, 9) < 0.8 ? 2 : 1
@@ -195,11 +187,11 @@ export function createSpineGeometry(edge = 0.13) {
       const kind = pick(i * 7 + k, 10)
       const long = kind < 0.45
       const blade = wing({
-        length: long ? 0.95 + pick(i, 11 + k) * 0.45 : 0.45 + pick(i, 12 + k) * 0.35,
+        length: long ? 0.7 + pick(i, 11 + k) * 0.35 : 0.35 + pick(i, 12 + k) * 0.25,
         width: long ? 0.85 + pick(i, 13 + k) * 0.45 : 0.6 + pick(i, 14 + k) * 0.35,
         sweep: (pick(i, 15 + k) - 0.4) * 0.7,
-        curl: kind > 0.7 ? 0.8 + pick(i, 16 + k) * 0.6 : 0,
-        broken: kind > 0.45 && kind < 0.6,
+        curl: kind > 0.4 ? 0.7 + pick(i, 16 + k) * 0.7 : 0,
+        broken: false,
       })
       // Out from the body's side, alternating sides up the column.
       const side = (k === 0 ? 0 : Math.PI) + (i % 2) * Math.PI + (pick(i, 17 + k) - 0.5) * 1.2
@@ -246,10 +238,10 @@ export function createSpineGeometry(edge = 0.13) {
     const x = positions.getX(i)
     const y = positions.getY(i)
     const z = positions.getZ(i)
-    const broad = valueNoise3(x * 1.6, y * 1.6, z * 1.6, 11) - 0.5
+    const broad = valueNoise3(x * 1.1, y * 0.9, z * 1.1, 11) - 0.5
     const ridge = 1 - Math.abs(valueNoise3(x * 5, y * 5, z * 5, 12) * 2 - 1)
     const grain = valueNoise3(x * 9, y * 9, z * 9, 13) - 0.5
-    const amount = (broad * 2 + ridge ** 3 * 0.9 - 0.3 + grain * 0.7) * bulge * 1.3
+    const amount = (broad * 3.2 + ridge ** 3 * 0.9 - 0.3 + grain * 0.6) * bulge * 1.5
     positions.setXYZ(
       i,
       x + normals.getX(i) * amount,
