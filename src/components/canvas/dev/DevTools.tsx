@@ -94,6 +94,25 @@ export default function DevTools() {
       corners: [0, 0.4, 0.005],
       warmPeriod: [3, 20, 0.5],
       warmth: [0, 1, 0.01],
+      rimWarm: [0, 1, 0.01],
+    }),
+  )
+  useControls(
+    'Core film',
+    sliders(sceneConfig.film, {
+      min: [100, 600, 5],
+      max: [200, 900, 5],
+      cycle: [0.2, 6, 0.05],
+      hue: [0, 1, 0.01],
+      spot: [0, 0.99, 0.01],
+    }),
+  )
+  useControls(
+    'Hero formers',
+    sliders(sceneConfig.formers, {
+      teal: [0, 6, 0.05],
+      violet: [0, 6, 0.05],
+      amber: [0, 10, 0.05],
     }),
   )
   useControls(

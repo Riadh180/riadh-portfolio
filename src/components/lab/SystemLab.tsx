@@ -54,7 +54,7 @@ function SystemScene() {
   return (
     <>
       <primitive attach="background" object={sceneColors.bg} />
-      <HeroLighting look={look} clock={clock} />
+      <HeroLighting look={look} clock={clock} calm={() => 1} />
       <LabCamera pointer={pointer} />
       <Backdrop />
       <SkillGraph clock={clock} look={look} pointer={pointer} reducedMotion={false} />

@@ -2,6 +2,7 @@ import { Environment, Lightformer } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
+  type Color,
   CylinderGeometry,
   DoubleSide,
   Float32BufferAttribute,
@@ -12,7 +13,6 @@ import { sceneColors, sceneConfig } from '@/styles/scene'
 import type { SceneClock } from '../useSceneClock'
 import { type GlassLook, lightKey } from './glassLook'
 import { useTier } from '@/stores/tier'
-import { warmPulse } from './motion'
 
 /**
  * A band of light circling the emblem on its own plane. A 45° bevel facing the camera
@@ -56,31 +56,62 @@ function paintHorizon({ geometry, swell, fade }: ReturnType<typeof createHorizon
  */
 const KEY_POSITION: [number, number, number] = [3.3, 5.4, 1.4]
 
+type Former = {
+  color: keyof typeof sceneConfig.formers
+  position: [number, number, number]
+  scale: [number, number, number]
+}
+
+/**
+ * Coloured light-formers, each with its twin turned half round the vertical axis, so the
+ * rig still looks the same from either face (see below): teal low on the left, violet on
+ * the right, a small amber accent low on the right.
+ */
+const FORMERS: Former[] = (
+  [
+    { color: 'teal', position: [-6, -3.5, 4.5], scale: [5, 2.5, 1] },
+    { color: 'violet', position: [6.5, 2, 3], scale: [2.5, 5, 1] },
+    { color: 'amber', position: [3.5, -5.5, 2], scale: [1.6, 1.6, 1] },
+  ] as Former[]
+).flatMap((former) => [
+  former,
+  { ...former, position: [-former.position[0], former.position[1], -former.position[2]] },
+])
+
+const FORMER_COLORS: Record<Former['color'], Color> = {
+  teal: sceneColors.teal,
+  violet: sceneColors.violet,
+  amber: sceneColors.warm,
+}
+
 /** How long the environment keeps re-rendering after a light change, in seconds. */
 const SETTLE = 0.3
 
 /**
  * A dark studio, set by the look: one small key up to the right (the single sparkle), the
- * band of edge light round it, and equal soft fills in front and behind for the faces.
- * Apart from the key, the rig looks the same turned half round the vertical axis, so the
- * emblem's light can follow its turn without a jump as it passes edge-on (see Emblem); the
- * key swaps sides right at edge-on, where the reflections are dimmed and the face hidden.
+ * band of edge light round it, equal soft fills in front and behind for the faces, and at
+ * the hero a few coloured formers, so the glass carries colour. Apart from the key, the rig
+ * looks the same turned half round the vertical axis, so the emblem's light can follow its
+ * turn without a jump as it passes edge-on (see Emblem); the key swaps sides right at
+ * edge-on, where the reflections are dimmed and the face hidden.
  *
- * The light drifts to one warm moment per cycle. The cube map only re-renders while that
- * moment is live (~1.5s of every ~9s) or just after the look's light changes; otherwise it
- * stays baked, so the rest of the cycle costs nothing.
+ * The cube map is baked once and re-renders only while the light changes (the look's blend
+ * along the path, the formers fading, Contact's warmth rising). The hero's slow drift to
+ * warm copper is a tint in The Core's own material (see glassMaterial), so the idle hero
+ * never re-renders it.
  */
 type Props = {
   look: GlassLook
   clock: SceneClock
-  /** 0..1: how far below the hero the camera is; the warm moment belongs to the hero. */
+  /** 0..1: how far below the hero the camera is; the coloured formers belong to the hero. */
   calm?: () => number
-  /** 0..1: a held warm light (Contact's warm accent), on top of the hero's pulse. */
+  /** 0..1: a held warm light (Contact's warm accent). */
   warmHold?: () => number
 }
 
 export function HeroLighting({ look, clock, calm, warmHold }: Props) {
   const meshes = useRef<(Mesh | null)[]>([])
+  const formers = useRef<(Mesh | null)[]>([])
   const horizonMesh = useRef<Mesh>(null)
   const [live, setLive] = useState(false)
   const liveRef = useRef(false)
@@ -91,17 +122,14 @@ export function HeroLighting({ look, clock, calm, warmHold }: Props) {
   useEffect(() => () => horizon.geometry.dispose(), [horizon])
 
   useFrame(() => {
-    const { warmPeriod, warmth } = sceneConfig.light
-    const warm = Math.max(
-      // Lite tier: no hero pulse (re-baking the cube map every frame of it stalled
-      // integrated GPUs); Contact's held warmth still comes in.
-      (useTier.getState().tier === 'lite' ? 0 : warmPulse(clock.time, warmPeriod)) *
-        warmth *
-        (1 - (calm?.() ?? 0)),
-      (warmHold?.() ?? 0) * warmth,
-    )
+    const { warmth } = sceneConfig.light
+    const strength = sceneConfig.formers
+    const warm = (warmHold?.() ?? 0) * warmth
+    // The formers fade out as the camera leaves the hero (in tenths: one re-bake per step).
+    const presence = Math.round((1 - (calm?.() ?? 0)) * 10) / 10
+    const lite = useTier.getState().tier === 'lite'
 
-    const key = lightKey(look)
+    const key = `${lightKey(look)}|${presence}|${lite}`
     if (key !== lastKey.current) {
       lastKey.current = key
       settleUntil.current = clock.time + SETTLE
@@ -113,8 +141,8 @@ export function HeroLighting({ look, clock, calm, warmHold }: Props) {
       )
     }
 
-    // Re-render the cube map only while the warmth is changing (the hero's pulse, Contact's
-    // rise): a held warmth is baked once, like the cool light.
+    // Re-render the cube map only while the warmth is changing (Contact's rise): a held
+    // warmth is baked once, like the cool light.
     const changing = Math.abs(warm - lastWarm.current) > 0.0005
     lastWarm.current = warm
     if (changing) settleUntil.current = clock.time + SETTLE
@@ -128,6 +156,16 @@ export function HeroLighting({ look, clock, calm, warmHold }: Props) {
     intensities.forEach((intensity, i) => {
       const material = meshes.current[i]?.material as MeshBasicMaterial | undefined
       material?.color.copy(sceneColors.glass).lerp(sceneColors.warm, warm).multiplyScalar(intensity)
+    })
+    FORMERS.forEach((former, i) => {
+      const mesh = formers.current[i]
+      if (!mesh) return
+      // Lite: a static cool environment; the amber accent is the full tier's.
+      const on = presence * (lite && former.color === 'amber' ? 0 : 1)
+      mesh.visible = on > 0
+      ;(mesh.material as MeshBasicMaterial).color
+        .copy(FORMER_COLORS[former.color])
+        .multiplyScalar(strength[former.color] * on)
     })
   })
 
@@ -167,6 +205,17 @@ export function HeroLighting({ look, clock, calm, warmHold }: Props) {
       >
         <meshBasicMaterial side={DoubleSide} toneMapped={false} vertexColors />
       </mesh>
+      {FORMERS.map((former, i) => (
+        <Lightformer
+          key={i}
+          ref={(mesh) => {
+            formers.current[i] = mesh
+          }}
+          form="rect"
+          scale={former.scale}
+          position={former.position}
+        />
+      ))}
     </Environment>
   )
 }

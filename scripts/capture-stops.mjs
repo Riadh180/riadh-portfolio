@@ -38,6 +38,8 @@ const height = phone ? 844 : 900
 await page.setViewport({ width, height, deviceScaleFactor: Number(process.env.DPR ?? (phone ? 2 : 1)), isMobile: phone, hasTouch: phone })
 const errors = []
 page.on('pageerror', (e) => errors.push(e.message))
+// TIER=lite starts the visit on the lite tier (measurement hook in stores/tier.ts).
+if (process.env.TIER === 'lite') await page.evaluateOnNewDocument(() => (window.__tier = 'lite'))
 await page.evaluateOnNewDocument(() => {
   sessionStorage.setItem('signal-intro', '1')
   window.__cardCorners = {}

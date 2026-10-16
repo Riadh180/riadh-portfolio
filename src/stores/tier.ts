@@ -8,12 +8,19 @@ import { create } from 'zustand'
  */
 export type Tier = 'full' | 'lite'
 
+declare global {
+  interface Window {
+    /** Measurement only (the capture scripts' TIER=lite): start the visit on this tier. */
+    __tier?: Tier
+  }
+}
+
 type TierState = {
   tier: Tier
   degrade: () => void
 }
 
 export const useTier = create<TierState>()((set) => ({
-  tier: 'full',
+  tier: typeof window !== 'undefined' && window.__tier === 'lite' ? 'lite' : 'full',
   degrade: () => set({ tier: 'lite' }),
 }))

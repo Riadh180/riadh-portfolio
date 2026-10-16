@@ -69,6 +69,8 @@ const errors = []
 page.on('pageerror', (e) => errors.push(e.message))
 page.on('console', (m) => ['error', 'warn'].includes(m.type()) && errors.push(m.text()))
 // Skip the preloader (as on a repeat visit); ask the cards for their corners.
+// TIER=lite starts the visit on the lite tier (measurement hook in stores/tier.ts).
+if (process.env.TIER === 'lite') await page.evaluateOnNewDocument(() => (window.__tier = 'lite'))
 await page.evaluateOnNewDocument(() => {
   sessionStorage.setItem('signal-intro', '1')
   window.__cardCorners = {}

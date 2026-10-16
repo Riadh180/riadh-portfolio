@@ -2,17 +2,18 @@ import {
   ClampToEdgeWrapping,
   DataTexture,
   LinearFilter,
+  LinearMipmapLinearFilter,
   NearestFilter,
   RepeatWrapping,
   RGBAFormat,
 } from 'three'
 import { hash, valueNoise as noise } from '../noise'
 import type { GlassLook } from './glassLook'
-import { BAND_EDGES, CHAMFER_EDGES, FACE_EDGES } from './bandGeometry'
+import { BAND_EDGES, CHAMFER_EDGES, FACE_EDGES, GROOVE_EDGES } from './bandGeometry'
 
 // Surface textures for the glass bands: the film lies across the emblem's plane (uv1), the
-// smudges on the band UVs (u along the path in world units, v round the profile, one
-// eighth per edge), tiling seamlessly in u.
+// smudges, the rim glow and the engraving on the band UVs (u along the path in world units,
+// v round the profile, an equal share per edge), tiling seamlessly in u.
 
 function texture(width: number, height: number, repeat: number) {
   const map = new DataTexture(new Uint8Array(width * height * 4), width, height, RGBAFormat)
@@ -83,7 +84,7 @@ export function writeFilmTexture(map: DataTexture, look: GlassLook) {
  * A: specular strength: the marks catch light, the clean glass mirrors a little less.
  */
 export function createSurfaceTexture() {
-  return texture(512, 128, 2)
+  return texture(512, 256, 2)
 }
 
 /** Where the faces are marked, 0 (clean) .. 1; computed once. */
@@ -139,15 +140,75 @@ export function writeSurfaceTexture(map: DataTexture, look: GlassLook) {
 /**
  * The bevels alone (emissiveMap, band UVs): a faint glow of their own, so the outline
  * reads as one continuous line at every angle of the turn, under the moving reflections.
+ * The grooves glow a little less: a second, finer line inside the first.
  */
 export function createRimTexture() {
   const map = texture(4, BAND_EDGES * 8, 1)
   const { data, width, height } = map.image as { data: Uint8Array; width: number; height: number }
   for (let y = 0; y < height; y++) {
-    const rim = CHAMFER_EDGES.includes(edgeAt(y, height)) ? 255 : 0
+    const edge = edgeAt(y, height)
+    const rim = CHAMFER_EDGES.includes(edge) ? 255 : GROOVE_EDGES.includes(edge) ? 150 : 0
     for (let x = 0; x < width; x++) data.set([rim, rim, rim, 255], (y * width + x) * 4)
   }
   map.magFilter = map.minFilter = NearestFilter
+  map.needsUpdate = true
+  return map
+}
+
+/** Hairlines engraved across each face: [position across the face 0..1, depth 0..1]. */
+const ENGRAVING: [number, number][] = [
+  [0.12, 0.7],
+  [0.2, 0.45],
+  [0.33, 1],
+  [0.47, 0.5],
+  [0.58, 0.8],
+  [0.74, 0.55],
+  [0.86, 0.9],
+]
+
+/**
+ * Engraved micro-lines (normalMap, band UVs): a few very fine hairlines cut into the flat
+ * faces, running along the outline like a hand-cut guilloché, each a tiny V that tips the
+ * normal one way then the other, wandering a little along its length. Up close the faces
+ * catch light along them, so The Core reads as a crafted object; at a distance the mipmaps
+ * smooth them away. Flat everywhere but the wide faces.
+ */
+export function createEngravingTexture() {
+  const width = 64
+  const rows = 64
+  const height = rows * BAND_EDGES
+  const map = new DataTexture(new Uint8Array(width * height * 4), width, height, RGBAFormat)
+  map.wrapS = RepeatWrapping
+  map.wrapT = ClampToEdgeWrapping
+  map.magFilter = LinearFilter
+  map.minFilter = LinearMipmapLinearFilter
+  map.generateMipmaps = true
+  // One tile per world unit of the path.
+  map.repeat.set(1, 1)
+  const { data } = map.image as { data: Uint8Array }
+  for (let y = 0; y < height; y++) {
+    const edge = Math.floor(y / rows)
+    // Only the two wide faces (the narrow strips by the groove stay clean).
+    const engraved = edge === FACE_EDGES[0] || edge === FACE_EDGES[3]
+    const across = (y % rows) / rows
+    for (let x = 0; x < width; x++) {
+      let tilt = 0
+      if (engraved) {
+        const along = x / width
+        for (const [k, [at, depth]] of ENGRAVING.entries()) {
+          // Each line wanders by a fraction of a texel along the path, never straight-ruled.
+          const wander = Math.sin(along * Math.PI * 2 * (k + 1) + k * 1.7) * 0.004
+          const d = (across - at - wander) * rows
+          // A V about two texels wide: one wall tips up, the other down.
+          if (Math.abs(d) < 1.3) tilt += Math.sign(d) * (1 - Math.abs(d) / 1.3) * depth
+        }
+      }
+      // Tangent space: the tilt is across the face (the v direction).
+      const ny = Math.max(-0.9, Math.min(0.9, tilt * 0.75))
+      const nz = Math.sqrt(1 - ny * ny)
+      data.set([128, byte(ny * 0.5 + 0.5), byte(nz * 0.5 + 0.5), 255], (y * width + x) * 4)
+    }
+  }
   map.needsUpdate = true
   return map
 }

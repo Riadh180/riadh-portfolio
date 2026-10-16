@@ -8,12 +8,17 @@ import {
   Vector3,
 } from 'three'
 
-/** Edges of the band profile, in order: front face, then round the chamfered rectangle. */
-export const BAND_EDGES = 8
+/**
+ * Edges of the band profile, in order: the front face (split by a fine V-groove near the
+ * inner edge), round the chamfered rectangle, and the back face (grooved the same way).
+ */
+export const BAND_EDGES = 14
 /** Which profile edges are the angled chamfers (the crisp, light-catching cuts). */
-export const CHAMFER_EDGES = [1, 3, 5, 7]
-/** The wide front and back faces. */
-export const FACE_EDGES = [0, 4]
+export const CHAMFER_EDGES = [4, 6, 11, 13]
+/** The flat front and back faces (either side of each groove). */
+export const FACE_EDGES = [0, 3, 7, 10]
+/** The two walls of each face's groove: the second, thin inner edge that catches light. */
+export const GROOVE_EDGES = [1, 2, 8, 9]
 
 type Band = {
   /** Width of the flat face. */
@@ -28,6 +33,11 @@ type Band = {
    * edge faces up exactly like the outer bevel of the top edge.
    */
   innerChamfer?: number
+  /**
+   * The fine V-groove cut into both faces, parallel to the inner edge: its centre's
+   * distance from the inner chamfer, its half-width and its depth.
+   */
+  groove: { offset: number; width: number; depth: number }
   /** Samples along the path. */
   segments: number
 }
@@ -38,8 +48,9 @@ type Band = {
  * edges. Normals are flat across the profile and smooth along the path.
  *
  * UVs: u runs along the path (about one unit per world unit of length, rounded to an even
- * number so tiling textures close seamlessly), v runs round the profile, one eighth per
- * edge (front face first), so textures can tell the face from the chamfers. uv1 maps the
+ * number so tiling textures close seamlessly), v runs round the profile, an equal share per
+ * edge (front face first), so textures and shaders can tell the faces, grooves and chamfers
+ * apart. uv1 maps the
  * shape's own plane (see below).
  */
 export function createBandGeometry(curve: Curve<Vector3>, band: Band) {
@@ -47,13 +58,23 @@ export function createBandGeometry(curve: Curve<Vector3>, band: Band) {
   const b = band.depth / 2
   const c = Math.min(band.chamfer, a, b)
   const ci = Math.min(band.innerChamfer ?? band.chamfer, a, b)
+  // The groove: centred `offset` in from the inner chamfer, walls at about 45°.
+  const g = -a + ci + band.groove.offset
+  const w = band.groove.width
+  const d = band.groove.depth
   // Counter-clockwise in (across, depth): the front face (+depth) comes first.
   const profile = [
     [a - c, b],
+    [g + w, b],
+    [g, b - d],
+    [g - w, b],
     [-a + ci, b],
     [-a, b - ci],
     [-a, -b + ci],
     [-a + ci, -b],
+    [g - w, -b],
+    [g, -b + d],
+    [g + w, -b],
     [a - c, -b],
     [a, -b + c],
     [a, b - c],

@@ -8,7 +8,7 @@ import type { SceneClock } from '../useSceneClock'
 import { createBandGeometry, roundedSquareCurve } from './bandGeometry'
 import type { GlassLook } from './glassLook'
 import { applyGlassLook, createGlassMaterial, disposeGlassMaterial } from './glassMaterial'
-import { idleSpin } from './motion'
+import { idleSpin, lightDrift } from './motion'
 import { useCursor } from '@/stores/cursor'
 import { revealed } from '@/stores/loading'
 import { useTier } from '@/stores/tier'
@@ -76,13 +76,17 @@ const smooth01 = (x: number) => {
 /** Resting angle: slightly off face-on so the bands catch the light while it dwells. */
 const REST = { x: 0.14, y: -0.25 }
 
-/** The calm outside: a flat, bevelled band in the app-icon outline. */
+/**
+ * The calm outside: a flat, bevelled band in the app-icon outline, a crisp inner chamfer and
+ * a fine V-groove cut into each face just inside it (a second, thin inner edge).
+ */
 function createFrame() {
   return createBandGeometry(roundedSquareCurve(), {
     width: 0.24,
     depth: 0.15,
     chamfer: 0.055,
-    innerChamfer: 0.015,
+    innerChamfer: 0.02,
+    groove: { offset: 0.034, width: 0.008, depth: 0.006 },
     segments: 600,
   })
 }
@@ -97,6 +101,7 @@ function createInner() {
     depth: 0.11,
     chamfer: 0.04,
     innerChamfer: 0.014,
+    groove: { offset: 0.022, width: 0.006, depth: 0.0045 },
     segments: 400,
   })
 }
@@ -238,13 +243,20 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     // Deeper refraction at the statement, so the glass visibly bends the tagline behind it.
     // At the held angle the reflections stay up, so the slit of glass stays bright.
     const faceOn = Math.abs(Math.cos(turn - facing))
+    const lite = useTier.getState().tier === 'lite'
+    // The hero's light drifts cool → warm copper → cool (full tier); it belongs to the hero
+    // and the statement, gone as the camera heads down to Work. Lite: a held warm rim tint.
+    const { warmPeriod, warmth, rimWarm } = sceneConfig.light
+    const hero = anchored || !journey ? 0 : 1 - Math.min(1, journey.toWork * 3)
     applyGlassLook(glass, look, {
       facing: faceOn + (0.7 - faceOn) * travel,
       depth: 1 + 2 * travel,
       rainbow: travel,
       // A small anchored Core reflects only: no refraction pass (it would re-render the
       // scene for an emblem a few hundred pixels wide).
-      reflectOnly: !!anchored || useTier.getState().tier === 'lite',
+      reflectOnly: !!anchored || lite,
+      warm: lite ? 0 : lightDrift(t, warmPeriod) * warmth * hero,
+      rimWarm: lite ? rimWarm * hero : 0,
     })
   })
 

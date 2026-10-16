@@ -34,6 +34,8 @@ await page.setViewport({ width, height, deviceScaleFactor: phone ? 3 : 2, isMobi
 const errors = []
 page.on('pageerror', (e) => errors.push(e.message))
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
+// TIER=lite starts the visit on the lite tier (measurement hook in stores/tier.ts).
+if (process.env.TIER === 'lite') await page.evaluateOnNewDocument(() => (window.__tier = 'lite'))
 await page.evaluateOnNewDocument(() => {
   sessionStorage.setItem('signal-intro', '1')
   window.__frames = 0

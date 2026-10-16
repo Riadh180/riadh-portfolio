@@ -82,7 +82,7 @@ function WorkScene({ version, mode }: { version: number; mode: View }) {
   return (
     <>
       <primitive attach="background" object={sceneColors.bg} />
-      <HeroLighting look={workLook} clock={clock} />
+      <HeroLighting look={workLook} clock={clock} calm={() => 1} />
       <LabCamera mode={mode} />
       <Backdrop />
       <Spine key={`spine-${version}`} clock={clock} />

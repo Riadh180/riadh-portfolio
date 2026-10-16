@@ -889,6 +889,24 @@ Contact, scramble/glitch rules, transitions, UI, content, SEO, legal pages, CV. 
 only on /impressum.
 
 ## Decisions I made
+- **The light drift lives in The Core's material, not in the light-formers.** A former's colour
+  only reaches the glass when the cube map re-renders (the HD 630 dip found earlier). The drift
+  is a per-frame tint on The Core's reflections (cool → warm copper → cool, `lightDrift`, 9 s);
+  the coloured formers are baked once and re-bake only while they fade in or out along the path.
+  The hero's old warm pulse (a cube-map re-render every frame of it) is gone; Contact's held
+  warmth still re-bakes as before. Lite: no drift, a constant warm tint on grazing rims.
+- **The rim's rainbow is a hue ramp gated by a travelling spot.** The physical thin film alone
+  read pastel (the grade's per-channel shoulder whitens bright lines); the full ramp all round
+  read as a neon RGB ring. Final: a faint film tint all round, vivid where a cut mirrors one
+  fixed direction, so the spot slides along the rim as The Core turns (MOTION.md §1).
+- **"The teal bleed bottom-left"**: the backdrop isn't unlocked in Stage 1, so the corner bleeds
+  are unchanged (our lower left is violet, as before).
+- **Hero dust** stays the existing glitter grains, spread wider and sparser round and behind The
+  Core; the glass look comes with Stage 3 (one shader for every place).
+- **Lite captures.** The tier drops to lite only when a run measures < 55 fps, which the HD 630
+  rarely does, so lite was never guaranteed in captures. A measurement-only hook
+  (`window.__tier`, set by the scripts' `TIER=lite`) starts a visit on lite; the tier system
+  itself is unchanged.
 - **Work segment = 26–51 s, not 44–60 s.** A 2 s contact sheet of 24–64 s shows Work begins
   at ~26 s (first card, "Frontier"), seg_44 matches 44–51 s (hover on one card), and from
   ~52 s a card is opened (no column, only the detail view). 26–51 s is the whole descent.
@@ -1582,3 +1600,63 @@ loop back to the hero, the scramble / glitch rules, UI copy and content, SEO str
 pages, CV, the tier system, performance work. The phone number only on /impressum.
 
 ## Decisions I made
+- **The light drift lives in The Core's material, not in the light-formers.** A former's colour
+  only reaches the glass when the cube map re-renders (the HD 630 dip found earlier). The drift
+  is a per-frame tint on The Core's reflections (cool → warm copper → cool, `lightDrift`, 9 s);
+  the coloured formers are baked once and re-bake only while they fade in or out along the path.
+  The hero's old warm pulse (a cube-map re-render every frame of it) is gone; Contact's held
+  warmth still re-bakes as before. Lite: no drift, a constant warm tint on grazing rims.
+- **The rim's rainbow is a hue ramp gated by a travelling spot.** The physical thin film alone
+  read pastel (the grade's per-channel shoulder whitens bright lines); the full ramp all round
+  read as a neon RGB ring. Final: a faint film tint all round, vivid where a cut mirrors one
+  fixed direction, so the spot slides along the rim as The Core turns (MOTION.md §1).
+- **"The teal bleed bottom-left"**: the backdrop isn't unlocked in Stage 1, so the corner bleeds
+  are unchanged (our lower left is violet, as before).
+- **Hero dust** stays the existing glitter grains, spread wider and sparser round and behind The
+  Core; the glass look comes with Stage 3 (one shader for every place).
+- **Lite captures.** The tier drops to lite only when a run measures < 55 fps, which the HD 630
+  rarely does, so lite was never guaranteed in captures. A measurement-only hook
+  (`window.__tier`, set by the scripts' `TIER=lite`) starts a visit on lite; the tier system
+  itself is unchanged.
+
+## Stage 1 — the hero (tag `loop1-stage-1`)
+Files: `hero/bandGeometry.ts`, `hero/glassTextures.ts`, `hero/glassMaterial.ts`,
+`hero/HeroLighting.tsx`, `hero/Emblem.tsx`, `hero/HeroAura.tsx`, `hero/motion.ts`,
+`shaders/heroSpark.*`, `shaders/heroShard.frag`, `styles/scene.ts` (`light`, `film`,
+`formers`), `dev/DevTools.tsx` (sliders), the labs (no hero formers at Work / System), the
+measurement hook in `stores/tier.ts`; tools `scripts/capture-moments.mjs`, `scripts/fps-place.mjs`.
+1. **Iridescent rim.** The bevels, the new grooves and (a little) the side walls carry a thin
+   film whose thickness runs along the outline (260–560 nm, one hue cycle per 1.6 units), and
+   a hue ramp (aqua, green, gold, pink, blue) held under the grade's shoulder; vivid in one
+   travelling spot, a faint tint elsewhere; the key's hot sparkle stays white. Coloured
+   light-formers in the hero environment: teal low left, violet right, amber low right (each with
+   its twin half a turn round, so the edge-on hand-over stays seamless); they fade out on the way
+   to Work.
+2. **Detail.** A crisper inner chamfer (0.015 → 0.02), a fine V-groove cut into each face just
+   inside it (the second thin inner edge, catching the edge light as two hairlines), and engraved
+   micro-lines on the wide faces (a mipmapped normal map: seven wandering hairlines).
+3. **Light drift** (full): cool → warm copper → cool every 9 s, ~2 s above half strength, as a
+   tint in the material. Lite: static cool environment, gentle warm tint on grazing rims.
+4. **Living space.** The halo behind The Core is a whisper (about 35% of before, 60% of that on
+   portrait); the dust is a wider, sparser field of eight loose clouds round and behind it (never
+   in front of its centre); 14 gold and pink sparks rise slowly behind and beside it; three thin
+   glass arcs far behind (z −7 to −13), soft and faint, a glint running along each every 9–13 s.
+5. Kept: the intro burst, the 1.5× scale, the corner bleeds.
+
+Sheet: `docs/screens/loop1-hero.jpg` (at_01 and seg_00 at 1.0 / 4.5 / 6.5 s | now | new at 0,
+1.9, 3.8 and 5.7 s of the idle turn; phone now | new). The copper moment falls where the scene
+clock puts it (1.9 s in the "new" run).
+
+Self-review against at_01 / seg_00:
+- Closer: the rim carries colour; a rainbow zone (pink, gold, green, blue) slides along the bevels
+  as The Core turns, the rest silver with a faint film; a warm copper moment comes once a cycle.
+- Closer: the space is darker round The Core (no teal wash, also on phones), alive with sparse
+  dust, rising sparks and faint far arcs; The Core stays the one subject.
+- Closer: the groove and crisper chamfer read as cut, crafted glass at 1.5× crops.
+- Still different: their ring is darker glass (grey body, thin bright rim); ours keeps the
+  bright-cut white bevel lines, so it reads lighter overall.
+- Still different: their dust is olive / green bokeh discs of many sizes; ours is fine pale dust
+  (Stage 3). The engraved lines are below a pixel at the hero's DPR cap (1.25): texture, not lines.
+
+FPS (production, Retina): idle hero 59.9–60.3 on both GPUs (full), lite on the HD 630 59.9–60.3;
+statement 59.9–60.3 on both.

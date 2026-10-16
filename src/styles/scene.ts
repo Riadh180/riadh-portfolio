@@ -74,11 +74,26 @@ export const sceneConfig = {
   light: {
     /** Strength of the corner light bleeds. */
     corners: 0.12,
-    /** Seconds between warm light moments. */
+    /** Seconds between warm light moments (the hero's drift: cool → warm copper → cool). */
     warmPeriod: 9,
-    /** How far the key light shifts toward the warm accent at the peak. */
+    /** How far the light shifts toward the warm accent at the peak. */
     warmth: 0.85,
+    /** Lite tier: a constant warm tint on the rims, standing in for the drift. */
+    rimWarm: 0.35,
   },
+  /**
+   * The Core's bevel film: thickness range in nm (through orange, violet, blue, teal, green,
+   * gold and pink), world units of outline per hue cycle, how far the cut edges take the
+   * film's hue outright at the rainbow spot (0 = the physical film only, pastel under
+   * bright light), and the spot's size (cosine threshold: lower is wider).
+   */
+  film: { min: 260, max: 560, cycle: 1.6, hue: 0.95, spot: 0.72 },
+  /**
+   * Coloured light-formers in the hero's environment (strength), so The Core's faces and
+   * bevels carry colour, not just white: teal low left, violet right, a small amber accent
+   * low right (full tier). Hero only: they fade as the camera leaves for Work.
+   */
+  formers: { teal: 1.6, violet: 1.3, amber: 2.2 },
   /**
    * Work: the spine, one heavy sculpted column of fused, chunky glass-dark pieces in The
    * Core's language (tune at /lab/work).
