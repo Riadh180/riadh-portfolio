@@ -110,6 +110,8 @@ const scroller = (async () => {
 })()
 
 let frame = 0
+/** Each frame's projected card corners (for scripts/count-cards.mjs). */
+const cards = []
 const started = Date.now()
 const framesAtStart = await page.evaluate(() => window.__frames)
 while (frame < 160) {
@@ -119,6 +121,7 @@ while (frame < 160) {
   const corners = await page.evaluate(() => structuredClone(window.__cardCorners))
   await page.screenshot({ path: path.join(outDir, name) })
   await writeMask(path.join(masksDir, name), corners)
+  cards.push({ frame: name, corners })
   frame++
   if ((await page.evaluate(() => window.scrollY)) >= end) break
 }
@@ -126,6 +129,7 @@ const fps = ((await page.evaluate(() => window.__frames)) - framesAtStart) / ((D
 scrolling = false
 await scroller
 await browser.close()
+fs.writeFileSync(path.join(masksDir, 'cards.json'), JSON.stringify(cards))
 compress(outDir)
 console.log(
   `${frame} frames → ${outDir} | page fps while capturing ${fps.toFixed(0)}`,

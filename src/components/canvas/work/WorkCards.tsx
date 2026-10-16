@@ -41,7 +41,7 @@ import type { SceneClock } from '../useSceneClock'
 import { CardFace } from './cardFace'
 import { FrostField } from './frostField'
 import { type CardScene, createCardScene } from './cardScenes'
-import { COLUMN_SPACING, ORBIT_SPACING, orbitPose } from './layout'
+import { APPROACH, COLUMN_SPACING, ORBIT_SPACING, orbitPose } from './layout'
 
 /** Big, like the reference: the nearest card fills ~45% of the screen width. */
 export const CARD = { width: 2.4, height: 1.5, radius: 0.1 }
@@ -264,6 +264,9 @@ function createDustMaterial(face: CardFace, seed: number, live?: Texture) {
   })
 }
 
+/** 0..1 eased (cosine), clamped. */
+const smooth01 = (x: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, x)))) / 2
+
 /** Easing for the fly-in: heavy in, heavy out (the site's default curve, roughly). */
 const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2)
 
@@ -468,6 +471,12 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     // A slow float, each card on its own phase.
     target.position.y += Math.sin(clock.time * 0.4 + index * 1.7) * 0.05
     g.position.copy(target.position)
+    // At its stop the card comes forward, in front of its neighbours (the camera holds its
+    // distance): the gallery shows the cards round it at the edges and behind the column.
+    const stop = (useJourney.getState().progress - 2) * (jobs.length - 1)
+    const nearStop =
+      layout === 'orbit' ? smooth01(1 - Math.abs(stop - index) / APPROACH.width) : 0
+    g.position.lerp(s.eye, APPROACH.share * nearStop * (1 - flown))
     // Focused: comes forward, towards the camera.
     g.position.lerp(s.eye, s.focus * 0.12 * (1 - flown))
 
@@ -500,7 +509,6 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     // At rest a card leans its own way towards the viewer (some most of the way, some kept
     // turned along the spiral so their side walls show); focused or open, it turns fully.
     // The card at the camera's stop leans a little towards it.
-    const stop = (useJourney.getState().progress - 2) * (jobs.length - 1)
     const atStop = layout === 'orbit' ? Math.max(0, 1 - Math.abs(stop - index) / 0.45) : 0
     const facing = target.face + (1 - target.face) * Math.max(s.focus, flown, atStop * 0.45)
     g.quaternion.copy(s.rest).slerp(s.look, facing)

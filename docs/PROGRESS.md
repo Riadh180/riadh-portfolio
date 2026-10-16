@@ -935,6 +935,16 @@ only on /impressum.
   Lenis in a smooth scroll that pulls every later jump back to the top (the "first jump lands at
   the hero" quirk of earlier rounds). Real phones scroll by touch and never see it; the scripts
   now tap instead (`scripts/*.mjs`).
+- **Stage 4: one side of the camera line for every card.** With the spacing closed up, the
+  old alternating left / right poses stacked each left card into the right card above it at
+  nearly the same place round the column (they cut through each other in 114 of 121 simulated
+  frames). A regular helix keeps 54° between neighbours round the column instead.
+- **Stage 4: the card comes forward, the camera holds** (`WORK.dolly` 0, `APPROACH` 12% in
+  `layout.ts`). A camera dolly brings every card nearer at once; a card coming forward at its
+  stop is always in front of its neighbours, so its face is never covered.
+- **Stage 4: the pockets keep their placement rule** (same count, hues, split, the same
+  formula); its inputs follow the new path (the camera's angle at each height, the cards' new
+  poses), so the pockets keep wrapping the column where the camera looks.
 - **Integrated-GPU numbers need pauses.** Back-to-back runs on the HD 630 drift down by 5–15 fps
   (heat, GPU switching): the same build measured 44–52 at the hero in a long sequence and 60 with
   20 s pauses. Before / after comparisons are now alternated with pauses (`ab.sh` in the session
@@ -1836,3 +1846,42 @@ Self-review against at_04–at_07 and seg_44:
 FPS (production, Retina, cursor moving constantly): full tier (discrete GPU) 59.9–60.4 at every
 place; HD 630 lite at Work and the hero 59.4–60.4 in alternated runs with pauses, the same as the
 Stage 2 build. Long back-to-back sequences on the HD 630 dip to ~50 for both builds (heat).
+
+## Stage 4 — gallery composition (tag `loop1-stage-4`)
+Files: `work/layout.ts` (spacing, spiral, poses, `APPROACH`), `journey/path.ts` (no dolly, the
+camera's aim height), `work/WorkCards.tsx` (the card coming forward at its stop),
+`shaders/frost.frag` (full tier: depth of field on cards out of focus); tools
+`scripts/count-cards.mjs` (cards per frame from the recorder's projected corners, which
+`record-work.mjs` now saves) and a scratch simulation of the Work path (`gallery-sim.mjs`, same
+math as `path.ts`, `layout.ts`, `CameraRig` and `WorkCards`) used to search layouts against four
+constraints: 3–4 cards per frame, the focused card 50–55% wide and never covered by a nearer
+card, no two cards intersecting in 3D (with the hover lift), the HTML list zone clear.
+1. **Tighter spiral.** 54° between neighbouring cards (was 60°), 1.45 units apart (was 2.1);
+   the Work scroll length is unchanged, so the camera moves less per card. All cards hang on the
+   same side of the camera's line (a regular helix): the previous card up to the left, the next
+   down to the right and further round, the one after behind the column.
+2. **The focused card dominant.** At its stop the card comes 12% of the way towards the camera
+   (the camera no longer dollies in): ~53% of the frame width, always in front of its neighbours.
+   Neighbours sit at clearly different depths (simulated 3.8 vs 4.6–6.1 units). Full tier: a
+   neighbour's title and edge line soften with its media (depth of field); lite: the existing
+   dimming of cards away from the camera's height.
+3. **List zone.** Nothing hangs low on the left; the bottom-left list stays clear of card faces.
+
+Target: **3–4 visible cards in 100% of recorded Work frames** (53 frames: 25 with three, 28 with
+four; before: 26%, mostly two). Widest card: median 53% of the frame width.
+
+Sheet: `docs/screens/loop1-composition.jpg` (at_04, at_05, at_06, at_07, at_09 and a seg_44 tile
+| Stage 3 at the six stops | new at the six stops).
+
+Self-review against at_04–at_09 and seg_44:
+- Closer: walking through a gallery: at every stop the card in focus dominates, its neighbours
+  are cut by the frame's edges at other depths, often a fourth card behind the column.
+- Closer: depth reads at once: neighbours are smaller, softer (media, title and edge) and dimmer.
+- Still different: the reference fans its neighbours out to the left and right edges at steep
+  angles (streaked titles); ours sit above-left and below-right, a helix more than a fan.
+- Still different: their focused card often sits dead centre; ours sits right of centre (the
+  details column lives on the left).
+
+FPS (production, Retina, alternated with Stage 3 with 30 s pauses, HD 630 lite at Work): still
+57.5–60 vs Stage 3's 57.9–60.3; cursor moving 56.0–60.4 vs 56.4–60. Full tier (discrete GPU):
+59.7–60.4 still and moving.

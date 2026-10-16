@@ -123,6 +123,21 @@ void main() {
   // The seam takes the image's own colour, lifted: the card burns away into its dust.
   color = color * mix(uBrightness, 1.05, clear) * (1.0 + seam * 0.8);
   vec4 title = texture2D(uTitle, vUv);
+#ifndef LITE
+  // Depth of field (full tier): a neighbour out of focus softens its title with its media,
+  // a small disc of taps that grows with uBlur.
+  if (uBlur > 0.02) {
+    vec2 r = vec2(0.008, 0.0128) * uBlur;
+    vec4 soft = title;
+    soft += texture2D(uTitle, vUv + vec2(r.x, 0.0));
+    soft += texture2D(uTitle, vUv - vec2(r.x, 0.0));
+    soft += texture2D(uTitle, vUv + vec2(0.0, r.y));
+    soft += texture2D(uTitle, vUv - vec2(0.0, r.y));
+    soft += texture2D(uTitle, vUv + r * 0.7);
+    soft += texture2D(uTitle, vUv - r * 0.7);
+    title = soft / 7.0;
+  }
+#endif
   // Open, the title moves to the details beside the image: it clears with the glass. White
   // and crisp, kept just under the bloom threshold, so it doesn't haze the dark card round
   // it (no neon); dimmed with a receding card.
@@ -133,7 +148,11 @@ void main() {
     vec2 p = (vUv - 0.5) * uPane.xy;
     float d = roundedBox(p, uPane.xy * 0.5, uPane.z) + 0.014;
     float w = fwidth(d) * 1.2;
-    float edgeLine = 1.0 - smoothstep(0.0, w + 0.004, abs(d));
+#ifndef LITE
+    // Out of focus, the edge line softens too (and spreads its light thinner).
+    w += uBlur * 0.012;
+#endif
+    float edgeLine = (1.0 - smoothstep(0.0, w + 0.004, abs(d))) * (1.0 - uBlur * 0.35);
     float lit = 0.45 + 0.55 * clamp(dot(normalize(p), normalize(vec2(-0.6, 0.8))) * 0.5 + 0.5, 0.0, 1.0);
     float around = atan(p.y, p.x);
     float glint = pow(0.5 + 0.5 * sin(around - uTime * 0.9), 40.0);
