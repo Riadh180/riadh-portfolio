@@ -52,14 +52,20 @@ export function Effects({ reducedMotion, antialias = true }: Props) {
     }
   })
 
-  return (
-    <EffectComposer multisampling={multisampling} frameBufferType={HalfFloatType}>
-      {/* Bloom at half resolution (a quarter in the lite tier): it only blurs the cores. */}
-      {/* Halation before bloom sees the HDR highlights; full tier only. */}
-      {!lite && <primitive object={halation} />}
-      <Bloom ref={bloom} mipmapBlur resolutionScale={lite ? 0.25 : 0.5} levels={lite ? 4 : 8} />
-      <ChromaticAberration ref={chromatic} radialModulation />
-      <primitive object={grade} />
-    </EffectComposer>
+  // Memoised on what changes the pipeline: a re-render with new children rebuilds the
+  // composer's passes and all of the bloom's blur targets (a dropped frame at every Work
+  // entry and exit, where `antialias` flips even when multisampling stays off).
+  return useMemo(
+    () => (
+      <EffectComposer multisampling={multisampling} frameBufferType={HalfFloatType}>
+        {/* Bloom at half resolution (a quarter in the lite tier): it only blurs the cores. */}
+        {/* Halation before bloom sees the HDR highlights; full tier only. */}
+        {!lite && <primitive object={halation} />}
+        <Bloom ref={bloom} mipmapBlur resolutionScale={lite ? 0.25 : 0.5} levels={lite ? 4 : 8} />
+        <ChromaticAberration ref={chromatic} radialModulation />
+        <primitive object={grade} />
+      </EffectComposer>
+    ),
+    [multisampling, lite, halation, grade],
   )
 }

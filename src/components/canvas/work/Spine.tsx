@@ -22,7 +22,7 @@ export function Spine({ clock }: Props) {
   const scene = useThree((state) => state.scene)
   const camera = useThree((state) => state.camera)
   const lite = useTier((state) => state.tier === 'lite')
-  const standIn = useStandIn(lite ? 0.2 : 0.1)
+  const standIn = useStandIn(lite ? 0.2 : 0.12)
   const material = useMemo(() => createOilMaterial(), [])
   const [model, setModel] = useState<BufferGeometry | null>(null)
 
@@ -66,10 +66,11 @@ export function Spine({ clock }: Props) {
     const { turn, sheen, gloss } = sceneConfig.spine
     mesh.current.rotation.y = clock.time * turn
     const oil = mesh.current.material as MeshPhysicalMaterial
-    // Lite tier: no thin film, clear coat or per-pixel grain (one recompile on the switch).
+    // Lite tier: no clear coat, facets or patchy roughness (one recompile on the switch).
     const lite = useTier.getState().tier === 'lite'
-    oil.iridescence = lite ? 0 : sheen
-    oil.clearcoat = lite ? 0 : oil.clearcoat
+    // The thin film is the spine's own (oil.glsl), not three's iridescence.
+    ;(oil.userData.film as { value: number }).value = sheen
+    oil.clearcoat = lite ? 0 : 0.5
     if (lite && !oil.defines?.OIL_LITE) {
       oil.defines = { ...oil.defines, OIL_LITE: '' }
       oil.needsUpdate = true

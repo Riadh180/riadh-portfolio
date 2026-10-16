@@ -148,3 +148,31 @@ Hue shares (%, 12 bins of 30° from red: red, orange, yellow, … cyan 180°, bl
 - Final: 1 · 1 · 1 · 0 · 0 · 2 · 46 · 23 · 19 · 5 · 1 · 1
 
 "Final" = pass 2 plus the lite-only change (no facets on lite), re-recorded.
+
+---
+# Column (Detail 2c): chrome vertebrae, against the reference and v1-vertebrae
+
+| Metric | Reference | v1-vertebrae | Pass 1 | Pass 2 | Pass 3 | Final |
+|---|---|---|---|---|---|---|
+| Mean luminance (0–255) | 28.4 | 33.2 (+17% ✗) | 38.4 (+35% ✗) | 38.4 (+35% ✗) | 34.2 (+21% ✗) | 34.2 (+21% ✗) |
+| Contrast (luma std dev) | 21.2 | 28.2 (+33% ✗) | 33.1 (+56% ✗) | 33.3 (+57% ✗) | 28.1 (+33% ✗) | 28.2 (+33% ✗) |
+| 5th percentile | 10.8 | 12.6 (+17% ✗) | 14.7 (+36% ✗) | 14.8 (+37% ✗) | 13.3 (+23% ✗) | 13.1 (+21% ✗) |
+| 95th percentile | 70.8 | 88.8 (+25% ✗) | 109.7 (+55% ✗) | 110.3 (+56% ✗) | 94.0 (+33% ✗) | 94.3 (+33% ✗) |
+| Mean saturation | 0.427 | 0.448 (+5% ✓) | 0.412 (-4% ✓) | 0.418 (-2% ✓) | 0.428 (+0% ✓) | 0.431 (+1% ✓) |
+| EMPTY AREA (% tiles) | 51.1 | 38.9 (-24% ✗) | 37.0 (-28% ✗) | 37.3 (-27% ✗) | 38.2 (-25% ✗) | 37.6 (-26% ✗) |
+| SPARKLE (points / MP) | 341 | 748 (+119% ✗) | 559 (+64% ✗) | 548 (+61% ✗) | 830 (+144% ✗) | 793 (+133% ✗) |
+| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.17 ✗ | 0.25 ✗ | 0.24 ✗ | 0.23 ✗ | 0.23 ✗ |
+
+Hue shares (%, 12 bins of 30° from red: red, orange, yellow, … cyan 180°, blue 210°, blue-violet 240°, violet 270°, magenta 300°):
+
+- Reference: 1 · 1 · 0 · 0 · 0 · 4 · 37 · 17 · 33 · 3 · 2 · 1
+- v1-vertebrae: 1 · 1 · 1 · 0 · 0 · 2 · 46 · 23 · 19 · 5 · 1 · 1
+- Pass 1: 0 · 1 · 1 · 0 · 0 · 3 · 53 · 23 · 12 · 6 · 1 · 0
+- Pass 2: 1 · 1 · 1 · 0 · 0 · 3 · 52 · 22 · 11 · 6 · 3 · 0
+- Pass 3: 0 · 1 · 1 · 0 · 0 · 3 · 51 · 23 · 12 · 6 · 2 · 0
+- Final: 1 · 1 · 1 · 0 · 0 · 3 · 49 · 24 · 12 · 6 · 2 · 0
+
+"Pass 3" = darker reflections through the base colour; "Final" = pass 3 plus the two
+invisible cost cuts (film variation without noise, roughness from the facet hash, tessellation
+0.12), re-recorded. Raw values: `docs/screens/metrics/column-2/*.json`
+(`pass3-no-effect.json` is the envMapIntensity attempt that three ignores).

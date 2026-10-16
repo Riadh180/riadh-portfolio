@@ -2,7 +2,7 @@
 
 import { PerformanceMonitor } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useJourney } from '@/stores/journey'
 import { useLoading } from '@/stores/loading'
@@ -23,6 +23,7 @@ export default function SceneCanvas() {
   const [ready, setReady] = useState(false)
   // Each place renders at most at its measured DPR ceiling (see PLACE_MAX_DPR).
   const place = useJourney((state) => state.place)
+  const placeDpr = useSettled(PLACE_MAX_DPR[place])
   // No frames until the first scene's shaders are compiled (asynchronously, see Warmup):
   // the first render would otherwise compile them all in one long blocking task.
   const compiled = useLoading((state) => state.done.shaders)
@@ -34,7 +35,7 @@ export default function SceneCanvas() {
       className={`pointer-events-none fixed inset-0 transition-opacity duration-1400 ease-signal ${ready ? 'opacity-100' : 'opacity-0'}`}
     >
       <Canvas
-        dpr={Math.min(dpr, PLACE_MAX_DPR[place], lite ? LITE_MAX_DPR : Infinity)}
+        dpr={Math.min(dpr, placeDpr, lite ? LITE_MAX_DPR : Infinity)}
         flat
         frameloop={compiled ? 'always' : 'never'}
         // The canvas sits behind the page: take pointer events from the whole document, so
@@ -75,4 +76,31 @@ export default function SceneCanvas() {
       </Canvas>
     </div>
   )
+}
+
+/** Quiet time after the last scroll before a new DPR applies, in ms. */
+const SETTLE_MS = 300
+
+/**
+ * The value, applied only once the page has stopped scrolling for a moment: a DPR change
+ * resizes the canvas and reallocates every render target (HDR buffer, the bloom's blur
+ * chain), which costs a dropped frame or two. Mid-flight between places the canvas keeps its
+ * size; it sharpens (or eases its cost) as soon as the scroll settles.
+ */
+function useSettled(value: number) {
+  const [settled, setSettled] = useState(value)
+  useEffect(() => {
+    if (value === settled) return
+    let timer = window.setTimeout(() => setSettled(value), SETTLE_MS)
+    const onScroll = () => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => setSettled(value), SETTLE_MS)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('scroll', onScroll)
+    }
+  }, [value, settled])
+  return settled
 }

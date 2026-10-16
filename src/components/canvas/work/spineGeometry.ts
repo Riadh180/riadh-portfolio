@@ -1,6 +1,7 @@
 import {
   type BufferAttribute,
   BufferGeometry,
+  CatmullRomCurve3,
   Euler,
   ExtrudeGeometry,
   Float32BufferAttribute,
@@ -8,6 +9,7 @@ import {
   type InterleavedBufferAttribute,
   Matrix4,
   Quaternion,
+  TubeGeometry,
   Vector3,
 } from 'three'
 import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js'
@@ -21,7 +23,7 @@ const pick = (i: number, seed: number) => hash(i, seed, 3)
 
 /** A vertebra body: a thick rounded-square block, centred, lying flat. */
 function body(width: number, depth: number, thickness: number) {
-  const bevel = thickness * 0.22
+  const bevel = thickness * 0.14
   const geometry = new ExtrudeGeometry(
     roundedRectShape(width, depth, Math.min(width, depth) * 0.3),
     {
@@ -42,6 +44,35 @@ function body(width: number, depth: number, thickness: number) {
 function lump(radius: number, squash: number) {
   const geometry = new IcosahedronGeometry(radius, 1)
   geometry.scale(1.25, squash, 1)
+  return geometry
+}
+
+/**
+ * A spur: a thin, short process curving out sideways and up (or down), tapering to a
+ * rounded tip; a tube along a curve whose radius shrinks along it.
+ */
+function spur(length: number, radius: number, rise: number, curl: number) {
+  const points = Array.from({ length: 6 }, (_, k) => {
+    const t = k / 5
+    return new Vector3(t * length, rise * t * t * length, curl * Math.sin(t * Math.PI) * length * 0.25)
+  })
+  const geometry = new TubeGeometry(new CatmullRomCurve3(points), 16, radius, 7, false)
+  const position = geometry.getAttribute('position')
+  // Taper: pull each ring towards its centre line by how far along the spur it is.
+  const centre = new Vector3()
+  const curve = new CatmullRomCurve3(points)
+  for (let i = 0; i < position.count; i++) {
+    const ring = Math.floor(i / 8)
+    const t = ring / 16
+    curve.getPoint(t, centre)
+    const taper = 0.25 + 0.75 * (1 - t) ** 0.8
+    position.setXYZ(
+      i,
+      centre.x + (position.getX(i) - centre.x) * taper,
+      centre.y + (position.getY(i) - centre.y) * taper,
+      centre.z + (position.getZ(i) - centre.z) * taper,
+    )
+  }
   return geometry
 }
 
@@ -68,8 +99,9 @@ type Segment = {
 }
 
 /**
- * The column's vertebrae, top to bottom: each 1.2–1.8 long (0.8–1.2 card heights), a
- * slightly asymmetric lobe of its own size, tilt and turn.
+ * The column's vertebrae, top to bottom: each 1.2–1.8 long (0.8–1.2 card heights), an
+ * asymmetric lobe of its own size (0.6–1.4×), uneven tilt and turn; some are cut in on one
+ * side.
  */
 function createSegments(top: number, bottom: number) {
   const segments: Segment[] = []
@@ -79,10 +111,10 @@ function createSegments(top: number, bottom: number) {
     segments.push({
       top: y,
       length,
-      size: 0.9 + hash(k, 42, 3) * 0.25,
+      size: 0.6 + hash(k, 42, 3) * 0.8,
       belly: 0.38 + hash(k, 43, 3) * 0.24,
-      tiltX: (hash(k, 44, 3) - 0.5) * 0.22,
-      tiltZ: (hash(k, 45, 3) - 0.5) * 0.22,
+      tiltX: (hash(k, 44, 3) - 0.5) * 0.4,
+      tiltZ: (hash(k, 45, 3) - 0.5) * 0.4,
       turn: (hash(k, 46, 3) - 0.5) * 0.9,
     })
     y -= length
@@ -122,8 +154,14 @@ function vertebrae(positions: BufferAttribute | InterleavedBufferAttribute, segm
     // Turn about the axis, then lean about the vertebra's centre.
     const cos = Math.cos(segment.turn)
     const sin = Math.sin(segment.turn)
-    const rx = (x * cos - z * sin) * width
-    const rz = (x * sin + z * cos) * width
+    let rx = (x * cos - z * sin) * width
+    let rz = (x * sin + z * cos) * width
+    // Some lobes are cut in on one side: that side pressed flat towards the axis.
+    if (hash(Math.round(segment.top * 10), 48, 3) < 0.35) {
+      const cut = 0.55 * width * (0.6 + 0.4 * lobe)
+      if (rx > cut) rx = cut + (rx - cut) * 0.25
+      rz *= rx > cut * 0.8 ? 0.92 : 1
+    }
     const dy = y - centre
     positions.setXYZ(
       i,
@@ -172,7 +210,8 @@ function deform(positions: BufferAttribute | InterleavedBufferAttribute) {
  */
 export function createSpineGeometry(edge = 0.1) {
   const { top, bottom, twist, tilt, bulge } = sceneConfig.spine
-  const spacing = 0.93
+  // Thin layered plates, 2–3 per vertebra, each overlapping the next.
+  const spacing = 0.5
   const segments = Math.round((top - bottom) / spacing)
   const euler = new Euler()
   const rotation = new Quaternion()
@@ -203,11 +242,12 @@ export function createSpineGeometry(edge = 0.1) {
     const wz = Math.cos(i * 0.7) * 0.1 + (pick(i, 2) - 0.5) * 0.1
     const rx = (pick(i, 3) - 0.5) * tilt
     const rz = (pick(i, 4) - 0.5) * tilt
-    const ry = i * twist + pick(i, 5) * 0.8
+    const ry = i * twist * 0.6 + pick(i, 5) * 1.4
+    // Flat, wide plates with fairly sharp bevels.
     const width = 0.95 + pick(i, 6) * 0.5
-    const depth = 0.85 + pick(i, 7) * 0.4
-    // Thicker than the spacing: neighbours overlap and fuse into one mass.
-    const thickness = spacing * (1.25 + pick(i, 8) * 0.2)
+    const depth = 0.8 + pick(i, 7) * 0.45
+    // A little thicker than the spacing: neighbours overlap and fuse into one mass.
+    const thickness = spacing * (1.15 + pick(i, 8) * 0.25)
     parts.push(clean(place(body(width, depth, thickness), wx, y, wz, rx, ry, rz)))
 
     // Processes: a flattened lump on most bodies, reaching sideways (never a blade).
@@ -260,7 +300,8 @@ export function createSpineGeometry(edge = 0.1) {
     )
   }
   // The vertebrae: lobes and necks; the necks count as crevices (near-black).
-  const lobes = vertebrae(positions, createSegments(top, bottom))
+  const chain = createSegments(top, bottom)
+  const lobes = vertebrae(positions, chain)
   for (let i = 0; i < crevice.length; i++) {
     crevice[i] = Math.max(crevice[i]!, Math.min(1, (1 - lobes[i]!) * 1.15))
   }
@@ -268,5 +309,38 @@ export function createSpineGeometry(edge = 0.1) {
   deform(positions)
   // Smooth shaded: broad curved surfaces; the mesh's own triangles never show.
   carved.computeVertexNormals()
-  return carved
+
+  // Spurs: on about half of the vertebrae, one or two thin curved processes from the lobe's
+  // belly, shaped by the same vertebra and column deformation so they stay attached.
+  const spurs: BufferGeometry[] = []
+  chain.forEach((segment, k) => {
+    if (hash(k, 51, 3) > 0.5) return
+    const count = hash(k, 52, 3) < 0.4 ? 2 : 1
+    for (let s = 0; s < count; s++) {
+      const length = 0.3 + hash(k * 3 + s, 53, 3) * 0.25
+      const part = spur(
+        length,
+        0.035 + hash(k * 3 + s, 54, 3) * 0.02,
+        (hash(k * 3 + s, 55, 3) - 0.4) * 0.8,
+        (hash(k * 3 + s, 56, 3) - 0.5) * 1.2,
+      )
+      const angle = hash(k * 3 + s, 57, 3) * Math.PI * 2 + s * Math.PI
+      // Rooted inside the lobe, at its belly, reaching out past its surface.
+      part.translate(0.55 * segment.size, 0, 0)
+      part.rotateY(angle)
+      part.translate(0, segment.top - segment.length * segment.belly, 0)
+      const spurPositions = part.getAttribute('position')
+      vertebrae(spurPositions, chain)
+      deform(spurPositions)
+      part.deleteAttribute('uv')
+      part.computeVertexNormals()
+      part.setAttribute('crevice', new Float32BufferAttribute(spurPositions.count, 1))
+      spurs.push(part)
+    }
+  })
+  if (!spurs.length) return carved
+  const spine = mergeGeometries([carved, ...spurs])
+  carved.dispose()
+  spurs.forEach((part) => part.dispose())
+  return spine
 }

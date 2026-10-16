@@ -299,7 +299,14 @@ export function WorkCards({ layout, clock }: Props) {
   }, [scenes, gl])
   // The reliefs bake inside the render loop (once each), where the renderer's state is
   // settled; baked from a mount effect the first card could come out blank.
-  useFrame(() => fields.forEach((field) => field.bake(gl)), -1)
+  // Each live scene also renders once here, one per frame: its first render allocates its
+  // render target and the GPU pipeline, which otherwise lands mid-scroll as a dropped frame
+  // when the card first comes into view.
+  const warmed = useRef(0)
+  useFrame(() => {
+    fields.forEach((field) => field.bake(gl))
+    if (warmed.current < scenes.length) scenes[warmed.current++]?.render(gl, 0)
+  }, -1)
   useEffect(() => {
     void loadAssets().then(({ work }) => {
       jobs.forEach((job, i) => {

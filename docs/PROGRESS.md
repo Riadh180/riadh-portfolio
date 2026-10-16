@@ -1371,3 +1371,113 @@ Self-review against at_04–at_07:
   Practices, SEO 100; no console errors.
 - Reduced motion and no-WebGL: clean, no errors. Phone number: only on /impressum (not in
   `.next/static`, not on /, /datenschutz, /cv, /work/bliggit or the 404).
+
+
+---
+# Detail 2c — vertebrae
+Branch `detail-column-2` from `main` (tags: `before-vertebrae` on the old main, `v1-vertebrae`
+after merging `detail-column`).
+
+## What changed
+Files: `work/spineGeometry.ts`, `work/oilMaterial.ts`, `shaders/oil.glsl`, `work/Spine.tsx`;
+for the frame-rate fix `post/Effects.tsx`, `SceneCanvas.tsx`, `work/WorkCards.tsx`.
+
+1. **Body: near-black chrome.** Metalness 1 on a neutral base with a trace of indigo (no
+   lilac diffuse); its colour comes only from what it reflects. Necks and hollows at 8%.
+   Finding: with the scene's shared environment, three replaces a material's
+   `envMapIntensity` by `scene.environmentIntensity`, so the spine's 1.4 (v1) and my 0.55 /
+   0.32 / 0.18 never applied. For a metal the base colour is the reflection strength, so the
+   darkening is done there (0.62 → 0.3).
+2. **Highlights: iridescent, not white/copper.** three's physical iridescence is off; the
+   spine has its own thin film (`oilFilm`): every reflection takes a teal → pink → teal colour
+   by angle with a rare gold band, strongest at grazing angles; only a highlight's hottest
+   centre stays white. The warm light: checked; the hero's warm pulse is already zero at Work
+   (`calm` = toWork × 3) and Contact's warmth starts after Work is hidden, so it never reached
+   the spine. The copper came from the old film range (380–820 nm), which is gone; the film now
+   re-colours every reflection, so a warm cast can't come back either.
+3. **No more balloons.**
+   - Plates: each vertebra is now 2–3 overlapping thin plates (0.5 apart, sharper bevels,
+     turned more against each other) instead of one fused block per 0.93.
+   - Variation: segment size 0.6–1.4× (was 0.9–1.15), tilt ±0.2 (was ±0.11), and ~35% of the
+     lobes cut in flat on one side.
+   - Spurs: on about half of the vertebrae, 1–2 thin curved tapering spurs (0.3–0.55 long)
+     from the lobe's belly, built after the carving and passed through the same vertebra and
+     column deformation, unlit hollows excluded (they carry the film rim; none reads as a
+     black blade).
+   - Grooves: a normal field of fine wandering ridges and grooves (`oilGrooves`) on every
+     plate, so the highlights break up along the forms.
+4. **Highlights smaller and sharper:** key core pow 420 (was 140), film ring pow 140 (was 36),
+   facet tilt 0.14.
+5. **Outline:** the roughness rises towards the silhouette (to 0.4 at grazing), so the mirror
+   doesn't alias into single bright pixels there; the silhouette rim term stays at 0.08.
+6. **Lite:** same plates, spurs, grooves, film and highlights; no facet field, no clear coat
+   (smooth, not blocky).
+7. **Frame rate, the cause and the fix** (long-frame probe with WebGL call tracing):
+   - The 67 ms hitch leaving Work (and one entering): `Scene` passes `antialias={!atWork}`
+     to `Effects`; every Work enter/exit re-rendered the EffectComposer with new children,
+     which rebuilt all its passes and the bloom's 8-level blur targets (18 new framebuffers
+     each time), even on Retina where multisampling stays 0. Fix: the composer subtree is
+     memoised on what changes the pipeline (multisampling, tier).
+   - The dropped frames entering / leaving Work: the per-place DPR cap (statement 1.25, Work
+     1.4, System 2) resized the canvas, reallocating every render target, mid-scroll. Fix:
+     a new cap applies once the scroll has paused for 300 ms (`useSettled`): no resolution is
+     lowered anywhere, the canvas just sharpens when you stop.
+   - Each live card scene now renders once at start (one per frame), so its render target
+     and pipeline aren't created mid-scroll.
+   - The new column is heavier on the integrated GPU; two invisible cuts bring it back to
+     v1's level there: the film's variation is a cheap sine pattern instead of a noise, the
+     patchy roughness comes from the facet hash already computed, and the tessellation is 0.12
+     (smooth shading hides it).
+
+Passes: (1) chrome + plates + spurs + grooves + film: the right character at once, but bright
+silver-grey and a weak film; (2) stronger film, shorter spurs: closer in colour, body still
+bright; (3) darker body: its first version (envMapIntensity) had no effect, found and applied
+through the base colour. Each was closer on the sheet; none reverted.
+
+## Metrics (column + air)
+| Metric | Reference | v1-vertebrae | Pass 1 | Pass 2 | Pass 3 | Final |
+|---|---|---|---|---|---|---|
+| Mean luminance (0–255) | 28.4 | 33.2 (+17% ✗) | 38.4 (+35% ✗) | 38.4 (+35% ✗) | 34.2 (+21% ✗) | 34.2 (+21% ✗) |
+| Contrast (luma std dev) | 21.2 | 28.2 (+33% ✗) | 33.1 (+56% ✗) | 33.3 (+57% ✗) | 28.1 (+33% ✗) | 28.2 (+33% ✗) |
+| 5th percentile | 10.8 | 12.6 (+17% ✗) | 14.7 (+36% ✗) | 14.8 (+37% ✗) | 13.3 (+23% ✗) | 13.1 (+21% ✗) |
+| 95th percentile | 70.8 | 88.8 (+25% ✗) | 109.7 (+55% ✗) | 110.3 (+56% ✗) | 94.0 (+33% ✗) | 94.3 (+33% ✗) |
+| Mean saturation | 0.427 | 0.448 (+5% ✓) | 0.412 (-4% ✓) | 0.418 (-2% ✓) | 0.428 (+0% ✓) | 0.431 (+1% ✓) |
+| EMPTY AREA (% tiles) | 51.1 | 38.9 (-24% ✗) | 37.0 (-28% ✗) | 37.3 (-27% ✗) | 38.2 (-25% ✗) | 37.6 (-26% ✗) |
+| SPARKLE (points / MP) | 341 | 748 (+119% ✗) | 559 (+64% ✗) | 548 (+61% ✗) | 830 (+144% ✗) | 793 (+133% ✗) |
+| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.17 ✗ | 0.25 ✗ | 0.24 ✗ | 0.23 ✗ | 0.23 ✗ |
+
+- SPARKLE: +119% → +133%. It fell to +61% in pass 2, then rose again with the darker body
+  (the same highlights stand out as more local maxima against near-black). Not within ±25%.
+- Luminance +17% → +21% and EMPTY AREA 38.9% → 37.6%: both slightly worse than v1-vertebrae,
+  against the brief's "must not get worse". The chrome plates reflect more of the studio than
+  v1's indigo lobes; one more darkening step would likely fix both, but the three passes were
+  used. Open.
+- Contrast held (+33%), saturation +1%.
+
+## Sheet
+`docs/screens/column-vertebrae-2.jpg`: reference column crops (28, 31, 41, 48.5 s) |
+v1-vertebrae | new, at 75°, 105°, 195° and 225° (between the card stops, the camera framed on
+the column), desktop full, the HD 630, and the phone (v1 | new).
+
+Self-review against at_04–at_07:
+- Closer: dark chrome made of layered irregular plates with spurs and grooves, teal and pink
+  iridescent reflections, small sharp highlights; no balloons, no copper, no lilac.
+- Still different: their body is darker still (near-black between reflections); ours shows
+  more mid-grey chrome. Their spurs and wings are longer and more numerous.
+- Still different: their iridescence is more saturated at the edges.
+
+## Gate (production, Retina)
+| | Discrete GPU (full) | HD 630 |
+|---|---|---|
+| Down the Work cards | 59.9–60.4 | 59.9–60.4 |
+| Every place | 60 | 59.9 |
+| Idle hero 60 s | 60 in all 12 windows | 59.9–60 |
+| Fast scroll, 2 loops: slowest 1 s window | 59.8 in 4 of 5 runs; 45.9 once | 56.9, 56.8 |
+
+- Full tier: the one slow window appears only in the first full run right after an HD 630 run
+  or a recording (the Mac switching GPUs; the long-frame probe shows no hitch at Work on the
+  full tier any more). Three back-to-back runs: 59.8 each. Before this round: 54.9 / 40.9.
+- Lighthouse (3 runs): desktop 93 / 92 / 93, mobile 94 / 98 / 95; Accessibility, Best
+  Practices, SEO 100; no console errors.
+- Reduced motion and no-WebGL: clean. Phone number only on /impressum (not in `.next/static`,
+  not on /, /datenschutz, /cv, /work/bliggit or the 404).
