@@ -271,7 +271,7 @@ export class CardFace {
     )
 
     // Editorial: the company small and spaced above, the title large, light and centred
-    // over the media, white with a soft glow.
+    // over the media, white with a faint glow (crisp, not neon).
     const display = TITLE_STYLE === 'pixel' ? this.family : this.display
     const weight = TITLE_STYLE === 'pixel' ? '' : '300 '
     const title = (this.job.cardTitle ?? this.job.metric).toUpperCase()
@@ -336,8 +336,8 @@ export class CardFace {
         c.fillStyle = rgba(palette.teal, 0.55 * ghost)
         c.fillText(char, x - ghost * 14, baseline)
       }
-      c.shadowColor = rgba(palette.glow, 0.55)
-      c.shadowBlur = 24
+      c.shadowColor = rgba(palette.glow, 0.3)
+      c.shadowBlur = 13
       c.fillStyle = palette.text
       c.fillText(char, x, baseline)
       c.shadowBlur = 0

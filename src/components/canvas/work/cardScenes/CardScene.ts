@@ -39,7 +39,7 @@ export abstract class CardScene {
       vertexShader: skyVertex,
       fragmentShader: skyFragment,
       uniforms: {
-        uBase: { value: sceneColors.bg.clone().lerp(lowerLeft, 0.12).multiplyScalar(1.6) },
+        uBase: { value: sceneColors.bg.clone().lerp(lowerLeft, 0.06) },
         uLowerLeft: { value: lowerLeft },
         uUpperRight: { value: upperRight },
       },

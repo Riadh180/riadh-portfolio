@@ -206,16 +206,17 @@ export function createScreenMaterial(
       uField: { value: field.target.texture },
       uShade: { value: live ? 1 : 0 },
       uClarity: { value: live || face.clear ? 1 : 0 },
+      uSmoke: { value: 0.42 },
       uBrightness: { value: 1 },
       uBlur: { value: 0 },
       uSeed: { value: seed },
       uHaze: {
-        // Milky grey-green: the cast glass's own body colour (at_05).
+        // Smoky slate: the cast glass's own body colour, dark (at_05).
         value: new Color()
           .copy(sceneColors.glass)
-          .lerp(sceneColors.emerald, 0.2)
+          .lerp(sceneColors.teal, 0.2)
           .lerp(sceneColors.bg, 0.68)
-          .multiplyScalar(0.6),
+          .multiplyScalar(0.07),
       },
       uDissolve: { value: 0 },
       uEdgeGlow: { value: sceneColors.glow },

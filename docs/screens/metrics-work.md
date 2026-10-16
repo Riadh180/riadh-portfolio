@@ -73,3 +73,32 @@ Hue shares (%, 12 bins of 30° from red: red, orange, yellow, … cyan 180°, bl
 - Stage 3 pass 1: 0 · 1 · 0 · 0 · 0 · 2 · 36 · 34 · 21 · 5 · 1 · 0
 - Stage 3 pass 2 (reverted): 0 · 1 · 1 · 0 · 0 · 2 · 32 · 37 · 21 · 5 · 1 · 0
 - Stage 3 pass 3: 0 · 1 · 1 · 0 · 0 · 2 · 45 · 24 · 21 · 5 · 1 · 0
+
+---
+# Cards (Detail 1): inside the cards only
+
+`compare-frames.mjs --inside`: the same recordings, crop and masks, measuring only inside the
+cards (reference: the hand-drawn quads; ours: the projected card corners). Targets: card-area
+luminance and saturation within ±15% of the reference's cards. Raw values in
+`docs/screens/metrics/cards/*.json`.
+
+| Metric | Reference | Baseline | Pass 1 | Pass 2 | Final (pass 3) |
+|---|---|---|---|---|---|
+| Mean luminance (0–255) | 47.5 | 94.1 (+98% ✗) | 66.7 (+41% ✗) | 61.0 (+28% ✗) | 56.6 (+19% ✗) |
+| Contrast (luma std dev) | 27.7 | 34.5 (+24% ✗) | 33.5 (+21% ✗) | 35.0 (+26% ✗) | 34.9 (+26% ✗) |
+| 5th percentile | 15.8 | 56.7 (+258% ✗) | 42.1 (+166% ✗) | 34.8 (+120% ✗) | 31.4 (+98% ✗) |
+| 95th percentile | 93.7 | 159.8 (+71% ✗) | 133.7 (+43% ✗) | 132.1 (+41% ✗) | 127.5 (+36% ✗) |
+| Mean saturation | 0.357 | 0.296 (-17% ✗) | 0.268 (-25% ✗) | 0.310 (-13% ✓) | 0.293 (-18% ✗) |
+| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.42 ✗ | 0.52 ✗ | 0.53 ✗ | 0.53 ✗ |
+
+Hue shares (%, 12 bins of 30° from red: red, orange, yellow, … cyan 180°, blue 210°, blue-violet 240°, violet 270°, magenta 300°):
+
+- Reference: 7 · 4 · 1 · 1 · 1 · 7 · 44 · 20 · 9 · 2 · 2 · 4
+- Baseline: 1 · 1 · 0 · 0 · 0 · 2 · 20 · 34 · 23 · 9 · 8 · 2
+- Pass 1: 1 · 0 · 0 · 0 · 0 · 1 · 11 · 38 · 33 · 12 · 2 · 2
+- Pass 2: 1 · 0 · 0 · 0 · 0 · 1 · 10 · 35 · 35 · 13 · 3 · 2
+- Final (pass 3): 1 · 0 · 0 · 0 · 0 · 1 · 10 · 33 · 36 · 14 · 2 · 2
+
+Measured share of the cropped frame: reference 69%, ours ~41% (their cards are larger and
+closer). Hue: theirs is mostly cyan with some wine; ours leans azure/blue-violet even after
+the smoke (the live scenes' subjects are violet and blue), so the hue distance stays high.

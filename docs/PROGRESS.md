@@ -1128,3 +1128,77 @@ errors, two pre-existing warnings.
 **7. Vercel preview:** every push to `final-round` builds a preview, but neither the GitHub
 CLI nor a Vercel project link is available here, so I couldn't read its URL. It is on the
 branch's latest commit in GitHub (deployment status) or in the Vercel dashboard.
+
+
+---
+# Detail 1 — cards
+Branch `detail-cards`, started from `final-round` (not `main`, which doesn't include the final
+round yet; confirmed with you before starting): the card frost doesn't depend on the scene,
+but the card-tone check, the measurement tools and the corner export only exist there.
+Merge `final-round` first, then this.
+
+## What changed (card shading only)
+- **Smoked glass** (`shaders/frost.frag`, `uSmoke` 0.42 in `work/WorkCards.tsx`): while
+  frosted, the media sits at 42% inside the glass. Where the glass clears (the hover spot,
+  the opened card) the image comes back at full brightness and sharp, so closed vs open is
+  now a strong contrast.
+- **Dark smoke instead of milk** (`uHaze` in `work/WorkCards.tsx`): the veil was a light grey-green
+  (~sRGB 80+, the pastel/milky look); it is now a dark slate-teal smoke (~sRGB 30). Same
+  frost structure and amount; only its colour.
+- **Family palette** (`shaders/frost.frag`): behind the frost, lavender desaturates towards
+  dusty violet and pink shifts towards deep wine; teal is untouched.
+- **Live scenes** (`work/cardScenes/CardScene.ts`, `shaders/cardScenes/sky.frag`): the
+  backdrop is near-black with only a faint bleed of the subject's colours (the corners were
+  at 55% / 40% of the full accent, the pastel pink and lavender fills).
+- **Titles** (`work/cardFace.ts`, `shaders/frost.frag`): the glow behind the letters is about
+  half (shadow 0.55 / 24px → 0.3 / 13px), and the title is no longer lifted past white by
+  the card's focus brightness (that pushed it into the bloom). Still white; the scrim is
+  unchanged.
+- Unchanged: layout, sizes, poses, bevel line and its glint, frost structure, fonts and
+  text, the Bliggit layout.
+- Tooling: `compare-frames.mjs --inside` and `metrics-report.mjs --cards`.
+
+## Cards metrics (inside the cards; full table in `docs/screens/metrics-work.md`)
+| Metric | Reference | Baseline | Pass 1 | Pass 2 | Final (pass 3) |
+|---|---|---|---|---|---|
+| Mean luminance (0–255) | 47.5 | 94.1 (+98% ✗) | 66.7 (+41% ✗) | 61.0 (+28% ✗) | 56.6 (+19% ✗) |
+| Contrast (luma std dev) | 27.7 | 34.5 (+24% ✗) | 33.5 (+21% ✗) | 35.0 (+26% ✗) | 34.9 (+26% ✗) |
+| 5th percentile | 15.8 | 56.7 (+258% ✗) | 42.1 (+166% ✗) | 34.8 (+120% ✗) | 31.4 (+98% ✗) |
+| 95th percentile | 93.7 | 159.8 (+71% ✗) | 133.7 (+43% ✗) | 132.1 (+41% ✗) | 127.5 (+36% ✗) |
+| Mean saturation | 0.357 | 0.296 (-17% ✗) | 0.268 (-25% ✗) | 0.310 (-13% ✓) | 0.293 (-18% ✗) |
+| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.42 ✗ | 0.52 ✗ | 0.53 ✗ | 0.53 ✗ |
+
+Three passes. Pass 1 (smoke 0.55, darker live backdrops, title glow) and pass 2 (the veil
+made genuinely dark: linear colour, so the "darker" milk had still been ~sRGB 80) were kept;
+pass 3 (smoke 0.42, dusty-violet / wine grade) was kept because the sheet was closest to the
+reference, although saturation fell back from −13% to −18%.
+
+Still outside ±15% after the three passes:
+- **Luminance +19%** (target ±15%); p5 +98%: the darkest card pixels are still the smoke
+  veil (~sRGB 30) where theirs go to ~16. One more step on the veil (about a third darker)
+  would likely close both. Open.
+- **Saturation −18%** (pass 2 was in range at −13%): the dusty-violet grade takes colour out.
+- **Hue distance 0.53** (was 0.42): theirs is mostly cyan with some wine; ours leans azure and
+  blue-violet because the live scenes' subjects are violet and blue. The darker cards read
+  closer on the sheet, but by hue they moved away. Changing the subjects' colours would be
+  outside this round (card shading only).
+- **Bliggit at rest:** darker, but the red still reads fairly vivid rather than deep wine
+  (it is a photo cover, not a live scene). Hover still defrosts it, as intended. Open.
+
+## Sheet
+`docs/screens/cards-tone.jpg`: the 8 matched pairs from `work-vs-reference-2.jpg`, reference
+| before | after. After is closer in every pair: dark smoky slate, dusty violet and wine panes
+sitting inside the darkness, recognisable media (globe, shield, device grid, bars, Core),
+crisp titles.
+
+## Checks
+- Title contrast (white strokes vs the brightest 10% of the media round them): 4.7–7.5 on
+  the 8 desktop frames (4.7 = Bliggit), 6.2–8.7 on the phone frames. All ≥ 4.5:1.
+- Phone 390×844: titles readable on every card.
+- FPS (Retina): full tier, Work cards 59.9–60.3, every place 60, fast scroll p10 57.9 /
+  min 56.9. HD 630: Work cards 59.9–60.3, every place 60, fast scroll p10 56.9 / min 56.3
+  (one idle window at 16.3 right after the GPU switch, as in the final round).
+- Lighthouse (3 runs): desktop 90 / 90 / 91, mobile 95 / 93 / 92; Accessibility, Best
+  Practices, SEO 100; no console errors.
+- One full-tier FPS run aborted with a "detached frame" (headless harness). Four repeated
+  place tours with navigation logging showed no reload, crash or error; the rerun was clean.

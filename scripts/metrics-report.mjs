@@ -1,15 +1,19 @@
 // One table of the Work metrics across stages (JSON files written by compare-frames.mjs),
 // each against the reference, for docs/screens/metrics-work.md.
 //
-//   node scripts/metrics-report.mjs <label=file.json> [<label=file.json> …]
+//   node scripts/metrics-report.mjs [--cards] <label=file.json> [<label=file.json> …]
+//
+// --cards: inside-the-cards runs (compare-frames --inside): no EMPTY AREA / SPARKLE rows.
 import fs from 'node:fs'
 
-const stages = process.argv.slice(2).map((item) => {
+const args = process.argv.slice(2)
+const cards = args[0] === '--cards'
+const stages = args.slice(cards ? 1 : 0).map((item) => {
   const at = item.indexOf('=')
   return { label: item.slice(0, at), data: JSON.parse(fs.readFileSync(item.slice(at + 1), 'utf8')) }
 })
 const ref = stages[0].data.ref
-const rows = [
+const all = [
   ['Mean luminance (0–255)', 'luminance', 1],
   ['Contrast (luma std dev)', 'contrast', 1],
   ['5th percentile', 'p5', 1],
@@ -18,6 +22,7 @@ const rows = [
   ['EMPTY AREA (% tiles)', 'empty', 1],
   ['SPARKLE (points / MP)', 'sparkle', 0],
 ]
+const rows = cards ? all.slice(0, 5) : all
 const cell = (value, target, digits) => {
   const delta = ((value - target) / target) * 100
   return `${value.toFixed(digits)} (${delta >= 0 ? '+' : ''}${delta.toFixed(0)}% ${Math.abs(delta) <= 15 ? '✓' : '✗'})`

@@ -1,6 +1,9 @@
 // Image metrics for matching the look of Work's column and air to the reference recording.
 //
-//   node scripts/compare-frames.mjs <refFrames> <refMasks> <ourFrames> <ourMasks> [--json out.json] [--overlay sheet.jpg]
+//   node scripts/compare-frames.mjs <refFrames> <refMasks> <ourFrames> <ourMasks> [--json out.json] [--overlay sheet.jpg] [--inside]
+//
+// --inside: the opposite, the cards only (their tone against the reference's cards); EMPTY
+// AREA and SPARKLE are left out of the table then.
 //
 // Every frame is read at 1440×900. 8% is cropped from every edge (the UI bars), and the
 // cards are masked out (mask PNGs named like the frames, white = card), so only the column
@@ -37,13 +40,16 @@ function percentile(histogram, total, p) {
   return 255
 }
 
+/** Measure inside the cards instead of around them (--inside). */
+let inside = false
+
 async function readMask(file) {
   const keep = new Uint8Array(W * H)
   const card = fs.existsSync(file)
     ? await sharp(file).resize(W, H, { fit: 'fill', kernel: 'nearest' }).greyscale().raw().toBuffer()
     : null
   for (let y = Y0; y < Y1; y++) {
-    for (let x = X0; x < X1; x++) keep[y * W + x] = card && card[y * W + x] > 127 ? 0 : 1
+    for (let x = X0; x < X1; x++) keep[y * W + x] = (card !== null && card[y * W + x] > 127) === inside ? 1 : 0
   }
   return keep
 }
@@ -159,7 +165,7 @@ export async function measureDir(dir, masks) {
   for (const f of files) {
     const m = await measure(path.join(dir, f), path.join(masks, f))
     // A frame that is almost all card says nothing about the air.
-    if (m && m.measured > 0.15) frames.push({ file: f, ...m })
+    if (m && m.measured > (inside ? 0.05 : 0.15)) frames.push({ file: f, ...m })
   }
   const avg = (key) => frames.reduce((a, m) => a + m[key], 0) / frames.length
   return {
@@ -201,8 +207,8 @@ async function overlaySheet(dir, masks, out, every = 8) {
     .toFile(out)
 }
 
-export function table(ref, ours) {
-  const rows = [
+export function table(ref, ours, cards = false) {
+  const all = [
     ['Mean luminance (0–255)', 'luminance', 1],
     ['Contrast (luma std dev)', 'contrast', 1],
     ['5th percentile', 'p5', 1],
@@ -211,6 +217,7 @@ export function table(ref, ours) {
     ['EMPTY AREA (% tiles)', 'empty', 1],
     ['SPARKLE (points / MP)', 'sparkle', 0],
   ]
+  const rows = cards ? all.slice(0, 5) : all
   const lines = [
     `| Metric | Reference (${ref.frames} frames) | Ours (${ours.frames} frames) | Difference |`,
     '|---|---|---|---|',
@@ -231,7 +238,7 @@ export function table(ref, ours) {
     `- Reference: ${pct(ref.hue)}`,
     `- Ours: ${pct(ours.hue)}`,
     '',
-    `Measured share of the cropped frame (cards masked): reference ${(ref.measured * 100).toFixed(0)}%, ours ${(ours.measured * 100).toFixed(0)}%.`,
+    `Measured share of the cropped frame (${cards ? 'cards only' : 'cards masked'}): reference ${(ref.measured * 100).toFixed(0)}%, ours ${(ours.measured * 100).toFixed(0)}%.`,
   )
   return { text: lines.join('\n'), tv }
 }
@@ -244,6 +251,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   const jsonOut = take('--json')
   const overlay = take('--overlay')
+  const at = args.indexOf('--inside')
+  if (at >= 0) {
+    args.splice(at, 1)
+    inside = true
+  }
   const [refDir, refMasks, oursDir, oursMasks] = args
   if (!oursMasks) {
     console.error('usage: compare-frames.mjs <refFrames> <refMasks> <ourFrames> <ourMasks> [--json out] [--overlay sheet.jpg]')
@@ -251,7 +263,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   const ref = await measureDir(refDir, refMasks)
   const ours = await measureDir(oursDir, oursMasks)
-  const { text, tv } = table(ref, ours)
+  const { text, tv } = table(ref, ours, inside)
   console.log(text)
   if (jsonOut) fs.writeFileSync(jsonOut, JSON.stringify({ ref, ours, tv }, null, 2))
   if (overlay) {

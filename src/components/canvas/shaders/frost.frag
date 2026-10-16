@@ -26,6 +26,8 @@ uniform float uSweep;
 uniform float uShade;
 /** 0..1: lighter frost (live scenes, the capstone's dashboard) so the media read. */
 uniform float uClarity;
+/** How dim the media sits behind the frosted glass (1 = not at all). */
+uniform float uSmoke;
 /** Seconds, for the glint travelling round the edge line. */
 uniform float uTime;
 /** The pane's size (world units) and corner radius: for the edge line. */
@@ -91,16 +93,29 @@ void main() {
   color = mix(vec3(luma), color, 0.82);
   color += vec3(0.03, 0.022, 0.055) * (1.0 - smoothstep(0.0, 0.35, luma));
   color = color / (1.0 + color * 0.3);
+  // Smoked glass: while frosted, the media sits dim inside the dark glass (the reference's
+  // cards are dark, not lit panels); where the glass clears (the hover spot, opened) the
+  // image comes back bright and sharp.
+  color *= mix(1.0, uSmoke, glass);
+  // The family's palette behind the smoke: lavender reads as dusty violet and pink as deep
+  // wine (the reference's muted teal, dusty violet, wine and slate); teal is left alone.
+  {
+    float violet = clamp((color.b - color.g) * 6.0, 0.0, 1.0);
+    float pink = clamp((color.r - color.g) * 6.0, 0.0, 1.0) * violet;
+    color = mix(color, vec3(dot(color, vec3(0.299, 0.587, 0.114))), violet * 0.35 * glass);
+    color.b = mix(color.b, color.g, pink * 0.55 * glass);
+  }
   float milk = (0.26 + swell * 0.08 + grazing * 0.3 + (vUv.y - 0.5) * 0.1) * (1.0 - uClarity * 0.4);
   color = mix(color, uHaze, clamp(milk, 0.0, 0.85) * glass);
   // The cast glass catches a little light along each ripple crest.
   color += uEdgeGlow * smoothstep(0.55, 0.95, ripple) * 0.035 * glass;
 
-  vec4 title = texture2D(uTitle, vUv);
-  // Open, the title moves to the details beside the image: it clears with the glass.
-  color = mix(color, title.rgb, title.a * (1.0 - uBlur * 0.6) * glass);
   // The seam takes the image's own colour, lifted: the card burns away into its dust.
   color = color * mix(uBrightness, 1.05, clear) * (1.0 + seam * 0.8);
+  vec4 title = texture2D(uTitle, vUv);
+  // Open, the title moves to the details beside the image: it clears with the glass. White
+  // and crisp: dimmed with a receding card, never lifted past white (no neon bloom).
+  color = mix(color, title.rgb * min(uBrightness, 1.0), title.a * (1.0 - uBlur * 0.6) * glass);
   // The glass edge: one continuous thin bright line just inside the pane's outline,
   // brighter on the side facing the light (top left), with a glint travelling round it.
   {
