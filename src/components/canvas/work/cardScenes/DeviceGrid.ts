@@ -23,10 +23,10 @@ export class DeviceGrid extends CardScene {
   private devices: InstancedMesh
   private grid = new Group()
   private color = new Color()
-  private dim = new Color().copy(sceneColors.blue).multiplyScalar(0.18)
+  private dim = new Color().copy(sceneColors.teal).multiplyScalar(0.16)
 
   constructor() {
-    super(sceneColors.blue, sceneColors.glow)
+    super(sceneColors.teal, sceneColors.glow)
     const box = this.own(new BoxGeometry(0.24, 0.15, 0.05))
     const material = this.own(new MeshBasicMaterial({ toneMapped: false }))
     this.devices = new InstancedMesh(box, material, COLUMNS * ROWS)
@@ -52,7 +52,7 @@ export class DeviceGrid extends CardScene {
     linkGeometry.setAttribute('position', new Float32BufferAttribute(links, 3))
     const linkMaterial = this.own(
       new LineBasicMaterial({
-        color: new Color().copy(sceneColors.blue).multiplyScalar(0.35),
+        color: new Color().copy(sceneColors.teal).multiplyScalar(0.3),
         transparent: true,
         blending: AdditiveBlending,
         depthWrite: false,
@@ -85,7 +85,7 @@ export class DeviceGrid extends CardScene {
         this.color
           .copy(this.dim)
           .lerp(sceneColors.glow, wave * 0.85)
-          .lerp(sceneColors.blue, (1 - wave) * 0.15)
+          .lerp(sceneColors.teal, (1 - wave) * 0.15)
         this.devices.setColorAt(r * COLUMNS + c, this.color)
       }
     }

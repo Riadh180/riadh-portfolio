@@ -14,7 +14,7 @@ import {
 import { sceneColors } from '@/styles/scene'
 import flowFragment from '../../shaders/cardScenes/flow.frag'
 import flowVertex from '../../shaders/cardScenes/flow.vert'
-import { CardScene } from './CardScene'
+import { CARD_TONES, CardScene } from './CardScene'
 
 const BARS = 7
 const WIDTH = 0.22
@@ -29,10 +29,15 @@ export class CampaignBars extends CardScene {
   private tops = new Array<number>(8).fill(0)
 
   constructor() {
-    super(sceneColors.pink, sceneColors.violet)
+    super(CARD_TONES.wine, sceneColors.warm)
     const box = this.own(new BoxGeometry(WIDTH, 1, WIDTH))
     box.translate(0, 0.5, 0)
-    const material = this.glass([sceneColors.pink, sceneColors.violet, sceneColors.warm], 1.4)
+    // Deep wine glass, a warm gold light on the bar tops.
+    const material = this.glass(
+      [CARD_TONES.wine, sceneColors.ember, sceneColors.warm],
+      1.4,
+      sceneColors.warm,
+    )
     for (let i = 0; i < BARS; i++) {
       const bar = new Mesh(box, material)
       bar.position.x = (i - (BARS - 1) / 2) * GAP
@@ -83,7 +88,7 @@ export class CampaignBars extends CardScene {
         uniforms: {
           uTime: { value: 0 },
           uSize: { value: 26 },
-          uColors: { value: [sceneColors.pink, sceneColors.warm, sceneColors.glow] },
+          uColors: { value: [CARD_TONES.wine, sceneColors.warm, sceneColors.glow] },
           uTops: { value: this.tops },
         },
         transparent: true,

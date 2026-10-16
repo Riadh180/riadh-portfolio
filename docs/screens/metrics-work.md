@@ -102,3 +102,24 @@ Hue shares (%, 12 bins of 30° from red: red, orange, yellow, … cyan 180°, bl
 Measured share of the cropped frame: reference 69%, ours ~41% (their cards are larger and
 closer). Hue: theirs is mostly cyan with some wine; ours leans azure/blue-violet even after
 the smoke (the live scenes' subjects are violet and blue), so the hue distance stays high.
+
+## Cards (Detail 1b): detail 1 → final
+Targets: luminance and saturation within ±15%, hue distance ≤ 0.25.
+
+| Metric | Reference | Before detail 1 | Detail 1 | 1b pass 1 | 1b pass 2 | 1b final (pass 3) |
+|---|---|---|---|---|---|---|
+| Mean luminance (0–255) | 47.5 | 94.1 (+98% ✗) | 56.6 (+19% ✗) | 55.8 (+18% ✗) | 47.2 (-1% ✓) | 45.8 (-3% ✓) |
+| Contrast (luma std dev) | 27.7 | 34.5 (+24% ✗) | 34.9 (+26% ✗) | 35.4 (+27% ✗) | 32.4 (+17% ✗) | 32.8 (+18% ✗) |
+| 5th percentile | 15.8 | 56.7 (+258% ✗) | 31.4 (+98% ✗) | 30.6 (+93% ✗) | 22.5 (+42% ✗) | 20.2 (+27% ✗) |
+| 95th percentile | 93.7 | 159.8 (+71% ✗) | 127.5 (+36% ✗) | 127.6 (+36% ✗) | 116.1 (+24% ✗) | 115.6 (+23% ✗) |
+| Mean saturation | 0.357 | 0.296 (-17% ✗) | 0.293 (-18% ✗) | 0.275 (-23% ✗) | 0.319 (-11% ✓) | 0.329 (-8% ✓) |
+| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.42 ✗ | 0.53 ✗ | 0.38 ✗ | 0.19 ✗ | 0.18 ✗ |
+
+Hue shares (%, 12 bins of 30° from red: red, orange, yellow, … cyan 180°, blue 210°, blue-violet 240°, violet 270°, magenta 300°):
+
+- Reference: 7 · 4 · 1 · 1 · 1 · 7 · 44 · 20 · 9 · 2 · 2 · 4
+- Before detail 1: 1 · 1 · 0 · 0 · 0 · 2 · 20 · 34 · 23 · 9 · 8 · 2
+- Detail 1: 1 · 0 · 0 · 0 · 0 · 1 · 10 · 33 · 36 · 14 · 2 · 2
+- 1b pass 1: 1 · 0 · 0 · 0 · 0 · 2 · 23 · 37 · 20 · 10 · 5 · 3
+- 1b pass 2: 5 · 1 · 0 · 0 · 0 · 9 · 57 · 12 · 4 · 2 · 4 · 4
+- 1b final (pass 3): 5 · 1 · 0 · 0 · 0 · 9 · 55 · 13 · 4 · 2 · 5 · 6

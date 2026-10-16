@@ -214,9 +214,9 @@ export function createScreenMaterial(
         // Smoky slate: the cast glass's own body colour, dark (at_05).
         value: new Color()
           .copy(sceneColors.glass)
-          .lerp(sceneColors.teal, 0.2)
+          .lerp(sceneColors.teal, 0.45)
           .lerp(sceneColors.bg, 0.68)
-          .multiplyScalar(0.07),
+          .multiplyScalar(0.035),
       },
       uDissolve: { value: 0 },
       uEdgeGlow: { value: sceneColors.glow },

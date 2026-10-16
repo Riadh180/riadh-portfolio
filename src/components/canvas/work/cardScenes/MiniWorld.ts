@@ -1,7 +1,7 @@
 import { ExtrudeGeometry, Group, Mesh, type ShaderMaterial } from 'three'
 import { sceneColors } from '@/styles/scene'
 import { roundedRectShape } from '../../hero/bandGeometry'
-import { CardScene } from './CardScene'
+import { CARD_TONES, CardScene } from './CardScene'
 
 /** A rounded band: the outer shape minus an inner one (The Core's outline). */
 function band(size: number, width: number, depth: number) {
@@ -26,8 +26,9 @@ export class MiniWorld extends CardScene {
   private material: ShaderMaterial
 
   constructor() {
-    super(sceneColors.violet, sceneColors.teal)
-    this.material = this.glass([sceneColors.glow, sceneColors.violet, sceneColors.pink], 1.5)
+    super(sceneColors.teal, sceneColors.glow)
+    // Cool silver-teal glass (the site's own Core, in the cards' family tones).
+    this.material = this.glass([sceneColors.glow, CARD_TONES.silver, sceneColors.teal], 1.5)
     const outer = new Mesh(this.own(band(1.1, 0.14, 0.12)), this.material)
     this.inner = new Mesh(this.own(band(0.42, 0.07, 0.08)), this.material)
     this.inner.rotation.z = Math.PI / 4
@@ -42,7 +43,7 @@ export class MiniWorld extends CardScene {
     }
     this.dust = this.dots(
       positions,
-      [sceneColors.teal, sceneColors.violet, sceneColors.warm],
+      [sceneColors.teal, CARD_TONES.silver, sceneColors.warm],
       14,
       0.8,
     )

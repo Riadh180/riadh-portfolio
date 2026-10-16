@@ -5,6 +5,8 @@ uniform vec3 uBase;
 uniform vec3 uRim[3];
 uniform float uGlow;
 uniform float uTime;
+/** The soft light along the top faces. */
+uniform vec3 uTop;
 
 varying vec3 vNormal;
 varying vec3 vView;
@@ -21,6 +23,6 @@ void main() {
   float facing = abs(dot(n, normalize(vView)));
   float rim = pow(1.0 - facing, 2.2);
   vec3 hue = ramp(n.x * 0.35 + n.y * 0.25 + uTime * 0.05);
-  vec3 color = uBase * (0.6 + 0.4 * n.y) + hue * rim * uGlow + vec3(1.0) * pow(max(n.y, 0.0), 12.0) * 0.25;
+  vec3 color = uBase * (0.6 + 0.4 * n.y) + hue * rim * uGlow + uTop * pow(max(n.y, 0.0), 12.0) * 0.25;
   gl_FragColor = vec4(color, 1.0);
 }

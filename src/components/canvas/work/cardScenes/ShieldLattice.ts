@@ -14,7 +14,7 @@ import {
 } from 'three'
 import { sceneColors } from '@/styles/scene'
 import { roundedRectShape } from '../../hero/bandGeometry'
-import { CardScene } from './CardScene'
+import { CARD_TONES, CardScene } from './CardScene'
 
 /** The shield's outline: flat top with rounded shoulders, curving down to a point. */
 function shieldShape() {
@@ -34,8 +34,9 @@ export class ShieldLattice extends CardScene {
   private flaws: ReturnType<CardScene['dots']>
 
   constructor() {
-    super(sceneColors.violet, sceneColors.glow)
-    const rim: [Color, Color, Color] = [sceneColors.violet, sceneColors.glow, sceneColors.pink]
+    super(CARD_TONES.slate, sceneColors.teal)
+    // Deep teal-slate glass with a wine rim light.
+    const rim: [Color, Color, Color] = [CARD_TONES.slate, sceneColors.teal, CARD_TONES.wine]
     const shieldMaterial = this.glass(rim, 1.3)
     const shield = new Mesh(
       this.own(
@@ -75,7 +76,7 @@ export class ShieldLattice extends CardScene {
       this.own(new EdgesGeometry(this.own(new IcosahedronGeometry(1.45, 1)))),
       this.own(
         new LineBasicMaterial({
-          color: new Color().copy(sceneColors.violet).multiplyScalar(0.45),
+          color: new Color().copy(sceneColors.teal).multiplyScalar(0.35),
           transparent: true,
           blending: AdditiveBlending,
           depthWrite: false,

@@ -87,16 +87,26 @@ void main() {
   // where the glass swells and at grazing angles, a little brighter towards the top (lit
   // from above).
   float grazing = 1.0 - abs(dot(normalize(vNormal), normalize(vView)));
-  // The card family's shared grade: saturation held back, a cool violet lift in the
-  // shadows, highlights kept but compressed (never brighter than the spine's highlights).
+  // The card family's shared grade: saturation held back, a faint teal-slate lift in the
+  // shadows (the smoke's own colour), highlights kept but compressed (never brighter than
+  // the spine's highlights).
   float luma = dot(color, vec3(0.299, 0.587, 0.114));
   color = mix(vec3(luma), color, 0.82);
-  color += vec3(0.03, 0.022, 0.055) * (1.0 - smoothstep(0.0, 0.35, luma));
+  color += uHaze * 1.5 * (1.0 - smoothstep(0.0, 0.35, luma));
   color = color / (1.0 + color * 0.3);
   // Smoked glass: while frosted, the media sits dim inside the dark glass (the reference's
   // cards are dark, not lit panels); where the glass clears (the hover spot, opened) the
   // image comes back bright and sharp.
   color *= mix(1.0, uSmoke, glass);
+  // A fine, static grain in the media (clumps of a few pixels, two scales, about ±4% of
+  // the display range, applied in gamma space so it shows in the darks too), so it reads
+  // as a photograph behind cast glass, not a clean illustration. Gone where the glass clears.
+  {
+    float grain = snoise(vec3(vUv * vec2(330.0, 206.0), uSeed)) * 0.6
+      + snoise(vec3(vUv * vec2(110.0, 69.0), uSeed + 4.0)) * 0.4;
+    vec3 display = sqrt(max(color, 0.0)) + grain * 0.04 * glass;
+    color = max(display, 0.0) * max(display, 0.0);
+  }
   // The family's palette behind the smoke: lavender reads as dusty violet and pink as deep
   // wine (the reference's muted teal, dusty violet, wine and slate); teal is left alone.
   {
@@ -114,8 +124,9 @@ void main() {
   color = color * mix(uBrightness, 1.05, clear) * (1.0 + seam * 0.8);
   vec4 title = texture2D(uTitle, vUv);
   // Open, the title moves to the details beside the image: it clears with the glass. White
-  // and crisp: dimmed with a receding card, never lifted past white (no neon bloom).
-  color = mix(color, title.rgb * min(uBrightness, 1.0), title.a * (1.0 - uBlur * 0.6) * glass);
+  // and crisp, kept just under the bloom threshold, so it doesn't haze the dark card round
+  // it (no neon); dimmed with a receding card.
+  color = mix(color, title.rgb * min(uBrightness, 1.0) * 0.7, title.a * (1.0 - uBlur * 0.6) * glass);
   // The glass edge: one continuous thin bright line just inside the pane's outline,
   // brighter on the side facing the light (top left), with a glint travelling round it.
   {

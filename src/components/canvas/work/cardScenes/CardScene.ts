@@ -1,7 +1,7 @@
 import {
   AdditiveBlending,
   BufferGeometry,
-  type Color,
+  Color,
   Float32BufferAttribute,
   Mesh,
   PerspectiveCamera,
@@ -28,6 +28,19 @@ const SIZE = { width: 768, height: 480 }
  * frost). Original, abstract scenes in the site's style for the jobs whose real work is
  * confidential. Rendered only while its card is visible.
  */
+const WHITE = new Color(1, 1, 1)
+
+/**
+ * The card family's tones, derived from the palette (the reference's cards: muted teal,
+ * deep wine, slate, a little gold): wine for warm accents, slate-teal for dark bodies,
+ * silver-teal for cool glass.
+ */
+export const CARD_TONES = {
+  wine: new Color().copy(sceneColors.ember).lerp(sceneColors.violet, 0.25).multiplyScalar(0.55),
+  slate: new Color().copy(sceneColors.teal).lerp(sceneColors.glass, 0.25).multiplyScalar(0.45),
+  silver: new Color().copy(sceneColors.glass).lerp(sceneColors.teal, 0.3),
+}
+
 export abstract class CardScene {
   readonly target = new WebGLRenderTarget(SIZE.width, SIZE.height, { samples: 2 })
   protected readonly scene = new Scene()
@@ -84,8 +97,9 @@ export abstract class CardScene {
     return item
   }
 
-  /** The card scenes' glass: dark body, palette rim (no environment needed). */
-  protected glass(rim: [Color, Color, Color], glow = 1.2) {
+  /** The card scenes' glass: dark body, palette rim (no environment needed), and a soft
+   * light along its top faces (white unless given). */
+  protected glass(rim: [Color, Color, Color], glow = 1.2, top: Color = WHITE) {
     return this.own(
       new ShaderMaterial({
         vertexShader: glassRimVertex,
@@ -94,6 +108,7 @@ export abstract class CardScene {
           uBase: { value: sceneColors.bg.clone().multiplyScalar(1.6) },
           uRim: { value: rim },
           uGlow: { value: glow * 1.5 },
+          uTop: { value: top },
           uTime: { value: 0 },
         },
       }),
