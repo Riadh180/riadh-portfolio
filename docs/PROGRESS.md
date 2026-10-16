@@ -1481,3 +1481,104 @@ Self-review against at_04–at_07:
   Practices, SEO 100; no console errors.
 - Reduced motion and no-WebGL: clean. Phone number only on /impressum (not in `.next/static`,
   not on /, /datenschutz, /cv, /work/bliggit or the 404).
+
+
+---
+# Polish loop 1 (2026-10-16)
+Branch `polish-loop1` from `main` after merging `detail-column-2` (fast-forward, tagged
+`v1-chrome`; the same commit is tagged `before-loop1`, 9d1c28e). Nothing goes to `main`.
+Every stage ends with a commit, a tag `loop1-stage-N` and a push of the branch.
+
+## Plan
+Tools: the existing `scripts/` (capture-progress, capture-stops, record-work,
+compare-frames, metrics-report, sheet, fps), plus `scripts/capture-moments.mjs` (timed frames at
+one place: the hero's idle turn, a cursor swipe, transitions in time). Production build on
+port 3100, Retina where frame rates are measured; ffmpeg from the session scratchpad for the
+shared H.264 step of the metrics.
+
+**Stage 1 — the hero.** `hero/HeroLighting.tsx`, `hero/glassMaterial.ts`,
+`hero/glassTextures.ts`, `hero/bandGeometry.ts`, `hero/Emblem.tsx`, `hero/HeroAura.tsx`,
+`hero/motion.ts`, `styles/scene.ts` (+ shaders only where these need one).
+1. Thin film on the bevels and edges, its thickness running along the outline, so a rainbow
+   highlight slides round the rim as The Core turns; teal, violet and amber light-formers in
+   the hero environment, so the refraction carries colour.
+2. Detail: a crisp inner chamfer step and a second thin inner edge in the band profile; fine
+   engraved micro-lines on the faces (normal detail).
+3. Light drift on full: cool → warm copper → cool every ~9 s, done in the glass material
+   (tint uniforms per frame) on an environment baked once: no per-frame cube-map re-render.
+   Lite: the static cool environment and a gentle warm rim tint.
+4. Living space: sparse dust round and behind The Core (never in front of its centre), a few
+   gold/pink sparks rising slowly, 2–3 faint out-of-focus glass shards / arcs far behind,
+   catching the rim light now and then. The grains take Stage 3's glass look when it lands.
+5. Kept: the intro burst, the 1.5× scale, the teal bleed bottom-left.
+Sheet `docs/screens/loop1-hero.jpg` (at_01 + seg_00 tiles | now | new; 4 moments of the
+idle turn; desktop + phone).
+
+**Stage 2 — the column.** `work/spineGeometry.ts`, `work/oilMaterial.ts`,
+`work/spine.worker.ts`, `shaders/oil.glsl` only.
+1. Core body ~32% slimmer, chunky only at each vertebra's centre.
+2. 2–4 processes on most segments: curved, tapering, layered, reaching out and slightly
+   down, 0.6–1.2× the core width; every one with an iridescent rim.
+3. Thin parts (processes, plate edges) read translucent: a thinness attribute drives fresnel
+   transparency / film glow on full; lite: the fresnel rim tint only. The core stays dark chrome.
+4. Highlights travel with the orbit; one soft specular band sweeps down the column every ~7 s.
+5. Fewer single-pixel glints along the outline.
+Metrics (column + air) vs the reference and v1-chrome; sheet `docs/screens/loop1-column.jpg`.
+
+**Stage 3 — one glass-particle system.** A shared bead shading (`shaders/glassGrain.glsl`) and
+a shared cursor field (`canvas/particles/CursorField.ts` + `shaders/cursorField.glsl`: a
+decaying ping-pong texture on full, stateless position/velocity uniforms on lite), used by
+the existing grain shaders (`glitter.*`, `atmosphere.*`, `grain.frag`, `motes.vert`,
+`ember.frag`) and their components (`work/Pebbles.tsx`, `journey/Atmosphere.tsx`,
+`hero/HeroAura.tsx`, the System / Depth / Contact particle components) for per-place density.
+A) sizes ~75% tiny / ~20% small / ~5% medium-large, per-grain brightness; pockets with denser
+cores and wispy edges; bokeh away from the focus on full. B) bead shading: dark body, fresnel
+rim, one glint up-left, thin-film rim tint, a ~0.5–1 px fringe; refraction on full for the
+medium/large beads; glints flicker on their own phase. C) glints brighten through each place's
+light direction and pick up nearby highlight colour. D) cursor (touch-drag on phones): push +
+swirl with falloff, scaled by speed, spring return in 1–1.5 s, depth parallax; never over the
+focused card or text; off with reduced motion. E) density per place, falling off round text
+and subjects. Sheets `loop1-particles.jpg`, `loop1-pockets.jpg`, `loop1-cursor.jpg`.
+
+**Stage 4 — gallery composition (desktop).** `work/layout.ts`, `journey/path.ts`,
+`work/WorkCards.tsx` (neighbour DoF / dimming only). A tighter spiral (smaller angle and
+vertical step between cards, same total Work scroll), the focused card ~50–55% of the frame and
+never overlapped, neighbours at clearly different depths and cut by the frame edges, the list
+zone clear. Target: 3–4 cards in ≥ 80% of Work frames. Sheet `loop1-composition.jpg`.
+
+**Stage 5 — the opened card.** `work/WorkCards.tsx` (open transform, open/close timing),
+`shaders/frost.frag` (open grade), `shaders/cardDust.*` (dissolve grains as Stage 3's beads).
+Centred right of the details, facing the camera (≤ 3–4°), ~70–75% of the frame height, never
+cut on desktop; media ≤ 1.4× the closed brightness at the closed saturation; all six checked;
+phone fits the width. Sheet `loop1-open-card.jpg`.
+
+**Stage 6 — the capstone opens.** `depth/CapstonePanel.tsx`, `depth/DepthPlace.tsx`,
+`components/depth/DepthPanel.tsx`, `components/work/WorkDetail.tsx` / `JobDetail.tsx` (the
+shared detail column), `stores/work.ts`, `components/work/useWorkUrl.ts`,
+`app/(site)/work/[slug]/page.tsx`, `proxy.ts`, `app/sitemap.ts`, `app/assets.json/route.ts`
+(the gallery list). Hover tilt + "OPEN" cursor + light defrost; click / Enter opens it like a
+job card in the Depth palette; detail column with the given text; gallery of every image in
+`public/work/capstone/` with arrows / thumbnails / arrow keys and a glass wipe; route
+`/work/capstone` (metadata, OG, sitemap, deep link, Back / Esc to Depth); focus handling;
+phone. Sheet `loop1-capstone.jpg`.
+
+**Stage 7 — no thin frames, no overlaps.** Timing and density envelopes only (the looks stay
+locked): `journey/GoldCloud.tsx`, `journey/DustSheet.tsx`, the tagline dust / wireframe
+hand-over, `journey/Trails.tsx`, `depth/DepthBubbles.tsx`, `journey/ContactEmbers.tsx`,
+`hero/Emblem.tsx` (Contact pose). Every element overlaps the next by ≥ 0.4 of the range; The
+Core never over "LET'S TALK". Strips `loop1-transitions.jpg`.
+
+**Stage 8 — production and polish checks.** The toolbar pill, brand/OG images, a keyboard and
+screen-reader pass, one mouse "voice" from `motion/motion.ts` (camera lag, particle return,
+card tilt), phones at 390×844, 375×667, 430×932.
+
+**Gate**, then the final report here and as the last message.
+
+## LOCKED (unchanged this loop)
+Statement layout, tagline + dust + wireframe look, card tone / grade / frost / bevel, card
+titles (Departure Mono, two lines), card face layouts, Bliggit, System graph and labels, Depth
+layout and palette (only the capstone interaction in Stage 6 is unlocked), Contact layout, the
+loop back to the hero, the scramble / glitch rules, UI copy and content, SEO structure, legal
+pages, CV, the tier system, performance work. The phone number only on /impressum.
+
+## Decisions I made
