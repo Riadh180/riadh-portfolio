@@ -17,15 +17,3 @@ export const martian = Martian_Mono({
   weight: ['300', '400'],
   preload: false,
 })
-
-/**
- * Card titles in the 3D scene only: General Sans Light (Indian Type Foundry, Fontshare
- * Free License: free for personal and commercial use; self-hosted). Not preloaded.
- */
-export const generalSans = localFont({
-  src: '../fonts/GeneralSans-Light.woff2',
-  variable: '--font-general',
-  weight: '300',
-  display: 'swap',
-  preload: false,
-})

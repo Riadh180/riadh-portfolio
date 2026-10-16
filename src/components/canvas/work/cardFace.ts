@@ -21,12 +21,29 @@ const mix = (a: string, b: string, amount: number) => {
   return `#${hex(16)}${hex(8)}${hex(0)}`
 }
 
-/** Card title style: 'light' (General Sans Light, chosen) or 'pixel' (Departure Mono). */
-const TITLE_STYLE: 'light' | 'pixel' =
-  typeof window !== 'undefined' &&
-  new URLSearchParams(window.location.search).get('type') === 'pixel'
-    ? 'pixel'
-    : 'light'
+/** Card titles: the widest line's share of the card, and the letter-spacing (px at 1024). */
+const TITLE_WIDTH = 0.52
+const TITLE_TRACKING = 3
+
+/**
+ * Splits a title onto two lines at the word break that balances their widths (one line if
+ * it is a single word). Non-breaking spaces keep a phrase together ("END TO END").
+ */
+function splitTitle(title: string, measure: (text: string) => number) {
+  const words = title.split(' ')
+  if (words.length < 2) return [title]
+  let best = [title]
+  let bestWidth = Infinity
+  for (let k = 1; k < words.length; k++) {
+    const pair = [words.slice(0, k).join(' '), words.slice(k).join(' ')]
+    const width = Math.max(...pair.map(measure))
+    if (width < bestWidth) {
+      bestWidth = width
+      best = pair
+    }
+  }
+  return best
+}
 
 /** Loads an image (resolves once decoded). */
 function loadImage(url: string) {
@@ -56,8 +73,6 @@ export class CardFace {
   private context: CanvasRenderingContext2D
   private background = document.createElement('canvas')
   private family: string
-  /** The card titles' display face (General Sans Light). */
-  private display: string
   private hasCover = false
   /** Luminance of the media under the title (cached; reset when the media changes). */
   private scrimBand: number | null = null
@@ -76,9 +91,6 @@ export class CardFace {
     this.family =
       getComputedStyle(document.documentElement).getPropertyValue('--font-departure').trim() ||
       'monospace'
-    this.display =
-      getComputedStyle(document.documentElement).getPropertyValue('--font-general').trim() ||
-      'monospace'
     this.texture = new CanvasTexture(this.canvas)
     this.texture.colorSpace = SRGBColorSpace
     this.texture.minFilter = LinearMipmapLinearFilter
@@ -87,10 +99,7 @@ export class CardFace {
     this.image.colorSpace = SRGBColorSpace
     this.drawPlaceholder()
     // The mock screen's labels use the font too: redraw it once loaded (unless a cover came).
-    void Promise.all([
-      document.fonts.load(`64px ${this.family}`),
-      document.fonts.load(`300 64px ${this.display}`),
-    ]).then(() => {
+    void document.fonts.load(`64px ${this.family}`).then(() => {
       if (this.hasCover) this.draw(Infinity)
       else this.drawPlaceholder()
     })
@@ -270,79 +279,81 @@ export class CardFace {
       78,
     )
 
-    // Editorial: the company small and spaced above, the title large, light and centred
-    // over the media, white with a faint glow (crisp, not neon).
-    const display = TITLE_STYLE === 'pixel' ? this.family : this.display
-    const weight = TITLE_STYLE === 'pixel' ? '' : '300 '
+    // Like the reference's titles: the company small and spaced above, the title in
+    // Departure Mono on two centred lines (broken at the word that balances them), about
+    // half the card wide, light grey-white with a faint glow, over a measured scrim.
     const title = (this.job.cardTitle ?? this.job.metric).toUpperCase()
     const centre = (this.job.titleX ?? 0.5) * WIDTH
-    // Room: to the nearer card edge, both sides.
-    const room = Math.min(centre, WIDTH - centre) * 2 * 0.9
-    let size = 92
-    c.font = `${weight}${size}px ${display}`
-    while (c.measureText(title).width > room && size > 34) {
-      size -= 4
-      c.font = `${weight}${size}px ${display}`
+    const tracking = (px: number) => {
+      if ('letterSpacing' in c) (c as { letterSpacing: string }).letterSpacing = `${px}px`
     }
-    const baseline = HEIGHT * 0.56
+    tracking(TITLE_TRACKING)
+    const lines = splitTitle(title, (text) => {
+      c.font = `64px ${this.family}`
+      return c.measureText(text).width
+    })
+    // Size: the widest line fills TITLE_WIDTH of the card (never past the nearer edge).
+    c.font = `64px ${this.family}`
+    const widest = Math.max(...lines.map((line) => c.measureText(line).width))
+    const room = Math.min(TITLE_WIDTH * WIDTH, Math.min(centre, WIDTH - centre) * 2 * 0.9)
+    const size = Math.min(110, Math.max(34, Math.floor((64 * room) / widest)))
+    const leading = size * 1.08
+    c.font = `${size}px ${this.family}`
+    const blockWidth = Math.max(...lines.map((line) => c.measureText(line).width))
+    const baseline = HEIGHT * 0.56 + (lines.length - 1) * leading * 0.5
+    const top = baseline - (lines.length - 1) * leading - size
     // A soft, feathered scrim under the title, as strong as the media there needs for
-    // ≥ 4.5:1 contrast (measured from the media's luminance in the title band).
-    const band = this.luminance(
-      centre,
-      baseline - size * 0.5,
-      c.measureText(title).width,
-      size * 1.6,
-    )
+    // ≥ 4.5:1 contrast (measured from the media's luminance in the title block).
+    const middle = (top + baseline) / 2
+    const band = this.luminance(centre, middle, blockWidth, baseline - top + size * 0.6)
     const scrim = Math.min(0.78, Math.max(0.2, (band - 0.08) * 1.9))
     const glow = c.createRadialGradient(
       centre,
-      baseline - size * 0.45,
+      middle,
       0,
       centre,
-      baseline - size * 0.45,
-      Math.max(room * 0.55, size * 2.2),
+      middle,
+      Math.max(blockWidth * 0.75, size * 2.6),
     )
     glow.addColorStop(0, rgba(palette.bg, scrim))
     glow.addColorStop(0.6, rgba(palette.bg, scrim * 0.55))
     glow.addColorStop(1, rgba(palette.bg, 0))
     c.save()
-    c.scale(1, 0.55)
-    c.translate(0, (baseline - size * 0.45) * (1 / 0.55 - 1))
+    c.scale(1, 0.62)
+    c.translate(0, middle * (1 / 0.62 - 1))
     c.fillStyle = glow
-    c.fillRect(0, 0, WIDTH, HEIGHT / 0.55)
+    c.fillRect(0, 0, WIDTH, HEIGHT / 0.62)
     c.restore()
     c.textAlign = 'center'
-    c.font = `${weight}26px ${display}`
+    c.font = `26px ${this.family}`
     c.fillStyle = rgba(palette.text, 0.8)
-    if ('letterSpacing' in c) (c as { letterSpacing: string }).letterSpacing = '6px'
-    c.fillText(
-      (this.job.cardSubtitle ?? this.job.company).toUpperCase(),
-      WIDTH / 2,
-      baseline - size - 14,
-    )
-    if ('letterSpacing' in c) (c as { letterSpacing: string }).letterSpacing = '0px'
+    tracking(6)
+    c.fillText((this.job.cardSubtitle ?? this.job.company).toUpperCase(), centre, top - 22)
 
-    c.font = `${weight}${size}px ${display}`
-    const chars = scramble(title, elapsed)
-    const total = c.measureText(title).width
-    let x = centre - total / 2
+    tracking(TITLE_TRACKING)
+    c.font = `${size}px ${this.family}`
     c.textAlign = 'left'
-    for (const { char, ghost } of chars) {
-      const width = c.measureText(char).width
-      if (ghost > 0) {
-        // Chromatic doubled letters (the reference's "SUSSTAINABLE"), settling.
-        c.fillStyle = rgba(palette.pink, 0.55 * ghost)
-        c.fillText(char, x + ghost * 22, baseline)
-        c.fillStyle = rgba(palette.teal, 0.55 * ghost)
-        c.fillText(char, x - ghost * 14, baseline)
+    lines.forEach((line, row) => {
+      const y = baseline - (lines.length - 1 - row) * leading
+      let x = centre - c.measureText(line).width / 2
+      for (const { char, ghost } of scramble(line, elapsed)) {
+        const width = c.measureText(char).width
+        if (ghost > 0) {
+          // Chromatic doubled letters (the reference's "SUSSTAINABLE"), settling.
+          c.fillStyle = rgba(palette.pink, 0.55 * ghost)
+          c.fillText(char, x + ghost * 22, y)
+          c.fillStyle = rgba(palette.teal, 0.55 * ghost)
+          c.fillText(char, x - ghost * 14, y)
+        }
+        c.shadowColor = rgba(palette.glow, 0.3)
+        c.shadowBlur = 13
+        c.fillStyle = palette.text
+        c.fillText(char, x, y)
+        c.shadowBlur = 0
+        x += width
       }
-      c.shadowColor = rgba(palette.glow, 0.3)
-      c.shadowBlur = 13
-      c.fillStyle = palette.text
-      c.fillText(char, x, baseline)
-      c.shadowBlur = 0
-      x += width
-    }
+    })
+    tracking(0)
     this.texture.needsUpdate = true
   }
 

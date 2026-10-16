@@ -178,7 +178,8 @@ export const jobs: Job[] = [
       'Native adaptations for iOS and Android',
       'MongoDB aggregation pipelines and REST APIs',
     ],
-    metric: 'MERN end to end',
+    // Non-breaking spaces: the card title breaks as MERN / END TO END.
+    metric: 'MERN end\u00a0to\u00a0end',
     summary:
       'MERN web and mobile apps built end to end, including a data-collection platform for ad campaigns.',
     stack: ['React', 'React Native', 'Node.js', 'MongoDB', 'Express'],

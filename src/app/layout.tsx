@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import type { CSSProperties } from 'react'
 import { profile } from '@/content/site'
 import { siteUrl } from '@/lib/siteUrl'
-import { departure, generalSans, martian } from '@/styles/fonts'
+import { departure, martian } from '@/styles/fonts'
 import { cssVariables, palette } from '@/styles/tokens'
 import './globals.css'
 
@@ -48,7 +48,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
     <html
       lang="en"
       style={cssVariables as CSSProperties}
-      className={`${departure.variable} ${martian.variable} ${generalSans.variable} antialiased`}
+      className={`${departure.variable} ${martian.variable} antialiased`}
     >
       <body>
         <a

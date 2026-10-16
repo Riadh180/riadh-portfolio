@@ -1268,3 +1268,30 @@ titles, both kept).
   brightest 10% of the media round the letters). Bliggit measured on its title band: 5.9
   (the frame-wide check also picked up the white phone screenshots).
 - Phone 390×844: titles readable on every card.
+
+
+---
+# Detail 2 — titles + column
+Branch `detail-column` from `main` (after merging `detail-cards-2`, tagged `v1-cards-2`).
+
+## Part A — card titles in Departure Mono (`detail 2a`)
+- Card titles are set in Departure Mono, uppercase, on two centred lines like the
+  reference's "FRONTIER WITHIN": split at the word break that balances the two lines'
+  widths (`splitTitle` in `work/cardFace.ts`). The widest line fills ~52% of the card (never
+  past the nearer edge), letter-spacing 3px (at the 1024px face), line height 1.08. The 70%
+  light grey-white, the faint glow and the measured scrim are kept; the scrim now covers both
+  lines. The scramble runs per line.
+- Breaks: >99% / CRASH-FREE, CYPRESS / GUIDELINES, −40% / COUPLING, >80% TEST / COVERAGE,
+  MERN / END TO END, THIS / SITE. "MERN end to end" has non-breaking spaces in its metric
+  (`content/site.ts`) so the balanced split keeps "END TO END" together; the HTML text reads
+  the same.
+- The company line and the index/years are unchanged in size and place; the company line is
+  now in Departure Mono too (it used General Sans).
+- General Sans removed: `src/fonts/GeneralSans-Light.woff2`, its `localFont` in
+  `styles/fonts.ts` and its variable in `app/layout.tsx` (nothing else used it).
+- Contrast (title strokes vs the brightest 10% of the media round them): 4.6–6.1 on desktop,
+  4.6–5.6 on phone; Bliggit 6.1 and THIS SITE 4.9 measured on their title bands (the frame-wide
+  check had picked up the phone screenshots and a spine highlight). Phone 390×844: readable on
+  every card at ~50% width (the 75% allowance wasn't needed).
+- Sheet: `docs/screens/title-font-final.jpg` (the reference, all six cards on desktop, all six
+  on the phone).
