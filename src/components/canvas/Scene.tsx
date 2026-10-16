@@ -17,12 +17,14 @@ import { ContactGlow } from './journey/ContactGlow'
 import { FormMoment } from './journey/FormMoment'
 import { GoldCloud } from './journey/GoldCloud'
 import { type JourneyState, useJourneyState } from './journey/path'
+import { StatementDust } from './journey/StatementDust'
 import { Tagline } from './journey/Tagline'
 import { Trails } from './journey/Trails'
 import { HeroLighting } from './hero/HeroLighting'
 import { HeroAura } from './hero/HeroAura'
 import { IntroBurst } from './hero/IntroBurst'
 import { Warmup } from './hero/Warmup'
+import { CursorField } from './particles/CursorField'
 import { ParticleField } from './particles/ParticleField'
 import { Effects } from './post/Effects'
 import type { Pointer } from './usePointer'
@@ -80,6 +82,8 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
         warmHold={() => warmth(journey)}
       />
       <CameraRig pointer={pointer} journey={journey} enabled={!reducedMotion} />
+      {/* The air's answer to the cursor and each place's light, for every glass grain. */}
+      <CursorField pointer={pointer} journey={journey} clock={clock} reducedMotion={reducedMotion} />
       <Backdrop journey={journey} />
       <Drift journey={journey} seed={3} weight={1.3} rotate={false}>
         <Emblem
@@ -100,6 +104,7 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
         <Drift journey={journey} seed={7} weight={2} rotate={false}>
           <Tagline clock={clock} reducedMotion={reducedMotion} journey={journey} />
         </Drift>
+        <StatementDust journey={journey} clock={clock} />
       </Deferred>
       <Deferred>
         <FormMoment journey={journey} simSize={simSize} clock={clock} />

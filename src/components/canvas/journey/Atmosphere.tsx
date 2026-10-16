@@ -9,8 +9,11 @@ import {
   ShaderMaterial,
 } from 'three'
 import { sceneColors } from '@/styles/scene'
-import fragmentShader from '../shaders/atmosphere.frag'
-import vertexShader from '../shaders/atmosphere.vert'
+import { grainUniforms, syncGrainTier } from '../particles/CursorField'
+import atmosphereFragment from '../shaders/atmosphere.frag'
+import atmosphereVertex from '../shaders/atmosphere.vert'
+import glassGrain from '../shaders/glassGrain.glsl'
+import grainMotion from '../shaders/grainMotion.glsl'
 import type { SceneClock } from '../useSceneClock'
 import type { JourneyState } from './path'
 
@@ -87,9 +90,10 @@ function createGeometry(count: number, clusters: number) {
 
 function createMaterial(layer: Layer) {
   return new ShaderMaterial({
-    vertexShader,
-    fragmentShader,
+    vertexShader: `${grainMotion}\n${atmosphereVertex}`,
+    fragmentShader: `${glassGrain}\n${atmosphereFragment}`,
     uniforms: {
+      ...grainUniforms,
       uTime: { value: 0 },
       uBox: { value: layer.box },
       uNear: { value: layer.near },
@@ -165,6 +169,7 @@ export function Atmosphere({ journey, clock }: { journey: JourneyState; clock: S
     layers.forEach(({ key, layer }, i) => {
       const material = (points.current[i] as { material?: ShaderMaterial } | null)?.material
       if (!material) return
+      syncGrainTier(material)
       const u = material.uniforms
       const presence = placeLook(journey, u.uAccent!.value as Color)
       u.uTime!.value = clock.time

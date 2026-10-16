@@ -33,6 +33,11 @@ attribute vec4 seed;
 varying vec3 vColor;
 varying float vBlur;
 varying float vPointSize;
+#ifdef GRAIN
+// The world's glass grain (grainMotion.glsl prepended): its glint and film phase.
+varying float vGlint;
+varying float vPhase;
+#endif
 
 vec3 ramp(float t) {
   float x = fract(t) * 3.0;
@@ -47,6 +52,20 @@ void main() {
   p += vec3(sin(uTime * 0.23 + phase), sin(uTime * 0.17 + phase * 1.7), cos(uTime * 0.19 + phase)) * uDrift;
 
   vec4 mvPosition = modelViewMatrix * vec4(p, 1.0);
+#ifdef GRAIN
+  // The cursor parts the dust; a grain glints as it turns through the place's light.
+  float stirred;
+  mvPosition.xyz = grainCursor(mvPosition.xyz, uFocusDistance, stirred);
+  vec3 world = (modelMatrix * vec4(p, 1.0)).xyz;
+  vGlint = max(grainGlint(world, seed, uTime), stirred);
+#ifdef CAUSTIC
+  // Under the water: the caustic web's light passing over the grain makes it flare.
+  float web = abs(sin(world.x * 1.7 + uTime * 0.5) + sin(world.z * 1.3 - uTime * 0.4)
+    + sin((world.x + world.z) * 0.9 + uTime * 0.3)) / 3.0;
+  vGlint = max(vGlint, pow(web, 4.0) * 1.4);
+#endif
+  vPhase = fract(seed.x * 3.1 + seed.w);
+#endif
   gl_Position = projectionMatrix * mvPosition;
 
   float depth = max(-mvPosition.z, 0.05);
@@ -71,4 +90,7 @@ void main() {
 #endif
   float fog = smoothstep(uFogFar, uFogFar * 0.3, depth);
   vColor = color * uOpacity * energy * fog;
+#ifdef GRAIN
+  vColor = grainLit(vColor, world);
+#endif
 }

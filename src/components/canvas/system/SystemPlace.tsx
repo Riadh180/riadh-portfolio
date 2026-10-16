@@ -9,6 +9,7 @@ import type { Pointer } from '../usePointer'
 import { Drift } from '../motion/Drift'
 import type { SceneClock } from '../useSceneClock'
 import { SkillGraph } from './SkillGraph'
+import { SystemDust } from './SystemDust'
 
 const ease = (x: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, x)))) / 2
 const WORD = ['System'] as const
@@ -61,6 +62,7 @@ export function SystemPlace({ journey, clock, look, pointer, reducedMotion }: Pr
       />
       <Drift journey={journey} seed={23} weight={1}>
         <SkillGraph clock={clock} look={look} pointer={pointer} reducedMotion={reducedMotion} />
+        <SystemDust clock={clock} />
       </Drift>
     </group>
   )

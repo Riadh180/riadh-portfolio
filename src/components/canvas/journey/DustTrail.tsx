@@ -1,9 +1,8 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { AdditiveBlending, type Color, type Points, type ShaderMaterial } from 'three'
-import particlesFragment from '../shaders/grain.frag'
-import motesVertex from '../shaders/motes.vert'
-import { createMotesGeometry, createMotesUniforms, gaussian } from './motes'
+import { syncGrainTier } from '../particles/CursorField'
+import { createMotesGeometry, createMotesUniforms, gaussian, grainMotes } from './motes'
 
 type Trail = {
   /** World heights the trail runs between (top to bottom). */
@@ -65,7 +64,7 @@ export function DustTrail({
     () => createTrail({ top, bottom, fromX, toX, width, depth, count, gather }),
     [top, bottom, fromX, toX, width, depth, count, gather],
   )
-  const uniforms = useMemo(() => createMotesUniforms(colors), [colors])
+  const uniforms = useMemo(() => createMotesUniforms(colors, undefined, true), [colors])
   useEffect(() => () => geometry.dispose(), [geometry])
 
   useFrame(({ size, viewport, clock }) => {
@@ -74,6 +73,7 @@ export function DustTrail({
     const value = amount()
     p.visible = value > 0.01
     if (!p.visible) return
+    syncGrainTier(p.material as ShaderMaterial)
     const u = (p.material as ShaderMaterial).uniforms
     u.uTime!.value = clock.elapsedTime
     u.uOpacity!.value = value * brightness
@@ -86,8 +86,9 @@ export function DustTrail({
   return (
     <points ref={points} geometry={geometry} frustumCulled={false} visible={false}>
       <shaderMaterial
-        vertexShader={motesVertex}
-        fragmentShader={particlesFragment}
+        vertexShader={grainMotes.vertexShader}
+        fragmentShader={grainMotes.fragmentShader}
+        defines={grainMotes.defines}
         uniforms={uniforms}
         blending={AdditiveBlending}
         transparent

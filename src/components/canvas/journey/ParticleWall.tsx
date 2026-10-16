@@ -2,10 +2,9 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { AdditiveBlending, type Color, type Group, type ShaderMaterial } from 'three'
 import { valueNoise3 } from '../noise'
-import particlesFragment from '../shaders/grain.frag'
-import motesVertex from '../shaders/motes.vert'
 import type { SceneClock } from '../useSceneClock'
-import { createMotesGeometry, createMotesUniforms, gaussian } from './motes'
+import { syncGrainTier } from '../particles/CursorField'
+import { createMotesGeometry, createMotesUniforms, gaussian, grainMotes } from './motes'
 
 /** The sheet: a wide disc of dust, thin, gathered into clouds with dark gaps between. */
 const SHEET = { radius: 22, thickness: 0.45, count: 18000 }
@@ -68,7 +67,7 @@ export function ParticleWall({ clock, y, tilt, colors, seed }: Props) {
   const group = useRef<Group>(null)
   const material = useRef<ShaderMaterial>(null)
   const geometry = useMemo(() => createSheet(seed), [seed])
-  const uniforms = useMemo(() => createMotesUniforms(colors), [colors])
+  const uniforms = useMemo(() => createMotesUniforms(colors, undefined, true), [colors])
   useEffect(() => () => geometry.dispose(), [geometry])
 
   useFrame(({ camera, size, viewport }) => {
@@ -80,6 +79,7 @@ export function ParticleWall({ clock, y, tilt, colors, seed }: Props) {
     const amount = 1 - Math.min(1, Math.max(0, (distance - 1.5) / 4.5))
     g.visible = amount > 0.01
     if (!g.visible) return
+    syncGrainTier(material.current)
     const u = material.current.uniforms
     u.uTime!.value = clock.time
     u.uOpacity!.value = amount * amount * 4.8
@@ -100,8 +100,9 @@ export function ParticleWall({ clock, y, tilt, colors, seed }: Props) {
       <points geometry={geometry} frustumCulled={false}>
         <shaderMaterial
           ref={material}
-          vertexShader={motesVertex}
-          fragmentShader={particlesFragment}
+          vertexShader={grainMotes.vertexShader}
+          fragmentShader={grainMotes.fragmentShader}
+          defines={grainMotes.defines}
           uniforms={uniforms}
           blending={AdditiveBlending}
           transparent

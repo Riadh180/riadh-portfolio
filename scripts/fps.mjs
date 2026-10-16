@@ -47,8 +47,11 @@ await page.evaluateOnNewDocument(() => {
 })
 await page.goto(url, { waitUntil: 'networkidle2' })
 await sleep(3000)
-await page.mouse.move(width / 2, height / 2)
-await page.mouse.wheel({ deltaY: 1 })
+if (phone) await page.touchscreen.tap(width / 2, height * 0.35)
+else {
+  await page.mouse.move(width / 2, height / 2)
+  await page.mouse.wheel({ deltaY: 1 })
+}
 await sleep(3000)
 
 const frames = () => page.evaluate(() => window.__frames)

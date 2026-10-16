@@ -44,8 +44,11 @@ await page.evaluateOnNewDocument(() => {
 })
 await page.goto(url, { waitUntil: 'networkidle2' })
 await sleep(3000)
-await page.mouse.move(width / 2, height / 2)
-await page.mouse.wheel({ deltaY: 1 })
+if (phone) await page.touchscreen.tap(width / 2, height * 0.35)
+else {
+  await page.mouse.move(width / 2, height / 2)
+  await page.mouse.wheel({ deltaY: 1 })
+}
 await sleep(3000)
 if (where.startsWith('#')) {
   await page.evaluate((h) => {
@@ -86,13 +89,23 @@ const mover = (async () => {
 
 const frames = () => page.evaluate(() => window.__frames)
 const windows = []
+// Main-thread time (ms per second of wall time): high means CPU-bound, low means the GPU.
+const busy = { script: 0, task: 0 }
+const m0 = await page.metrics()
+const started = Date.now()
 for (let k = 0; k < Math.round(Number(seconds) / 2); k++) {
   const f0 = await frames()
   const t0 = Date.now()
   await sleep(2000)
   windows.push(Math.round((((await frames()) - f0) / ((Date.now() - t0) / 1000)) * 10) / 10)
 }
+const m1 = await page.metrics()
+const elapsed = (Date.now() - started) / 1000
+busy.script = Math.round(((m1.ScriptDuration - m0.ScriptDuration) * 1000) / elapsed)
+busy.task = Math.round(((m1.TaskDuration - m0.TaskDuration) * 1000) / elapsed)
 moving = false
 await mover
-console.log(JSON.stringify({ where, windows, min: Math.min(...windows), errors: errors.slice(0, 2) }))
+console.log(
+  JSON.stringify({ where, windows, min: Math.min(...windows), busy, errors: errors.slice(0, 2) }),
+)
 await browser.close()

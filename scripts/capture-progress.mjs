@@ -49,9 +49,13 @@ if (process.env.TIER === 'lite') await page.evaluateOnNewDocument(() => (window.
 await page.evaluateOnNewDocument(() => sessionStorage.setItem('signal-intro', '1'))
 await page.goto(url, { waitUntil: 'networkidle2' })
 await sleep(2500)
-// Phones start the 3D on the first interaction.
-await page.mouse.move(width / 2, height / 2)
-await page.mouse.wheel({ deltaY: 1 })
+// Phones start the 3D on the first interaction: a tap there (a scripted wheel tick on an
+// emulated phone leaves the smooth scroll pulling the page back to the top).
+if (phone) await page.touchscreen.tap(width / 2, height * 0.35)
+else {
+  await page.mouse.move(width / 2, height / 2)
+  await page.mouse.wheel({ deltaY: 1 })
+}
 await sleep(2500)
 
 const scrollFor = (progress) =>
@@ -86,9 +90,11 @@ for (let k = 0; k < count; k++) {
   const progress = Number(from) + k * Number(step)
   const y = await scrollFor(progress)
   await page.evaluate((target) => window.scrollTo(0, target), y)
-  // The first jump on a phone can land while the 3D is still starting: set it again.
-  if (k === 0) {
+  // The first jump on a phone can be undone while the 3D starts: set it until it holds.
+  for (let attempt = 0; k === 0 && attempt < 5; attempt++) {
     await sleep(2500)
+    const now = await page.evaluate(() => window.scrollY)
+    if (Math.abs(now - y) < height * 0.15) break
     await page.evaluate((target) => window.scrollTo(0, target), y)
   }
   await sleep(k === 0 ? 5000 : 3000)

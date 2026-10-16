@@ -14,9 +14,19 @@ import { jobs } from '@/content/site'
 import { WORK } from '../journey/path'
 import { hash } from '../noise'
 import { ORBIT_FIRST, ORBIT_SPACING, orbitPose, SPIRAL } from './layout'
-import fragmentShader from '../shaders/glitter.frag'
-import vertexShader from '../shaders/glitter.vert'
+import { grainUniforms, syncGrainTier } from '../particles/CursorField'
+import glitterFragment from '../shaders/glitter.frag'
+import glitterVertex from '../shaders/glitter.vert'
+import glassGrain from '../shaders/glassGrain.glsl'
+import grainMotion from '../shaders/grainMotion.glsl'
 import type { SceneClock } from '../useSceneClock'
+
+/** The glass grains' shaders: the shared grain look and motion round the glitter's own. */
+export const GLITTER_SHADERS = {
+  vertexShader: `${grainMotion}\n${glitterVertex}`,
+  fragmentShader: `${glassGrain}\n${glitterFragment}`,
+}
+const { vertexShader, fragmentShader } = GLITTER_SHADERS
 
 /** Glitter points: per-grain orbit / cloud / seed (positions come from the shader). */
 function chipGeometry(orbit: Float32Array, cloud: Float32Array, seed: Float32Array, count: number) {
@@ -106,10 +116,11 @@ const COLUMN_POCKETS: Pocket[] = [
 ]
 
 /**
- * ~90% of the grains in the pockets (an evenly dense body, quick falloff, a few strays for
- * wispy edges), ~10% as a sparse silver dust round the column, with real empty space
- * between. Each grain gets its orbit (angle, reach, start height, speed), its pocket (or
- * none) and a seed. Phones get fewer grains (three pockets).
+ * ~90% of the grains in the pockets (dense at the core, thinning out, a few strays trailing
+ * into wisps), ~10% as a sparse silver dust: half round the column, half spread wide between
+ * the cards, so no flat empty band shows between the stops. Each grain gets its orbit (angle,
+ * reach, start height, speed), its pocket (or none) and a seed. Phones get fewer grains
+ * (three pockets).
  */
 function createPebbles(layout: Layout) {
   const count = layout === 'column' ? Math.round(sceneConfig.pebbles.count * 0.25) : sceneConfig.pebbles.count
@@ -122,13 +133,13 @@ function createPebbles(layout: Layout) {
     const inPocket = Math.random() < 0.9
     const pocket = pockets[i % pockets.length]
     if (inPocket && pocket) {
-      // Evenly dense body (no burnt-out core where the additive grains would pile up); 6%
-      // stray further out (the wispy edge), so the dark between pockets stays clean.
+      // Dense at the core, thinning towards the edge; 6% stray further out (the wisps, see
+      // glitter.vert), so the dark between pockets stays clean.
       const stray = Math.random() < 0.06
       orbit.set(
         [
           Math.random() * Math.PI * 2,
-          stray ? 0.8 + Math.random() * 0.9 : Math.random() ** 0.8,
+          stray ? 0.8 + Math.random() * 0.9 : Math.random() ** 1.4,
           Math.random() * 6,
           0.5 + Math.random() * 0.5,
         ],
@@ -140,11 +151,12 @@ function createPebbles(layout: Layout) {
         i * 4,
       )
     } else {
-      // Sparse silver dust round the column.
+      // Sparse silver dust: half round the column, half wide between the cards.
+      const wide = Math.random() < 0.5
       orbit.set(
         [
           Math.random() * Math.PI * 2,
-          0.9 + Math.random() ** 2 * 0.6,
+          wide ? 1.4 + Math.random() * 1.6 : 0.9 + Math.random() ** 2 * 0.6,
           (Math.random() * 2 - 1) * halfHeight,
           0.9 + Math.random() * 0.2,
         ],
@@ -167,15 +179,24 @@ const GLITTER = [
 
 /** World size of a tiny grain at the focus (1–2 px at 1×). */
 const GRAIN = 0.011
-/** Pocket grains: visible coloured discs (3–8 px at 1×), like the reference's foam. */
-const POCKET_SCALE = 3.2
+/**
+ * Pocket grains: a touch larger than the column dust (they sit close to the camera's path),
+ * so a pocket holds many tiny points, small glass chips and a few larger ones.
+ */
+const POCKET_SCALE = 2.1
 
 /**
  * `cloudScale`: how much bigger the pocket grains are than the column dust (the spine's
  * foam reads as visible discs); `saturation`: how much colour the grains keep.
  */
-function createUniforms(focusDistance: number, palette?: Color[], cloudScale = 1, saturation = 0.55) {
+export function createGlitterUniforms(
+  focusDistance: number,
+  palette?: Color[],
+  cloudScale = 1,
+  saturation = 0.55,
+) {
   return {
+    ...grainUniforms,
     uCloudScale: { value: cloudScale },
     uSaturation: { value: saturation },
     uTime: { value: 0 },
@@ -191,13 +212,14 @@ function createUniforms(focusDistance: number, palette?: Color[], cloudScale = 1
   }
 }
 
-function updateUniforms(
+export function updateGlitter(
   material: ShaderMaterial | null,
   clock: SceneClock,
   viewportHeight: number,
   scale = 1,
 ) {
   if (!material) return
+  syncGrainTier(material)
   const { brightness, radius, rise } = sceneConfig.pebbles
   const u = material.uniforms
   u.uTime!.value = clock.time
@@ -222,13 +244,13 @@ export function Pebbles({ clock, focusDistance, layout = 'orbit' }: Props) {
   const material = useRef<ShaderMaterial>(null)
   const geometry = useMemo(() => createPebbles(layout), [layout])
   const uniforms = useMemo(
-    () => createUniforms(focusDistance, undefined, POCKET_SCALE, 0.8),
+    () => createGlitterUniforms(focusDistance, undefined, POCKET_SCALE, 1),
     [focusDistance],
   )
   useEffect(() => () => geometry.dispose(), [geometry])
 
   useFrame(({ size, viewport }) => {
-    updateUniforms(material.current, clock, size.height * viewport.dpr)
+    updateGlitter(material.current, clock, size.height * viewport.dpr)
     // Lite tier: half the grains (every pocket keeps its share).
     const lite = useTier.getState().tier === 'lite'
     geometry.setDrawRange(0, lite ? Math.floor(geometry.getAttribute('seed').count / 2) : Infinity)
@@ -273,10 +295,10 @@ export function ChipCluster({
 }) {
   const material = useRef<ShaderMaterial>(null)
   const geometry = useMemo(() => createCluster(clusters, count), [clusters, count])
-  const uniforms = useMemo(() => createUniforms(focusDistance, palette), [focusDistance, palette])
+  const uniforms = useMemo(() => createGlitterUniforms(focusDistance, palette), [focusDistance, palette])
   useEffect(() => () => geometry.dispose(), [geometry])
   useFrame((state) =>
-    updateUniforms(material.current, clock, state.size.height * state.viewport.dpr, size),
+    updateGlitter(material.current, clock, state.size.height * state.viewport.dpr, size),
   )
   return (
     <points geometry={geometry} frustumCulled={false}>
@@ -293,7 +315,7 @@ export function ChipCluster({
   )
 }
 
-function createCluster(clusters: [number, number, number, number][], count: number) {
+export function createCluster(clusters: [number, number, number, number][], count: number) {
   const orbit = new Float32Array(count * 4)
   const cloud = new Float32Array(count * 4)
   const seed = new Float32Array(count * 4)

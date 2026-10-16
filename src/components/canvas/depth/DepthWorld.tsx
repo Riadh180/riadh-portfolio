@@ -11,9 +11,8 @@ import {
   Vector3,
 } from 'three'
 import { sceneColors } from '@/styles/scene'
-import { createMotesGeometry, createMotesUniforms, gaussian } from '../journey/motes'
-import particlesFragment from '../shaders/grain.frag'
-import motesVertex from '../shaders/motes.vert'
+import { createMotesGeometry, createMotesUniforms, gaussian, grainMotes } from '../journey/motes'
+import { syncGrainTier } from '../particles/CursorField'
 import noise from '../shaders/noise.glsl'
 import shaftFragment from '../shaders/shaft.frag'
 import shaftVertex from '../shaders/shaft.vert'
@@ -86,6 +85,9 @@ function createRoots(count: number) {
   return geometry
 }
 
+/** Plankton: slow, sparse glass grains through the water, glinting as the caustics pass. */
+const PLANKTON_DEFINES = { ...grainMotes.defines, CAUSTIC: '' }
+
 /** Plankton: slow, sparse motes through the water. */
 function createPlankton() {
   return createMotesGeometry(1400, (_, out) => {
@@ -130,7 +132,11 @@ export function DepthWorld({ clock, fog }: Props) {
         uOpacity: { value: 0.08 },
         uColor: { value: depthPalette.caustic },
       })),
-      plankton: createMotesUniforms([depthPalette.gem, sceneColors.teal, depthPalette.tip]),
+      plankton: createMotesUniforms(
+        [depthPalette.gem, sceneColors.teal, depthPalette.tip],
+        undefined,
+        true,
+      ),
       roots: { uTime: { value: 0 } },
     }),
     [fog],
@@ -153,6 +159,7 @@ export function DepthWorld({ clock, fog }: Props) {
       if (material) material.uniforms.uTime!.value = t
     })
     if (plankton.current) {
+      syncGrainTier(plankton.current)
       const u = plankton.current.uniforms
       u.uTime!.value = t
       u.uOpacity!.value = 0.9
@@ -210,8 +217,9 @@ export function DepthWorld({ clock, fog }: Props) {
       <points geometry={planktonGeometry} frustumCulled={false}>
         <shaderMaterial
           ref={plankton}
-          vertexShader={motesVertex}
-          fragmentShader={particlesFragment}
+          vertexShader={grainMotes.vertexShader}
+          fragmentShader={grainMotes.fragmentShader}
+          defines={PLANKTON_DEFINES}
           uniforms={uniforms.plankton}
           blending={AdditiveBlending}
           transparent

@@ -1,10 +1,30 @@
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from 'three'
 import type { Color } from 'three'
 import { sceneConfig } from '@/styles/scene'
+import { grainUniforms } from '../particles/CursorField'
+import grainFragment from '../shaders/grain.frag'
+import glassGrain from '../shaders/glassGrain.glsl'
+import grainMotion from '../shaders/grainMotion.glsl'
+import motesVertex from '../shaders/motes.vert'
 
-/** Uniforms for the motes shader (shaders/motes.vert + particles.frag). */
-export function createMotesUniforms(colors: [Color, Color, Color], origin = new Vector3()) {
+/**
+ * Motes drawn as the world's glass grains (trails, transition walls, Depth's plankton): the
+ * shared grain look, the cursor and the place's light. Use with `createMotesUniforms(…,
+ * true)`; Depth adds CAUSTIC to its defines.
+ */
+export const grainMotes = {
+  vertexShader: `${grainMotion}\n${motesVertex}`,
+  fragmentShader: `${glassGrain}\n${grainFragment}`,
+  defines: { GRAIN: '' } as Record<string, string>,
+}
+
+/**
+ * Uniforms for the motes shader (shaders/motes.vert + particles.frag); `grain`: drawn as glass
+ * grains (see grainMotes), with the shared grain uniforms.
+ */
+export function createMotesUniforms(colors: [Color, Color, Color], origin = new Vector3(), grain = false) {
   return {
+    ...(grain ? grainUniforms : {}),
     uTime: { value: 0 },
     uSize: { value: sceneConfig.particles.size },
     uAperture: { value: sceneConfig.particles.aperture },

@@ -4,7 +4,9 @@
 //   node scripts/capture-moments.mjs <url> <outDir> <progress> <shots> [phone]
 //
 // <shots>: comma-separated times in ms after the page has settled at <progress>, e.g.
-// "0,1900,3800,5700". Each frame is named t<ms>.png.
+// "0,1900,3800,5700". Each frame is named t<ms>.png. With a SWIPE, a time written "a500"
+// is taken that long after the swipe ends (screenshots block the page's input, so shots
+// during a swipe would slow it down): e.g. "0,a0,a500,a1000,a1500".
 // Env: LOWGPU=1 (integrated GPU), DPR=2 (Retina), SETTLE=ms before the first shot (5000),
 // SWIPE="x0,y0,x1,y1,durationMs,atMs" moves the pointer (a touch drag on phones) from
 // (x0, y0) to (x1, y1) in px, starting at atMs on the same clock as the shots,
@@ -22,7 +24,7 @@ const phone = device === 'phone'
 const CHROME =
   process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-const shots = shotsArg.split(',').map(Number)
+const shots = shotsArg.split(',')
 const swipe = process.env.SWIPE?.split(',').map(Number)
 
 fs.rmSync(outDir, { recursive: true, force: true })
@@ -56,9 +58,13 @@ await page.evaluateOnNewDocument(() => sessionStorage.setItem('signal-intro', '1
 await page.goto(url, { waitUntil: 'networkidle2' })
 await sleep(2500)
 const [restX, restY] = process.env.POINTER?.split(',').map(Number) ?? [width / 2, height / 2]
-// Phones start the 3D on the first interaction.
-await page.mouse.move(restX, restY)
-await page.mouse.wheel({ deltaY: 1 })
+// Phones start the 3D on the first interaction: a tap there (a scripted wheel tick on an
+// emulated phone leaves the smooth scroll pulling the page back to the top).
+if (phone) await page.touchscreen.tap(width / 2, height * 0.35)
+else {
+  await page.mouse.move(restX, restY)
+  await page.mouse.wheel({ deltaY: 1 })
+}
 await sleep(2500)
 
 const progress = Number(progressArg)
@@ -87,40 +93,46 @@ const y = await page.evaluate((p) => {
   }
   return anchors.at(-1)[0]
 }, progress)
-await page.evaluate((target) => window.scrollTo(0, target), y)
-await sleep(2500)
-await page.evaluate((target) => window.scrollTo(0, target), y)
+// The first jump on a phone can be undone while the 3D starts: set it until it holds.
+for (let attempt = 0; attempt < 5; attempt++) {
+  await page.evaluate((target) => window.scrollTo(0, target), y)
+  await sleep(2500)
+  const now = await page.evaluate(() => window.scrollY)
+  if (Math.abs(now - y) < height * 0.15) break
+}
 await sleep(Number(process.env.SETTLE ?? 5000))
 
 const start = Date.now()
 const at = (ms) => sleep(Math.max(0, start + ms - Date.now()))
 
 async function drag() {
-  const [x0, y0, x1, y1, duration, startAt] = swipe
-  await at(startAt)
+  const [x0, y0, x1, y1, duration] = swipe
+  const begin = Date.now()
   const steps = Math.max(2, Math.round(duration / 16))
-  if (phone) {
-    const touch = (type, x, yy) =>
-      page.touchscreen[type === 'start' ? 'touchStart' : type === 'move' ? 'touchMove' : 'touchEnd'](x, yy)
-    await touch('start', x0, y0)
-    for (let k = 1; k <= steps; k++) {
-      await touch('move', x0 + ((x1 - x0) * k) / steps, y0 + ((y1 - y0) * k) / steps)
-      await at(startAt + (duration * k) / steps)
-    }
-    await page.touchscreen.touchEnd()
-  } else {
-    for (let k = 1; k <= steps; k++) {
-      await page.mouse.move(x0 + ((x1 - x0) * k) / steps, y0 + ((y1 - y0) * k) / steps)
-      await at(startAt + (duration * k) / steps)
-    }
+  if (phone) await page.touchscreen.touchStart(x0, y0)
+  for (let k = 1; k <= steps; k++) {
+    const x = x0 + ((x1 - x0) * k) / steps
+    const y = y0 + ((y1 - y0) * k) / steps
+    if (phone) await page.touchscreen.touchMove(x, y)
+    else await page.mouse.move(x, y)
+    await sleep(Math.max(0, begin + (duration * k) / steps - Date.now()))
   }
+  if (phone) await page.touchscreen.touchEnd()
+  return Date.now()
 }
-const dragging = swipe ? drag() : Promise.resolve()
 
-for (const ms of shots) {
-  await at(ms)
-  await page.screenshot({ path: path.join(outDir, `t${String(ms).padStart(5, '0')}.png`) })
+let swipeEnd = null
+for (const shot of shots) {
+  if (shot.startsWith('a')) {
+    swipeEnd ??= await (async () => {
+      await at(swipe?.[5] ?? 0)
+      return drag()
+    })()
+    await sleep(Math.max(0, swipeEnd + Number(shot.slice(1)) - Date.now()))
+  } else {
+    await at(Number(shot))
+  }
+  await page.screenshot({ path: path.join(outDir, `t${shot.padStart(5, '0')}.png`) })
 }
-await dragging
 console.log(`${shots.length} frames → ${outDir}`, errors.length ? `| ${errors[0]}` : '| clean')
 await browser.close()

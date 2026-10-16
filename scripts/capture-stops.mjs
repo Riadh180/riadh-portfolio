@@ -46,9 +46,13 @@ await page.evaluateOnNewDocument(() => {
 })
 await page.goto(url, { waitUntil: 'networkidle2' })
 await sleep(2500)
-// Phones start the 3D on the first interaction.
-await page.mouse.move(width / 2, height / 2)
-await page.mouse.wheel({ deltaY: 1 })
+// Phones start the 3D on the first interaction: a tap there (a scripted wheel tick on an
+// emulated phone leaves the smooth scroll pulling the page back to the top).
+if (phone) await page.touchscreen.tap(width / 2, height * 0.35)
+else {
+  await page.mouse.move(width / 2, height / 2)
+  await page.mouse.wheel({ deltaY: 1 })
+}
 await sleep(2500)
 await page.evaluate(() => {
   const link = document.createElement('a')

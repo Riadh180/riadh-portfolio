@@ -915,6 +915,30 @@ only on /impressum.
   edge seen at a grazing angle takes a little of the glass (35%); the blades take all of it.
 - **"Before" captures** come from a scratch worktree of the previous stage's tag, built and
   served on port 3101 (phones need a wasted first frame: the first jump can land at the hero).
+- **Grains are glass chips, not hollow beads.** Stage 3 B asks for a "dark body, thin bright
+  rim" bead; built literally, at 3–10 px it read as soap bubbles. The reference's pockets
+  (zoomed 3×) are filled, faceted chips of glass, so the body is filled and tinted (each facet
+  lit its own way, a slightly darker see-through middle), with the thin film-tinted rim, the
+  ~0.5 px fringe and the glint on top. Similarity to the reference decided.
+- **Refraction is a caustic, not a sample.** There is no scene buffer at most places (three's
+  transmission target exists only while The Core's glass is drawn), so on the full tier each chip
+  shows the light it lets through focused on its far side; lite drops it.
+- **One field for every grain**: the glitter (Work pockets, hero and statement dust, System
+  dust), the atmosphere layers, the trail / wall / plankton motes and the rising embers and beads
+  share one fragment include (`glassGrain.glsl`), one vertex include (`grainMotion.glsl`) and one
+  set of uniforms (`particles/CursorField.tsx`). The gold cloud and the statement's slab share
+  the motes shader but keep their own look (a GRAIN define): the statement look is locked.
+- **No stirring over a hovered card on desktop, but on phones only over an open card**: phones
+  keep the card in view focused (it scrambles), so the hover gate would have switched the touch
+  push off at Work.
+- **Phone captures tap to start the 3D.** A scripted wheel tick on an emulated phone leaves
+  Lenis in a smooth scroll that pulls every later jump back to the top (the "first jump lands at
+  the hero" quirk of earlier rounds). Real phones scroll by touch and never see it; the scripts
+  now tap instead (`scripts/*.mjs`).
+- **Integrated-GPU numbers need pauses.** Back-to-back runs on the HD 630 drift down by 5–15 fps
+  (heat, GPU switching): the same build measured 44–52 at the hero in a long sequence and 60 with
+  20 s pauses. Before / after comparisons are now alternated with pauses (`ab.sh` in the session
+  scratchpad: `fps-place.mjs` on :3101 and :3100 in turn).
 - **Work segment = 26–51 s, not 44–60 s.** A 2 s contact sheet of 24–64 s shows Work begins
   at ~26 s (first card, "Frontier"), seg_44 matches 44–51 s (hover on one card), and from
   ~52 s a card is opened (no column, only the detail view). 26–51 s is the whole descent.
@@ -1729,3 +1753,86 @@ Self-review against at_04–at_07:
 
 FPS (production, Retina, at Work): full 59.9–60.3; HD 630 59.9–60.4; HD 630 lite 59.9–60.4;
 phone 390×844 59.9–60.
+
+## Stage 3 — one glass-particle system (tag `loop1-stage-3`)
+Files: new `particles/CursorField.tsx` (the cursor field, the stateless push, the parallax and
+each place's light), `shaders/glassGrain.glsl`, `shaders/grainMotion.glsl`,
+`shaders/cursorField.vert/.frag`, `journey/StatementDust.tsx`, `system/SystemDust.tsx`; changed
+`shaders/glitter.*`, `atmosphere.*`, `grain.frag`, `motes.vert`, `bubble.vert`, `ember.frag` →
+`risingGrain.frag`, `work/Pebbles.tsx`, `journey/Atmosphere.tsx`, `journey/motes.ts`,
+`journey/DustTrail.tsx`, `journey/ParticleWall.tsx`, `journey/ContactEmbers.tsx`,
+`depth/DepthWorld.tsx`, `depth/DepthBubbles.tsx`, `system/SystemPlace.tsx` (mounts the dust),
+`motion/motion.ts` (`MOTION.air`), `Scene.tsx` (mounts the field and the statement dust); tools
+`scripts/shader-check.mjs` (production hides shader errors: this hooks WebGL's compile calls and
+prints any error in context), `fps-place.mjs` (MOVE=1, main-thread time), `capture-moments.mjs`
+(swipes), the phone tap in every script.
+
+A. **Sizes and brightness.** ~75% tiny points, ~20% small chips, ~5% medium and large; per-grain
+   brightness mostly dim with a few bright, the slow twinkle kept; tiny points soft, not hot
+   pixels. Pockets: denser at the core (r^1.4), lobed outlines that trail into wisps, chips 2.1×
+   the column dust; bokeh away from the focus on full (as before).
+B. **Glass look.** Every grain from ~3 px up is a faceted glass chip: 5–7 facets each lit its own
+   way, a darker see-through middle, a thin rim tinted by thin film (teal → pink → gold by angle),
+   a faint red / blue fringe, one glint up-left; full tier: a caustic on the far side (the light
+   it lets through). Glints flare as each chip tumbles through the light, on its own phase.
+C. **Light.** Each place has a light direction and colour (hero key, Work's upper left, System
+   from above, Depth's surface, Contact's warm upper right); glints take its colour (copper in the
+   hero's warm moment). At Work the column's 7 s light sweep passes through the air too: grains
+   in the band brighten and take its pink / teal for a moment. Depth's plankton flares as the
+   caustic web passes over it.
+D. **Cursor.** Full: a 128² spring field in screen space; the cursor's path kicks the springs it
+   passes (pushed aside, a slight swirl, a little along its motion, scaled by its speed) and they
+   settle on `MOTION.air` (0.8 Hz, ζ 0.7: ~1.1 s, ~5% overshoot), leaving a short trail; disturbed
+   grains glint. Near grains move more than far ones; the whole field shifts ~1.5% against the
+   cursor on the camera's pointer spring. Lite and phones (touch drag): a stateless push round the
+   cursor that eases out on the same spring. Off with reduced motion, while scrolling, over a
+   hovered / open card and over the text column.
+E. **Every place.** Hero: the Stage 1 dust as glass chips. Statement: loose dust behind the tagline
+   and just behind The Core's slit (its glass bends the grains). Work: the pockets (same count,
+   positions, hues, 90/10) plus half the 10% dust spread wide between the cards. System: fine
+   dust through the constellation at several depths, brighter near every filament and much
+   brighter along the threads lit on hover. Depth: the plankton as glass chips catching the
+   caustics, 16 larger beads rising with the bubbles. Contact: 110 warm embers round The Core and
+   behind the headline, fading over the text.
+
+Passes (against the Work metrics and the sheets): (1) the system as above; (2) softer, dimmer tiny
+points and a gentler sweep tint (SPARKLE); (3) pocket chips 1.5× → 2.1× (closer to the
+reference's chip size, fewer isolated points). Each closer on the sheet; none reverted.
+
+### Metrics (Work, column + air)
+| Metric | Reference | Stage 2 (final) | Stage 3 pass 1 | Pass 2 | Pass 3 (final) |
+|---|---|---|---|---|---|
+| Mean luminance (0–255) | 28.4 | 33.7 (+19% ✗) | 30.7 (+8% ✓) | 30.6 (+8% ✓) | 32.4 (+14% ✓) |
+| Contrast (luma std dev) | 21.2 | 26.6 (+25% ✗) | 26.3 (+24% ✗) | 26.2 (+24% ✗) | 28.5 (+35% ✗) |
+| 5th percentile | 10.8 | 13.6 (+25% ✗) | 13.6 (+26% ✗) | 13.6 (+26% ✗) | 14.0 (+30% ✗) |
+| 95th percentile | 70.8 | 89.8 (+27% ✗) | 86.0 (+21% ✗) | 86.4 (+22% ✗) | 94.2 (+33% ✗) |
+| Mean saturation | 0.427 | 0.445 (+4% ✓) | 0.436 (+2% ✓) | 0.440 (+3% ✓) | 0.428 (+0% ✓) |
+| EMPTY AREA (% tiles) | 51.1 | 38.5 (-25% ✗) | 46.0 (-10% ✓) | 48.1 (-6% ✓) | 45.7 (-11% ✓) |
+| SPARKLE (points / MP) | 341 | 835 (+145% ✗) | 1232 (+261% ✗) | 1184 (+247% ✗) | 1030 (+202% ✗) |
+| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.23 ✗ | 0.30 ✗ | 0.30 ✗ | 0.29 ✗ |
+
+- EMPTY AREA reached the reference's character (45.7% vs 51.1%; was 38.5%): the pockets are now
+  clusters of chips with dark between them, not overlapping discs. Luminance is in range.
+- **Open: SPARKLE 835 → 1030/MP.** Glitter made of separate chips counts each chip as a point;
+  the sparkle maps show them in the pockets (plus the HTML list and the card edges, as in every
+  run). Larger pocket chips (pass 3) brought it down from 1232.
+- **Open: hue distance 0.23 → 0.29**: more cyan, less violet than the reference (the chips' film
+  rims and the sweep tint lean teal; the pockets keep their hues, as required).
+
+Sheets: `docs/screens/loop1-particles.jpg` (each place, now | new, full frame and 3× crop),
+`docs/screens/loop1-pockets.jpg` (four pockets, reference | now | new, 1× and 3×),
+`docs/screens/loop1-cursor.jpg` (a swipe through a Work pocket: before, end of swipe, +0.5 /
++1.0 / +1.5 s; full field, lite push, phone touch drag).
+
+Self-review against at_04–at_07 and seg_44:
+- Closer: the pockets are glitter of faceted glass chips at many sizes, dense cores thinning to
+  wisps, instead of polka-dot discs; the space round every subject is alive (System's dust, the
+  statement's, Contact's embers) and still dark between clouds.
+- Closer: the air answers the cursor: a pocket parts round a swipe and drifts home in ~1.5 s.
+- Still different: the reference's pockets mix several hues in one cloud and are denser; ours keep
+  one hue per pocket and the same grain count (both locked).
+- Still different: SPARKLE and hue distance (above).
+
+FPS (production, Retina, cursor moving constantly): full tier (discrete GPU) 59.9–60.4 at every
+place; HD 630 lite at Work and the hero 59.4–60.4 in alternated runs with pauses, the same as the
+Stage 2 build. Long back-to-back sequences on the HD 630 dip to ~50 for both builds (heat).

@@ -27,6 +27,10 @@ attribute vec4 seed;
 
 varying vec3 vColor;
 varying float vAlpha;
+varying float vPointSize;
+varying float vSoft;
+varying float vGlint;
+varying float vPhase;
 
 vec3 ramp(float t) {
   float x = fract(t) * 4.0;
@@ -43,6 +47,8 @@ void main() {
   vec3 p = mod(seed.xyz * uBox + drift - cameraPosition, uBox) - uBox * 0.5 + cameraPosition;
 
   vec4 mv = viewMatrix * vec4(p, 1.0);
+  float stirred;
+  mv.xyz = grainCursor(mv.xyz, uFocus, stirred);
   gl_Position = projectionMatrix * mv;
   float depth = -mv.z;
   float fade = smoothstep(uNear, uNear * 1.6, depth) * (1.0 - smoothstep(uFar * 0.65, uFar, depth));
@@ -52,10 +58,14 @@ void main() {
   float blur = abs(depth - uFocus) / max(depth, 0.1) * uAperture * uViewportHeight * 0.02;
   float size = min(sharp + blur, uMaxSize);
   gl_PointSize = fade > 0.001 ? size : 0.0;
+  vPointSize = size;
   // The light of a mote spreads over its disc.
   float spread = clamp(sharp / max(size, 0.001), 0.0, 1.0);
+  vSoft = 1.0 - spread;
+  vPhase = fract(seed.x * 3.1 + seed.z);
+  vGlint = max(grainGlint(p, seed, uTime), stirred);
 
-  vColor = mix(ramp(seed.w * 1.7 + seed.x * 0.3), uAccent, uAccentAmount) * 0.9;
+  vColor = grainLit(mix(ramp(seed.w * 1.7 + seed.x * 0.3), uAccent, uAccentAmount) * 0.9, p);
   // Thinned over the text, so the atmosphere never competes with it.
   vec2 ndc = gl_Position.xy / gl_Position.w;
   float text = max(1.0 - smoothstep(uTextZone.x - 0.25, uTextZone.x, ndc.x), 1.0 - smoothstep(uTextZone.y - 0.25, uTextZone.y, ndc.y));
