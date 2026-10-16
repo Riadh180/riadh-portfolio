@@ -1295,3 +1295,79 @@ Branch `detail-column` from `main` (after merging `detail-cards-2`, tagged `v1-c
   every card at ~50% width (the 75% allowance wasn't needed).
 - Sheet: `docs/screens/title-font-final.jpg` (the reference, all six cards on desktop, all six
   on the phone).
+
+## Part B — the column: glossy vertebrae (`detail 2b`)
+Files: `work/spineGeometry.ts`, `work/oilMaterial.ts`, `shaders/oil.glsl` (the worker is
+unchanged: it builds whatever `createSpineGeometry` returns).
+
+- **Segment rhythm** (`createSegments`, `segmentAt`, `vertebrae()`): the carved mass is cut
+  into vertebrae 1.2–1.8 long (0.8–1.2 card heights), each a slightly asymmetric rounded lobe
+  (its widest point 38–62% down it) of its own size (0.9–1.15×), joined by necks at 62–68% of
+  the lobe; each vertebra turns (±0.45 rad) and leans (±0.11) about its own centre, so
+  neighbours never repeat. The necks count as crevices, so they fall to near-black. The
+  silhouette deformation, S-curve, twist, dissolving tips and phone width are unchanged.
+- **Processes:** a flattened sideways lump on ~60% of the bodies (no blades).
+- **Big smooth surfaces:** the fine chip crust is gone from the carving (only broad swells
+  and a medium ridge remain). The facet field is 4× larger (cells at 5 per unit instead of
+  21), its tilt halved, and softened: the two nearest cells blend over a wide edge. Each
+  lobe holds 1–3 broad highlights.
+- **Highlights:** near-mirror clear coat (roughness 0.1, clear coat 1 at 0.03) and a key
+  highlight that is crisp in its centre and ringed by a thin film running teal → pink →
+  gold towards its edge. The per-facet thin-film colours (the confetti) are gone; the
+  physical film only shows at true grazing angles. The silhouette rim is a third of what it was.
+- **Inner glitter** cut to 20% (threshold 0.992 → 0.9984), dimmer, deeper.
+- **Value:** necks and hollows down to 10% (were 18%); the lobes keep the deep indigo.
+- **Lite:** the same segments and highlights; no facet field at all (smooth lobes). The
+  cube-cell variant showed blocky.
+
+Passes: (1) segments + broad facets + new highlights: the vertebrae read immediately, but
+the highlights and large areas went copper-brown; (2) film only at grazing, weaker rim, more
+carved detail and processes: closer, kept; (3) darker body (environment 1.4 → 1.0), stronger
+film ring, film range 300–600 nm: barely different on the sheet, copper back in places, and
+luminance worse than before the round, so it was reverted to pass 2.
+
+### Column metrics (column + air)
+| Metric | Reference | Before (detail 1b) | Pass 1 | Pass 2 | Pass 3 (reverted) | Final |
+|---|---|---|---|---|---|---|
+| Mean luminance (0–255) | 28.4 | 33.1 (+17% ✗) | 32.6 (+15% ✓) | 32.9 (+16% ✗) | 33.7 (+19% ✗) | 33.2 (+17% ✗) |
+| Contrast (luma std dev) | 21.2 | 25.8 (+22% ✗) | 27.1 (+28% ✗) | 28.1 (+33% ✗) | 28.9 (+37% ✗) | 28.2 (+33% ✗) |
+| 5th percentile | 10.8 | 13.1 (+22% ✗) | 12.3 (+14% ✓) | 12.6 (+17% ✗) | 12.9 (+19% ✗) | 12.6 (+17% ✗) |
+| 95th percentile | 70.8 | 87.3 (+23% ✗) | 87.0 (+23% ✗) | 88.6 (+25% ✗) | 91.2 (+29% ✗) | 88.8 (+25% ✗) |
+| Mean saturation | 0.427 | 0.452 (+6% ✓) | 0.455 (+7% ✓) | 0.450 (+5% ✓) | 0.448 (+5% ✓) | 0.448 (+5% ✓) |
+| EMPTY AREA (% tiles) | 51.1 | 36.2 (-29% ✗) | 39.9 (-22% ✗) | 39.7 (-22% ✗) | 38.8 (-24% ✗) | 38.9 (-24% ✗) |
+| SPARKLE (points / MP) | 341 | 1103 (+223% ✗) | 818 (+140% ✗) | 772 (+127% ✗) | 709 (+108% ✗) | 748 (+119% ✗) |
+| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.17 ✗ | 0.18 ✗ | 0.17 ✗ | 0.16 ✗ | 0.17 ✗ |
+
+- SPARKLE: 1103 → 748 /MP (+223% → +119%), not within ±25%. What remains sits mostly along
+  the column's silhouette and in the dust (sparkle map), not in the column's interior; the
+  reference measures low there because its cards cover most of the frame.
+- EMPTY AREA improved (36.2 → 38.9%) and luminance held (+17% → +17%), as required. Contrast
+  rose (+22% → +33%): the big highlights against the darker necks.
+
+Sheet: `docs/screens/column-vertebrae.jpg`: reference column crops (28, 31, 41, 48.5 s) | now
+| new | new on the HD 630, at 0°/120°/180°/300°, and the phone (now | new). At 180° and 300°
+the centre crop is mostly cards; 0° and 120° show the column.
+
+Self-review against at_04–at_07:
+- Closer: the column now reads as a chain of glossy vertebrae with dark gaps and a few big
+  bright highlights, not a confetti crust.
+- Still different: their vertebrae are more intricate (thin wing-like processes, holes,
+  layered plates) and their edges are strongly iridescent teal/pink; ours are rounder lobes
+  whose highlights lean white with copper patches from the environment's warm moments.
+- Still different: their body is near-black chrome; ours keeps a lilac-indigo sheen.
+
+## Gate (after both parts, production, Retina)
+| | Discrete GPU (full) | HD 630 |
+|---|---|---|
+| Every place | 59.9–60 | 59.9–60 |
+| Down the Work cards | 58.7–60.4 | 59.9–60.3 |
+| Idle hero 60 s (5 s windows) | 60 in all 12 | 60–60.2 in all 12 |
+| Fast scroll, 2 loops (1 s windows) | median 59.9, p10 55.9, min 54.9 (3 runs: min 40.9 / 54.9 / 54.9) | median 59.8, p10 57.8, min 57.8 |
+
+- Full tier fast scroll: the slowest 1 s window is 54.9, 0.1 under the 55 line, in two of
+  three runs (one run had a single 40.9 window). The new column costs a little more on full
+  (the first two card stops 58.7 vs 60 before). Borderline; left as is, not hidden.
+- Lighthouse (3 runs): desktop 93 / 92 / 93, mobile 94 / 94 / 95; Accessibility, Best
+  Practices, SEO 100; no console errors.
+- Reduced motion and no-WebGL: clean, no errors. Phone number: only on /impressum (not in
+  `.next/static`, not on /, /datenschutz, /cv, /work/bliggit or the 404).

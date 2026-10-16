@@ -123,3 +123,28 @@ Hue shares (%, 12 bins of 30° from red: red, orange, yellow, … cyan 180°, bl
 - 1b pass 1: 1 · 0 · 0 · 0 · 0 · 2 · 23 · 37 · 20 · 10 · 5 · 3
 - 1b pass 2: 5 · 1 · 0 · 0 · 0 · 9 · 57 · 12 · 4 · 2 · 4 · 4
 - 1b final (pass 3): 5 · 1 · 0 · 0 · 0 · 9 · 55 · 13 · 4 · 2 · 5 · 6
+
+---
+# Column (Detail 2b): column + air, as in the final round
+
+| Metric | Reference | Before (detail 1b) | Pass 1 | Pass 2 | Pass 3 (reverted) | Final |
+|---|---|---|---|---|---|---|
+| Mean luminance (0–255) | 28.4 | 33.1 (+17% ✗) | 32.6 (+15% ✓) | 32.9 (+16% ✗) | 33.7 (+19% ✗) | 33.2 (+17% ✗) |
+| Contrast (luma std dev) | 21.2 | 25.8 (+22% ✗) | 27.1 (+28% ✗) | 28.1 (+33% ✗) | 28.9 (+37% ✗) | 28.2 (+33% ✗) |
+| 5th percentile | 10.8 | 13.1 (+22% ✗) | 12.3 (+14% ✓) | 12.6 (+17% ✗) | 12.9 (+19% ✗) | 12.6 (+17% ✗) |
+| 95th percentile | 70.8 | 87.3 (+23% ✗) | 87.0 (+23% ✗) | 88.6 (+25% ✗) | 91.2 (+29% ✗) | 88.8 (+25% ✗) |
+| Mean saturation | 0.427 | 0.452 (+6% ✓) | 0.455 (+7% ✓) | 0.450 (+5% ✓) | 0.448 (+5% ✓) | 0.448 (+5% ✓) |
+| EMPTY AREA (% tiles) | 51.1 | 36.2 (-29% ✗) | 39.9 (-22% ✗) | 39.7 (-22% ✗) | 38.8 (-24% ✗) | 38.9 (-24% ✗) |
+| SPARKLE (points / MP) | 341 | 1103 (+223% ✗) | 818 (+140% ✗) | 772 (+127% ✗) | 709 (+108% ✗) | 748 (+119% ✗) |
+| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.17 ✗ | 0.18 ✗ | 0.17 ✗ | 0.16 ✗ | 0.17 ✗ |
+
+Hue shares (%, 12 bins of 30° from red: red, orange, yellow, … cyan 180°, blue 210°, blue-violet 240°, violet 270°, magenta 300°):
+
+- Reference: 1 · 1 · 0 · 0 · 0 · 4 · 37 · 17 · 33 · 3 · 2 · 1
+- Before (detail 1b): 0 · 1 · 1 · 0 · 0 · 2 · 46 · 23 · 20 · 5 · 1 · 0
+- Pass 1: 1 · 1 · 1 · 0 · 0 · 2 · 47 · 24 · 18 · 4 · 1 · 1
+- Pass 2: 1 · 1 · 1 · 0 · 0 · 2 · 46 · 23 · 19 · 4 · 1 · 1
+- Pass 3 (reverted): 2 · 1 · 1 · 0 · 0 · 2 · 47 · 22 · 20 · 5 · 1 · 1
+- Final: 1 · 1 · 1 · 0 · 0 · 2 · 46 · 23 · 19 · 5 · 1 · 1
+
+"Final" = pass 2 plus the lite-only change (no facets on lite), re-recorded.
