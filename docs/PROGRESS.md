@@ -907,6 +907,14 @@ only on /impressum.
   rarely does, so lite was never guaranteed in captures. A measurement-only hook
   (`window.__tier`, set by the scripts' `TIER=lite`) starts a visit on lite; the tier system
   itself is unchanged.
+- **The blades' glass is faked in the opaque material** (a dark see-through body, the film
+  glowing along the rim), not real transparency: a transparent spine is sorted against the
+  additive grains by object distance and would overwrite grains in front of it; fixing its draw
+  order needs `Spine.tsx`, which this stage doesn't unlock.
+- **"Plate edges"**: after the carving a plate's edge can't be told from its face, so every
+  edge seen at a grazing angle takes a little of the glass (35%); the blades take all of it.
+- **"Before" captures** come from a scratch worktree of the previous stage's tag, built and
+  served on port 3101 (phones need a wasted first frame: the first jump can land at the hero).
 - **Work segment = 26–51 s, not 44–60 s.** A 2 s contact sheet of 24–64 s shows Work begins
   at ~26 s (first card, "Frontier"), seg_44 matches 44–51 s (hover on one card), and from
   ~52 s a card is opened (no column, only the detail view). 26–51 s is the whole descent.
@@ -1660,3 +1668,64 @@ Self-review against at_01 / seg_00:
 
 FPS (production, Retina): idle hero 59.9–60.3 on both GPUs (full), lite on the HD 630 59.9–60.3;
 statement 59.9–60.3 on both.
+
+## Stage 2 — the column (tag `loop1-stage-2`)
+Files: `work/spineGeometry.ts`, `work/oilMaterial.ts` (the worker builds whatever the geometry
+returns; `shaders/oil.glsl` unchanged).
+1. **Slimmer core.** The plates are two thirds of their old width and depth; the necks pinch to
+   50–56% of the lobe (were 62–68%) and the lobe falls away faster, so the bodies are chunky only
+   at their centres. Lumps on 30% of the bodies (were 60%), smaller.
+2. **Processes.** On ~85% of the vertebrae, 2–4 wing-like blades round the belly at different
+   heights and turns: leaf-shaped (broad near the root, tapering to a point), mostly upright so
+   the camera sees their broad sides, curving sideways and dropping towards the tip, reaching
+   0.5–1.0 past the surface (0.6–1.2× the core). Rooted inside the lobe and shaped by the same
+   vertebra and column deformation. A `thin` attribute runs 0 → 1 along each blade.
+3. **Glassy edges.** Full: the blades (and a little every edge at a grazing angle) read as tinted
+   glass, a dark body with the 2c film glowing along the rim; rougher, so their edges don't alias.
+   Lite: the rim tint only. The core stays dark chrome with the 2c film.
+4. **Moving light.** The key highlights still slide with the orbit; a soft band of light (film-
+   tinted specular) runs down the whole column every 7 s.
+5. **Outline glints.** No hot highlight or glitter right at the silhouette, rougher blades, the
+   blade tips dimmed.
+
+Passes: (1) slim core + thin curved spurs: they read as hooks; broadened into upright leaf-shaped
+fins and the sweep softened (2) and (3) softer, dimmer blade rims against SPARKLE. Each pass was
+closer on the sheet; none reverted.
+
+### Metrics (column + air)
+| Metric | Reference | v1-chrome | Pass 1 | Pass 2 | Pass 3 (final) |
+|---|---|---|---|---|---|
+| Mean luminance (0–255) | 28.4 | 34.6 (+22% ✗) | 34.3 (+21% ✗) | 33.9 (+19% ✗) | 33.7 (+19% ✗) |
+| Contrast (luma std dev) | 21.2 | 28.4 (+34% ✗) | 27.1 (+28% ✗) | 26.7 (+26% ✗) | 26.6 (+25% ✗) |
+| 5th percentile | 10.8 | 13.4 (+24% ✗) | 13.7 (+27% ✗) | 13.8 (+28% ✗) | 13.6 (+25% ✗) |
+| 95th percentile | 70.8 | 93.9 (+33% ✗) | 91.7 (+29% ✗) | 90.6 (+28% ✗) | 89.8 (+27% ✗) |
+| Mean saturation | 0.427 | 0.427 (+0% ✓) | 0.443 (+4% ✓) | 0.443 (+4% ✓) | 0.445 (+4% ✓) |
+| EMPTY AREA (% tiles) | 51.1 | 37.5 (-27% ✗) | 38.4 (-25% ✗) | 38.3 (-25% ✗) | 38.5 (-25% ✗) |
+| SPARKLE (points / MP) | 341 | 775 (+127% ✗) | 890 (+161% ✗) | 858 (+152% ✗) | 835 (+145% ✗) |
+| Hue distance (TV, 0–1, ≤ 0.15 ✓) | 0 | 0.22 ✗ | 0.23 ✗ | 0.23 ✗ | 0.23 ✗ |
+
+(v1-chrome re-recorded this session: the same code at Work as detail 2c's final, 34.6 / 37.5% /
+775 here vs 34.2 / 37.6% / 793 then.) JSON: `docs/screens/metrics/loop1-column/`.
+- Luminance improved (34.6 → 33.7) and EMPTY AREA moved toward 51% (37.5 → 38.5%), as required.
+- **Open: SPARKLE rose 775 → 835/MP (+8%).** The sparkle map shows the extra points as dotted
+  chains along the blades' edges (thin bright lines count as points; no multisampling at Work);
+  three passes softened them (890 → 858 → 835). Note: the HTML job list and the e-mail line count
+  as points in every run (the metric's crop doesn't exclude them).
+- EMPTY AREA barely moves with the column: most non-empty tiles at Work are the bead pockets
+  (Stage 3).
+
+Sheet: `docs/screens/loop1-column.jpg`: reference column crops (28, 31, 41, 48.5 s) | v1-chrome |
+new at 75°, 105°, 195°, 225° (between the stops), desktop full, desktop lite (forced), and the
+phone (v1 | new).
+
+Self-review against at_04–at_07:
+- Closer: a slim spine with wing-like blades reaching out and down; the outline is spiky and open,
+  with dark gaps between the blades, where v1 was a solid pile ~20% of the frame wide.
+- Closer: the blades read as tinted glass with teal / pink rims; a soft light passes down the column.
+- Closer on phones: a slim finned spine behind the cards instead of a heavy chrome mass.
+- Still different: their vertebrae are more intricate and colourful all over (pink / teal / green
+  speckle); ours keeps 2c's dark chrome lobes, which still read as rounded bodies in places.
+- Still different: SPARKLE (above).
+
+FPS (production, Retina, at Work): full 59.9–60.3; HD 630 59.9–60.4; HD 630 lite 59.9–60.4;
+phone 390×844 59.9–60.

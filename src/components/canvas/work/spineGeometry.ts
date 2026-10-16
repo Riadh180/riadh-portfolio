@@ -9,7 +9,6 @@ import {
   type InterleavedBufferAttribute,
   Matrix4,
   Quaternion,
-  TubeGeometry,
   Vector3,
 } from 'three'
 import { TessellateModifier } from 'three/examples/jsm/modifiers/TessellateModifier.js'
@@ -48,31 +47,67 @@ function lump(radius: number, squash: number) {
 }
 
 /**
- * A spur: a thin, short process curving out sideways and up (or down), tapering to a
- * rounded tip; a tube along a curve whose radius shrinks along it.
+ * A process: a wing-like blade reaching out from a vertebra, curving sideways and dropping a
+ * little towards its tip; flat, leaf-shaped and tapering to a point. `roll` turns the
+ * blade's broad side about its own axis (0 = flat in the horizontal, π/2 = an upright fin):
+ * mostly upright, so the camera, looking across the column, sees their broad sides. Built
+ * along +x from the origin; `thin` runs 0 at the root to 1 at the tip (the material makes
+ * the blade glassy and its very tip dimmer).
  */
-function spur(length: number, radius: number, rise: number, curl: number) {
-  const points = Array.from({ length: 6 }, (_, k) => {
-    const t = k / 5
-    return new Vector3(t * length, rise * t * t * length, curl * Math.sin(t * Math.PI) * length * 0.25)
-  })
-  const geometry = new TubeGeometry(new CatmullRomCurve3(points), 16, radius, 7, false)
-  const position = geometry.getAttribute('position')
-  // Taper: pull each ring towards its centre line by how far along the spur it is.
-  const centre = new Vector3()
-  const curve = new CatmullRomCurve3(points)
-  for (let i = 0; i < position.count; i++) {
-    const ring = Math.floor(i / 8)
-    const t = ring / 16
-    curve.getPoint(t, centre)
-    const taper = 0.25 + 0.75 * (1 - t) ** 0.8
-    position.setXYZ(
-      i,
-      centre.x + (position.getX(i) - centre.x) * taper,
-      centre.y + (position.getY(i) - centre.y) * taper,
-      centre.z + (position.getZ(i) - centre.z) * taper,
-    )
+function process(length: number, radius: number, drop: number, curl: number, roll: number) {
+  const curve = new CatmullRomCurve3(
+    Array.from({ length: 6 }, (_, k) => {
+      const t = k / 5
+      return new Vector3(
+        t * length,
+        -drop * t * t * length + Math.sin(t * Math.PI) * length * 0.06,
+        curl * Math.sin(t * Math.PI * 0.8) * length * 0.3,
+      )
+    }),
+  )
+  const rings = 18
+  const around = 8
+  const positions: number[] = []
+  const thin: number[] = []
+  const indices: number[] = []
+  const point = new Vector3()
+  const tangent = new Vector3()
+  const side = new Vector3()
+  const up = new Vector3()
+  const worldUp = new Vector3(0, 1, 0)
+  for (let r = 0; r <= rings; r++) {
+    const t = r / rings
+    curve.getPointAt(t, point)
+    curve.getTangentAt(t, tangent)
+    side.crossVectors(tangent, worldUp).normalize()
+    up.crossVectors(side, tangent).normalize()
+    // A leaf-shaped wing: broad near the root, swelling a little, then tapering to a point.
+    const taper = radius * (0.06 + 0.94 * Math.sin(Math.min(1, 0.35 + t) * Math.PI) ** 0.8 * (1 - t) ** 0.6)
+    for (let a = 0; a < around; a++) {
+      const v = (a / around) * Math.PI * 2
+      const broad = Math.cos(v) * taper * 2.2
+      const flat = Math.sin(v) * taper * 0.55
+      const w = broad * Math.cos(roll) - flat * Math.sin(roll)
+      const h = broad * Math.sin(roll) + flat * Math.cos(roll)
+      positions.push(
+        point.x + side.x * w + up.x * h,
+        point.y + side.y * w + up.y * h,
+        point.z + side.z * w + up.z * h,
+      )
+      thin.push(t)
+    }
   }
+  for (let r = 0; r < rings; r++) {
+    for (let a = 0; a < around; a++) {
+      const p0 = r * around + a
+      const p1 = r * around + ((a + 1) % around)
+      indices.push(p0, p0 + around, p1, p1, p0 + around, p1 + around)
+    }
+  }
+  const geometry = new BufferGeometry()
+  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
+  geometry.setAttribute('thin', new Float32BufferAttribute(thin, 1))
+  geometry.setIndex(indices)
   return geometry
 }
 
@@ -124,7 +159,7 @@ function createSegments(top: number, bottom: number) {
 
 /**
  * The segment profile at height y: which vertebra, how far down it (0..1), and the lobe
- * (1 at its belly, 0 at the necks between vertebrae). Necks are 62–68% of the lobe's width.
+ * (1 at its belly, 0 at the necks between vertebrae). Necks are 50–56% of the lobe's width.
  */
 function segmentAt(segments: Segment[], y: number) {
   const index = segments.findIndex((s) => y > s.top - s.length)
@@ -132,13 +167,14 @@ function segmentAt(segments: Segment[], y: number) {
   const t = Math.min(1, Math.max(0, (segment.top - y) / segment.length))
   // Asymmetric: rises to the belly, then falls; rounded (sine-shaped) on both sides.
   const u = t < segment.belly ? (t / segment.belly) * 0.5 : 0.5 + ((t - segment.belly) / (1 - segment.belly)) * 0.5
-  const lobe = Math.sin(u * Math.PI) ** 0.7
+  // Chunky at the centre only: the lobe falls away quickly towards the necks.
+  const lobe = Math.sin(u * Math.PI) ** 1.1
   return { segment, t, lobe }
 }
 
 /**
  * The vertebrae, applied to the carved mass: each lobe is scaled to its own size and the
- * necks pinched to ~65% of it; each vertebra leans and turns a little about its centre.
+ * necks pinched to about half of it; each vertebra leans and turns a little about its centre.
  * Returns the lobe value per vertex (0 at the necks) for the material's darkening.
  */
 function vertebrae(positions: BufferAttribute | InterleavedBufferAttribute, segments: Segment[]) {
@@ -148,7 +184,7 @@ function vertebrae(positions: BufferAttribute | InterleavedBufferAttribute, segm
     const y = positions.getY(i)
     const z = positions.getZ(i)
     const { segment, lobe } = segmentAt(segments, y)
-    const neck = 0.62 + hash(Math.round(segment.top * 10), 47, 3) * 0.06
+    const neck = 0.5 + hash(Math.round(segment.top * 10), 47, 3) * 0.06
     const width = segment.size * (neck + (1 - neck) * lobe)
     const centre = segment.top - segment.length * segment.belly
     // Turn about the axis, then lean about the vertebra's centre.
@@ -200,13 +236,14 @@ function deform(positions: BufferAttribute | InterleavedBufferAttribute) {
 }
 
 /**
- * The spine: a chain of glossy vertebrae, longer than the frame ever shows (it runs from
- * above the first card to well below the last). Thick rounded-square bodies of their own
- * size, tilt and turn (some with a small lump) overlap into one mass, are tessellated and
- * carved into broad smooth swells, then shaped into vertebrae (lobes joined by narrower
- * necks, see vertebrae()) and finally into the column's silhouette (deform). A `crevice` attribute (0 on the crests, 1 deep in the
- * carving) lets the material keep the hollows near-black. `edge` is the tessellation
- * (lite: coarser).
+ * The spine: a slim chain of glossy vertebrae with blades reaching out from them, longer
+ * than the frame ever shows (it runs from above the first card to well below the last).
+ * Rounded-square plates of their own size, tilt and turn (a few with a small lump) overlap
+ * into one slim mass, are tessellated and carved into broad smooth swells, then shaped into
+ * vertebrae (lobes joined by narrow necks, see vertebrae()) and the column's silhouette
+ * (deform); 2–4 processes per vertebra reach out of it. A `crevice` attribute (0 on the
+ * crests, 1 deep in the carving) keeps the hollows near-black; `thin` (0 on the core, 1
+ * along each blade, root to tip) makes the processes glassy. `edge` is the tessellation (lite: coarser).
  */
 export function createSpineGeometry(edge = 0.1) {
   const { top, bottom, twist, tilt, bulge } = sceneConfig.spine
@@ -243,17 +280,18 @@ export function createSpineGeometry(edge = 0.1) {
     const rx = (pick(i, 3) - 0.5) * tilt
     const rz = (pick(i, 4) - 0.5) * tilt
     const ry = i * twist * 0.6 + pick(i, 5) * 1.4
-    // Flat, wide plates with fairly sharp bevels.
-    const width = 0.95 + pick(i, 6) * 0.5
-    const depth = 0.8 + pick(i, 7) * 0.45
+    // Flat plates with fairly sharp bevels: a slim core (two thirds of the old width); the
+    // processes carry the outline outwards.
+    const width = (0.95 + pick(i, 6) * 0.5) * 0.67
+    const depth = (0.8 + pick(i, 7) * 0.45) * 0.67
     // A little thicker than the spacing: neighbours overlap and fuse into one mass.
     const thickness = spacing * (1.15 + pick(i, 8) * 0.25)
     parts.push(clean(place(body(width, depth, thickness), wx, y, wz, rx, ry, rz)))
 
-    // Processes: a flattened lump on most bodies, reaching sideways (never a blade).
-    const count = pick(i, 9) < 0.6 ? 1 : 0
+    // A flattened lump on some bodies, fused to the side (the blades are the processes).
+    const count = pick(i, 9) < 0.3 ? 1 : 0
     for (let k = 0; k < count; k++) {
-      const radius = 0.16 + pick(i, 11 + k) * 0.14
+      const radius = (0.16 + pick(i, 11 + k) * 0.14) * 0.7
       const side = ry + (k === 0 ? 0 : Math.PI) + (i % 2) * Math.PI + (pick(i, 17 + k) - 0.5) * 1.2
       const reach = width * 0.42
       parts.push(
@@ -310,29 +348,36 @@ export function createSpineGeometry(edge = 0.1) {
   // Smooth shaded: broad curved surfaces; the mesh's own triangles never show.
   carved.computeVertexNormals()
 
-  // Spurs: on about half of the vertebrae, one or two thin curved processes from the lobe's
-  // belly, shaped by the same vertebra and column deformation so they stay attached.
+  // Processes: on most vertebrae 2–4 blades reaching out and a little down from round the
+  // belly, layered at different heights and turns, 0.6–1.2× the core's width beyond its
+  // surface, so the outline is spiky and open, with dark space between them. Rooted inside
+  // the lobe and shaped by the same vertebra and column deformation, so they stay attached.
   const spurs: BufferGeometry[] = []
+  carved.setAttribute('thin', new Float32BufferAttribute(positions.count, 1))
   chain.forEach((segment, k) => {
-    if (hash(k, 51, 3) > 0.5) return
-    const count = hash(k, 52, 3) < 0.4 ? 2 : 1
+    if (hash(k, 51, 3) > 0.85) return
+    const count = 2 + Math.floor(hash(k, 52, 3) * 2.99)
+    const start = hash(k, 58, 3) * Math.PI * 2
     for (let s = 0; s < count; s++) {
-      const length = 0.3 + hash(k * 3 + s, 53, 3) * 0.25
-      const part = spur(
+      const seed = k * 5 + s
+      // Core width (before the lobe's scale) ~0.8: rooted just inside the surface, blades
+      // reach 0.5–1.0 past it.
+      const length = 0.15 + 0.8 * (0.6 + hash(seed, 53, 3) * 0.6)
+      const part = process(
         length,
-        0.035 + hash(k * 3 + s, 54, 3) * 0.02,
-        (hash(k * 3 + s, 55, 3) - 0.4) * 0.8,
-        (hash(k * 3 + s, 56, 3) - 0.5) * 1.2,
+        0.09 + hash(seed, 54, 3) * 0.06,
+        0.1 + hash(seed, 55, 3) * 0.25,
+        (hash(seed, 56, 3) - 0.5) * 0.8,
+        Math.PI * (0.3 + hash(seed, 60, 3) * 0.25) * (hash(seed, 61, 3) < 0.5 ? 1 : -1),
       )
-      const angle = hash(k * 3 + s, 57, 3) * Math.PI * 2 + s * Math.PI
-      // Rooted inside the lobe, at its belly, reaching out past its surface.
-      part.translate(0.55 * segment.size, 0, 0)
+      const angle = start + (s / count) * Math.PI * 2 + (hash(seed, 57, 3) - 0.5) * 0.9
+      const height = segment.top - segment.length * (segment.belly + (hash(seed, 59, 3) - 0.5) * 0.35)
+      part.translate(0.26, 0, 0)
       part.rotateY(angle)
-      part.translate(0, segment.top - segment.length * segment.belly, 0)
+      part.translate(0, height, 0)
       const spurPositions = part.getAttribute('position')
       vertebrae(spurPositions, chain)
       deform(spurPositions)
-      part.deleteAttribute('uv')
       part.computeVertexNormals()
       part.setAttribute('crevice', new Float32BufferAttribute(spurPositions.count, 1))
       spurs.push(part)
