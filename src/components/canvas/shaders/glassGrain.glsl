@@ -19,6 +19,26 @@ vec3 grainFilmRamp(float t) {
 }
 
 /**
+ * How much of the sprite a grain covers (0..1): a soft disc when tiny, the chip's polygon
+ * from a few pixels up. For grains drawn with normal blending (a card's dissolve dust).
+ */
+float grainBody(vec2 c, float size, float phase) {
+  float r = length(c);
+  float disc = 1.0 - smoothstep(0.55, 1.0, r);
+  float chip = smoothstep(2.2, 4.5, size);
+  if (chip <= 0.0) return disc;
+  float px = 2.0 / max(size, 1.0);
+  float n = 5.0 + floor(fract(phase * 3.7) * 3.0);
+  float a = atan(c.y, c.x) - phase * 6.2831;
+  float sector = floor((a / 6.2831 + 0.5) * n);
+  float h = fract(sin(sector * 12.9898 + phase * 78.233) * 43758.5453);
+  float centre = ((sector + 0.5) / n - 0.5) * 6.2831;
+  float toEdge = r * cos(a - centre) / cos(3.14159 / n);
+  float edge = 0.8 + 0.18 * h;
+  return mix(disc, 1.0 - smoothstep(edge - 1.4 * px, edge, toEdge), chip);
+}
+
+/**
  * c: sprite coordinate (-1..1, y up); size: sprite size in px; tint: the grain's colour (its
  * brightness included); glint: 0..1 how squarely it catches the light now (tumbling);
  * phase: per-grain 0..1 (its facets, film and turn). Returns additive colour.

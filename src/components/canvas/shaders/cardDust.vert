@@ -17,6 +17,9 @@ attribute vec4 seed;
 
 varying vec3 vColor;
 varying float vAlpha;
+varying float vPointSize;
+varying float vGlint;
+varying float vPhase;
 
 void main() {
   float threshold = dissolveThreshold(spot, uSeed);
@@ -24,8 +27,9 @@ void main() {
   float life = max(0.0, uDissolve - threshold) * 1.4;
 
   vec3 p = vec3((spot - 0.5) * uSize, uFront);
-  // Away from the face and slightly outward: the glass flakes off towards the viewer.
-  vec3 outward = vec3((spot - 0.5) * vec2(1.2, 0.8), 0.9 + seed.x);
+  // Away from the face, outward and drifting off to the left (towards the details), as in the
+  // reference's dissolve: a stream of image-coloured chips, not a puff towards the viewer.
+  vec3 outward = vec3((spot - 0.5) * vec2(1.5, 0.9) + vec2(-0.55, 0.0), 0.45 + seed.x * 0.6);
   vec3 swirl = vec3(
     snoise(vec3(spot * 3.0, seed.y * 5.0 + life * 0.6)),
     snoise(vec3(spot * 3.0 + 7.0, seed.z * 5.0 + life * 0.6)),
@@ -37,8 +41,12 @@ void main() {
   gl_Position = projectionMatrix * mv;
 
   float released = step(0.0001, life);
-  vAlpha = released * smoothstep(1.2, 0.1, life) * 0.9;
+  vAlpha = released * smoothstep(1.5, 0.15, life);
   vColor = texture2D(uImage, spot).rgb * 1.5 + 0.08;
-  // Fine: mostly tiny flakes, a few slightly larger.
-  gl_PointSize = released * uPointScale * (0.35 + seed.z * seed.z * 1.1) / max(-mv.z, 0.1);
+  // Chips of a few pixels, a few larger: the world's glass grains (glassGrain.glsl), each
+  // turning as it drifts, so its glint flares now and then.
+  gl_PointSize = released * uPointScale * (0.7 + seed.z * seed.z * 1.6) / max(-mv.z, 0.1);
+  vPointSize = gl_PointSize;
+  vGlint = pow(0.5 + 0.5 * sin(life * (4.0 + seed.x * 5.0) + seed.w * 6.2831), 12.0);
+  vPhase = fract(seed.y * 3.3 + seed.z);
 }

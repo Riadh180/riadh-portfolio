@@ -50,7 +50,8 @@ export function WorkDetail({ slug }: { slug?: string | null }) {
       aria-labelledby="work-detail-title"
       tabIndex={-1}
       key={job.slug}
-      className="detail-in flex w-full max-w-[46ch] flex-col gap-4 outline-none"
+      // Phones: at most half the screen (it scrolls), so the opened card above stays clear.
+      className="detail-in flex max-h-[50svh] w-full max-w-[46ch] flex-col gap-4 overflow-y-auto outline-none lg:max-h-none lg:overflow-visible"
     >
       <JobDetail job={job} headingId="work-detail-title" />
       <nav aria-label="More work" className="flex gap-4 ui text-xs">

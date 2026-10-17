@@ -4,6 +4,7 @@
 //   node scripts/fps-place.mjs <url> <#place | progress> <seconds> [phone]
 //
 // Arrives by the nav (a hash, e.g. #work) or by scrolling to a journey progress (e.g. 2.4),
+// or stays where the URL put it ("stay", e.g. a /work/<slug> page with its card open),
 // settles, then counts frames in 2s windows. Env: LOWGPU=1 (the integrated GPU),
 // MOVE=1 keeps the pointer moving in slow figure-eights the whole time.
 import puppeteer from 'puppeteer-core'
@@ -50,7 +51,9 @@ else {
   await page.mouse.wheel({ deltaY: 1 })
 }
 await sleep(3000)
-if (where.startsWith('#')) {
+if (where === 'stay') {
+  // The URL decides (e.g. /work/<slug> opens that card).
+} else if (where.startsWith('#')) {
   await page.evaluate((h) => {
     const a = document.createElement('a')
     a.href = h

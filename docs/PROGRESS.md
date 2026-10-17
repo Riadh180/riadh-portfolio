@@ -945,6 +945,14 @@ only on /impressum.
 - **Stage 4: the pockets keep their placement rule** (same count, hues, split, the same
   formula); its inputs follow the new path (the camera's angle at each height, the cards' new
   poses), so the pockets keep wrapping the column where the camera looks.
+- **Stage 5: the open card's height on 16:10 is 66.5%, not 70–75%.** The card is 16:10 like
+  the screen, and the space right of the details column is ~67% of the width, so a 72%-tall card
+  would be cut by the frame or laid over the details. It is 72% where it fits (16:9 and wider)
+  and as tall as fits otherwise (`openFrame` in `WorkCards.tsx`).
+- **Stage 5: on phones the details panel scrolls within half the screen.** Bliggit's details
+  (with its login screenshot) were taller than the space under the opened card and covered it
+  (before and after this loop); the panel now holds at most 50svh and scrolls, so the card
+  above stays clear (Close stays reachable by scrolling, Esc and Back).
 - **Integrated-GPU numbers need pauses.** Back-to-back runs on the HD 630 drift down by 5–15 fps
   (heat, GPU switching): the same build measured 44–52 at the hero in a long sequence and 60 with
   20 s pauses. Before / after comparisons are now alternated with pauses (`ab.sh` in the session
@@ -1885,3 +1893,53 @@ Self-review against at_04–at_09 and seg_44:
 FPS (production, Retina, alternated with Stage 3 with 30 s pauses, HD 630 lite at Work): still
 57.5–60 vs Stage 3's 57.9–60.3; cursor moving 56.0–60.4 vs 56.4–60. Full tier (discrete GPU):
 59.7–60.4 still and moving.
+
+## Stage 5 — the opened card (tag `loop1-stage-5`)
+Files: `work/WorkCards.tsx` (the open frame, square to the screen, almost no tilt; the dust's
+glass look; the measurement corners include the open card), `shaders/frost.frag` (the open
+grade), `shaders/cardDust.vert/.frag` (the dissolve as the world's glass chips),
+`shaders/glassGrain.glsl` (`grainBody`, the chip's outline for normal blending),
+`components/work/WorkDetail.tsx` (phones: the details scroll within half the screen); tools
+`scripts/capture-open.mjs` (each card via its /work/<slug> page), `capture-opening.mjs` (an
+opening and closing in time), `card-tone.mjs` (closed vs open brightness and saturation inside
+the card), the capture scripts save the card's corners.
+1. **Open state.** Desktop: centred in the area right of the details column, a touch below the
+   middle (the top clears the section indicator), 72% of the frame height where that width fits
+   (66.5% on 16:10), never cut. Square to the screen (the camera's own orientation: no
+   keystone), the idle and cursor tilt cut to 15% (≤ ~2°).
+2. **Open media.** Sharp, in the family grade: the brightest, most saturated fills (the live
+   scenes' neon mint) pulled back towards the family's tones and the whole a little dimmer. The
+   single light sweep is kept.
+
+| Card | Closed luminance | Open luminance | Open / closed | Closed saturation | Open saturation |
+|---|---|---|---|---|---|
+| bliggit | 56.6 | 79.1 | 1.40× | 0.29 | 0.30 |
+| kuehne-nagel | 46.3 | 62.7 | 1.35× | 0.42 | 0.40 |
+| adesso | 39.4 | 49.9 | 1.27× | 0.34 | 0.32 |
+| eon | 51.8 | 71.8 | 1.39× | 0.44 | 0.45 |
+| licht-und-schatten | 40.6 | 55.2 | 1.36× | 0.24 | 0.25 |
+| freelance | 45.5 | 57.6 | 1.27× | 0.40 | 0.40 |
+
+   (Before: 1.33–1.53×, Bliggit 1.53×, E.ON 1.45×.)
+3. **Dissolve.** Opening and closing keep the particle dissolve (defrost from the edges in, the
+   glass breaking away); its dust is now the world's glass chips (`glassGrain` with the chip's
+   own outline as alpha), each tinted by the spot of the image it broke from, about twice the
+   size and longer-lived, streaming off to the left as in at_08. Checked on all six cards.
+4. **Phone.** The opened card spans 85% of the width in the upper part, the details below; all
+   six fit, nothing cut (Bliggit's details no longer cover its card).
+
+Sheet: `docs/screens/loop1-open-card.jpg` (at_08 | now | new for the six cards on desktop, a
+dissolve frame; the six on the phone, now | new).
+
+Self-review against at_08 / at_09:
+- Closer: the opened card faces the viewer head on, calm and large in the space right of the
+  details, the details in small mono at the left with ← Close.
+- Closer: the open media stays dark-glass family (≤ 1.40× the closed card, the same saturation);
+  no neon panels.
+- Closer: the card breaks into image-coloured glass chips that stream off to the left.
+- Still different: their dissolve is a dense, opaque cloud of large chips; ours is thinner.
+- Still different: around their opened card the scene falls into smoke; ours keeps the dimmed
+  column and neighbours behind it.
+
+FPS (production, Retina, a card open): 59.9–60.3 on the discrete GPU, the HD 630 and the HD 630
+lite.

@@ -120,6 +120,16 @@ void main() {
   // The cast glass catches a little light along each ripple crest.
   color += uEdgeGlow * smoothstep(0.55, 0.95, ripple) * 0.035 * glass;
 
+  // Opened (cleared): sharp, but kept in the family grade: the brightest, most saturated
+  // fills (a scene's neon mint) pulled back towards the family's dusty tones, and a little
+  // dimmer overall, so the open card is at most ~1.4× the closed one, never a lit panel.
+  {
+    float l = dot(color, vec3(0.299, 0.587, 0.114));
+    vec3 chroma = color - l;
+    float neon = smoothstep(0.18, 0.45, length(chroma)) * smoothstep(0.15, 0.5, l);
+    color = mix(color, l + chroma * 0.65, neon * clear);
+    color *= mix(1.0, 0.92, clear);
+  }
   // The seam takes the image's own colour, lifted: the card burns away into its dust.
   color = color * mix(uBrightness, 1.05, clear) * (1.0 + seam * 0.8);
   vec4 title = texture2D(uTitle, vUv);

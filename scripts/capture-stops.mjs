@@ -93,6 +93,9 @@ for (let step = 0; step < 14 && seen.size < 6; step++) {
   if (slug && !seen.has(slug)) {
     seen.add(slug)
     await page.screenshot({ path: path.join(outDir, `${seen.size}-${slug}.png`) })
+    // The card's projected corners (for scripts/card-tone.mjs).
+    const corners = await page.evaluate((s) => window.__cardCorners?.[s] ?? null, slug)
+    fs.writeFileSync(path.join(outDir, `${seen.size}-${slug}.json`), JSON.stringify(corners))
   }
   for (let k = 0; k < 4; k++) {
     await page.mouse.wheel({ deltaY: phone ? 120 : 100 })

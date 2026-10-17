@@ -35,6 +35,8 @@ import frostFragment from '../shaders/frost.frag'
 import frostVertex from '../shaders/frost.vert'
 import cardDustFragment from '../shaders/cardDust.frag'
 import cardDustVertex from '../shaders/cardDust.vert'
+import glassGrain from '../shaders/glassGrain.glsl'
+import { grainUniforms } from '../particles/CursorField'
 import dissolve from '../shaders/dissolve.glsl'
 import noise from '../shaders/noise.glsl'
 import type { SceneClock } from '../useSceneClock'
@@ -250,8 +252,11 @@ function createDustGeometry() {
 function createDustMaterial(face: CardFace, seed: number, live?: Texture) {
   return new ShaderMaterial({
     vertexShader: `${noise}\n${dissolve}\n${cardDustVertex}`,
-    fragmentShader: cardDustFragment,
+    fragmentShader: `${glassGrain}\n${cardDustFragment}`,
     uniforms: {
+      // The world's glass grains: the film's hues and the place's light (CursorField).
+      uGrainFilm: grainUniforms.uGrainFilm,
+      uGrainLightColor: grainUniforms.uGrainLightColor,
       uImage: { value: live ?? face.image },
       uDissolve: { value: 0 },
       uSeed: { value: seed },
@@ -270,8 +275,26 @@ const smooth01 = (x: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, 
 /** Easing for the fly-in: heavy in, heavy out (the site's default curve, roughly). */
 const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2)
 
+/** The details column's share of the width (desktop, left) and the margin kept round the card. */
+const OPEN = { details: 0.31, margin: 0.025 }
+
+/**
+ * Where an opened card sits, in the frame: its height (share of the frame) and its centre
+ * (NDC). Desktop: 72% of the frame height, centred in the area right of the details column,
+ * smaller where that area isn't wide enough (16:10 screens), so it is never cut by the frame
+ * or laid over the details. Phones: 85% of the width, in the upper part, the details below.
+ */
+function openFrame(layout: CardLayout, aspect: number) {
+  const cardAspect = CARD.width / CARD.height
+  if (layout === 'column') return { height: (0.85 * aspect) / cardAspect, x: 0, y: 0.45 }
+  const room = 1 - OPEN.details - OPEN.margin
+  const height = Math.min(0.72, ((room - OPEN.margin) * aspect) / cardAspect)
+  // A touch below centre: the top clears the section indicator under the nav.
+  return { height, x: (OPEN.details + room / 2) * 2 - 1, y: -0.02 }
+}
+
 /** How long the fly-in and the dissolve take, in seconds (MOTION.md: fly-in ~1s). */
-const OPEN = { fly: 1, dissolve: 0.9 }
+const TIMING = { fly: 1, dissolve: 0.9 }
 
 type Props = { layout: CardLayout; clock: SceneClock }
 
@@ -418,6 +441,7 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     lift: new Vector3(),
     look: new Quaternion(),
     rest: new Quaternion(),
+    screen: new Quaternion(),
     tilt: new Quaternion(),
     euler: new Euler(),
     up: new Vector3(0, 1, 0),
@@ -455,11 +479,11 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
 
     // Open: fly in, then dissolve. Close: re-form first, then fly home.
     if (isOpen) {
-      s.fly = Math.min(1, s.fly + dt / OPEN.fly)
-      if (s.fly > 0.85) s.dissolve = Math.min(2, s.dissolve + dt / OPEN.dissolve)
+      s.fly = Math.min(1, s.fly + dt / TIMING.fly)
+      if (s.fly > 0.85) s.dissolve = Math.min(2, s.dissolve + dt / TIMING.dissolve)
     } else {
-      s.dissolve = Math.max(0, s.dissolve - (dt / OPEN.dissolve) * 1.6)
-      if (s.dissolve < 0.15) s.fly = Math.max(0, s.fly - dt / OPEN.fly)
+      s.dissolve = Math.max(0, s.dissolve - (dt / TIMING.dissolve) * 1.6)
+      if (s.dissolve < 0.15) s.fly = Math.max(0, s.fly - dt / TIMING.fly)
     }
     const flown = easeInOut(s.fly)
     const scale = layout === 'column' ? COLUMN_SCALE : 1
@@ -480,25 +504,21 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     // Focused: comes forward, towards the camera.
     g.position.lerp(s.eye, s.focus * 0.12 * (1 - flown))
 
-    // Flown in: centred in front of the camera, a little right of centre (the details
-    // appear at the left), big enough to fill most of the view.
+    // Flown in: square to the screen in front of the camera (desktop: centred right of the
+    // details column; phones: across the width, above the details), see openFrame.
     if (flown > 0) {
       camera.getWorldDirection(s.forward)
       s.right.crossVectors(s.forward, s.up).normalize()
-      // Big and sharp: ~57% of the screen width, centred right of the middle, leaving the
-      // left for the details (at_08). Phones: ~85% wide in the top third, above them.
+      s.lift.crossVectors(s.right, s.forward).normalize()
       const perspective = camera as PerspectiveCamera
       const tan = Math.tan((perspective.fov * Math.PI) / 360)
-      const share = layout === 'column' ? 0.85 : 0.57
-      const distance = (CARD.width * scale) / (share * 2 * tan * perspective.aspect)
-      const halfWidth = distance * tan * perspective.aspect
-      const halfHeight = distance * tan
-      s.lift.crossVectors(s.right, s.forward).normalize()
+      const frame = openFrame(layout, perspective.aspect)
+      const distance = (CARD.height * scale) / (frame.height * 2 * tan)
       s.open
         .copy(camera.position)
         .addScaledVector(s.forward, distance)
-        .addScaledVector(s.right, layout === 'column' ? 0 : halfWidth * 0.2)
-        .addScaledVector(s.lift, layout === 'column' ? halfHeight * 0.45 : 0)
+        .addScaledVector(s.right, frame.x * distance * tan * perspective.aspect)
+        .addScaledVector(s.lift, frame.y * distance * tan)
       g.parent?.worldToLocal(s.open)
       g.position.lerp(s.open, flown)
     }
@@ -506,6 +526,12 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     s.rest.setFromAxisAngle(s.up, target.turn)
     g.lookAt(camera.position)
     s.look.copy(g.quaternion)
+    // Open: square to the screen (it faces the viewer head on, no keystone): the camera's own
+    // orientation, in the cards' space.
+    if (flown > 0 && g.parent) {
+      g.parent.getWorldQuaternion(s.screen).invert().multiply(camera.quaternion)
+      s.look.slerp(s.screen, flown)
+    }
     // At rest a card leans its own way towards the viewer (some most of the way, some kept
     // turned along the spiral so their side walls show); focused or open, it turns fully.
     // The card at the camera's stop leans a little towards it.
@@ -520,8 +546,10 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
       Math.sin(t * 0.23 + index * 2.1) * TILT.drift + s.pointer.x * TILT.cursor - 0.08,
       Math.sin(t * 0.17 + index * 0.7) * 0.015 + target.roll,
     )
-    s.euler.x *= 1 - flown * 0.6
-    s.euler.y *= 1 - flown * 0.6
+    // Open: almost still (a couple of degrees at most), the card calm in front of the viewer.
+    s.euler.x *= 1 - flown * 0.85
+    s.euler.y *= 1 - flown * 0.85
+    s.euler.z *= 1 - flown * 0.85
     g.quaternion.multiply(s.tilt.setFromEuler(s.euler))
     g.scale.setScalar(scale * (1 + s.focus * 0.06 * (1 - flown)))
 
@@ -582,7 +610,8 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     }
 
     if (window.__cardCorners) {
-      if (glass.visible && shown(g)) {
+      // The open card too: its glass block has broken away, its screen is what shows.
+      if ((glass.visible || isOpen) && shown(g)) {
         exportCorners(job.slug, g, camera as PerspectiveCamera, size.width, size.height)
       } else delete window.__cardCorners[job.slug]
     }
