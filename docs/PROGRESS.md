@@ -2368,3 +2368,58 @@ WebGL.
   it for you as well.
 - **Content**: project media in `public/work/<slug>/` and the sculpted spine
   (`public/models/spine.glb`) lift the two "needs art" differences above.
+
+# Polish loop 2 (2026-10-17)
+Branch `polish-loop2` from `main` at `v2` (polish loop 1 merged, 9798b1f; the same commit is
+tagged `before-loop2`). Nothing goes to `main`. Every stage ends with a commit, a tag
+`loop2-stage-N` and a push of the branch.
+
+## Plan
+Tools: loop 1's scripts (capture-progress with the magnet off, capture-moments, record-work,
+compare-frames, empty-area, fps, fps-place, fps-scroll, console-check, phone-only-impressum),
+new ones where a stage needs them. Production build on port 3100, "before" builds on 3101.
+
+**Stage 1 — pockets: soft round beads, mixed hues.** `shaders/glassGrain.glsl` (the bead:
+round soft body, darker see-through middle, fresnel rim with thin film, one small glint, a
+fringe ≤ 0.5 px on large beads only), `shaders/grainMotion.glsl` (brightness tiers ~70 / 25 /
+5% and glints on the bright tier only, for every grain), the grain vertex shaders (glitter,
+atmosphere, motes, bubble, card dust: tiers, wider blur range on full), `work/Pebbles.tsx`
+(every pocket mixes 3–4 hues, one dominant at ~50%: teal-green, blue, violet, pink, a little
+gold). Metrics: SPARKLE ≤ 2× the reference, hue distance ≤ 0.2. Sheet `loop2-pockets.jpg`.
+
+**Stage 2 — cursor flow.** `particles/CursorField.tsx` and its field shaders (full: a 256²
+flow texture the cursor writes its velocity into, advected with a slight curl and decaying,
+plus a spring back home; lite and phones: the stateless push with a short velocity history),
+`shaders/grainMotion.glsl` (how grains sample it, the glint of disturbed grains, the depth
+parallax), per-place strengths, the card face and text blocks kept clear, touch drag at 60%
+and a tap ripple on phones. Targets: a medium swipe moves near beads 30–60 px at 1440×900,
+drift 0.3–0.6 s, settled in 1.5–2.5 s. Sheet `loop2-cursor.jpg` + `loop2-cursor.mp4`.
+
+**Stage 3 — the first scroll.** `hero/Emblem.tsx` and `journey/GoldCloud.tsx` between progress
+0 and 1 only: The Core comes down with the camera from the first scroll, turning edge-on, and
+arrives as the statement's slit; the cloud denser round it, thinning as the statement arrives.
+Rest states unchanged. Strip 0–1.1 at 0.05: `loop2-first-scroll.jpg` with seg_12.
+
+**Stage 4 — the opened card's backdrop.** `work/WorkCards.tsx`, `depth/CapstonePanel.tsx`, a
+backdrop layer (darken ~50–60%, a slow smoky fog in front of the scene; full: blur; lite: darken
++ fog), a denser bead dissolve. Sheet `loop2-open-card.jpg`.
+
+**Stage 5 — click to close.** The open state's click handling (the card and the backdrop),
+`ui/Cursor.tsx` and `stores/cursor.ts` ("CLOSE", the pair of "OPEN"), the open views' button
+semantics and focus. Sheet `loop2-close.jpg`.
+
+**Stage 6 — small fixes.** The capstone's medallion image graded like the dashboard; glass dust
+at the phone's System arrival (≤ 60% empty).
+
+**Gate**, then the report here and as the last message.
+
+## LOCKED (unchanged this loop)
+Everything not listed above: the hero, the column, the cards' tone, titles and faces, the
+gallery layout, the capstone layout, transition timing outside Stage 3, UI copy, content, SEO,
+legal pages, the CV, the tier system, performance work. The phone number only on /impressum.
+
+## Decisions I made
+- **The recording shows no cursor over the particles.** Across Work (26–51 s) the pointer
+  hovers the cards (a hand over the card's edge), and in the hero's strip it crosses empty
+  space; no frame has it over a pocket. Stage 2 follows the brief's own targets (flow, swirl,
+  inertia, 30–60 px for a medium swipe).
