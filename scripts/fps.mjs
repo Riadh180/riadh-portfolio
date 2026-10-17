@@ -1,7 +1,8 @@
 // Frame-rate gate (production build, Retina): every place, down the Work cards, the hero
 // idling for 60s, and a fast scroll through two loops of the world.
 //
-//   node scripts/fps.mjs <url> [phone]      (LOWGPU=1: the integrated GPU, i.e. the lite tier)
+//   node scripts/fps.mjs <url> [phone]      (LOWGPU=1: the integrated GPU, i.e. the lite tier;
+//   ONLY=idle: the idle hero alone)
 //
 // Frames are counted with requestAnimationFrame inside the page; each window's FPS is
 // frames / seconds. Prints one JSON object.
@@ -76,6 +77,11 @@ const result = {}
 // Idle hero, 60s in 5s windows.
 result.idleHero = []
 for (let k = 0; k < 12; k++) result.idleHero.push(round(await measure(5000)))
+if (process.env.ONLY === 'idle') {
+  console.log(JSON.stringify(result))
+  await browser.close()
+  process.exit(0)
+}
 
 // Every place (arrive, settle 2s, measure 4s).
 result.places = {}
