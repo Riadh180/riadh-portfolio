@@ -84,6 +84,11 @@ export type Job = {
   cvSummary?: string
   /** More images shown in the opened card's details (public/work/<slug>/…). */
   gallery?: { src: string; alt: string }[]
+  /**
+   * What the images in public/work/<slug>/ show, by file name (the capstone's gallery is
+   * every image in its folder; a file not named here is described by its number).
+   */
+  galleryAlt?: Record<string, string>
   /** A public repository, linked from the details. */
   repo?: string
   /** A part of the cover to show (source pixels: x, y, width, height). */
@@ -335,6 +340,12 @@ export const capstone: Job = {
     'Plotly',
   ],
   repo: 'https://github.com/Riadh180/data-engineering-capstone',
+  galleryAlt: {
+    'dashboard.png':
+      'The live dashboard: occupations posted in 2026 by how exposed their tasks are to generative AI',
+    'aiwork_medallion.svg':
+      'The medallion flow: raw data through bronze, silver and gold layers to the dashboard',
+  },
   // The live dashboard (Streamlit): its AI-exposure bubble chart.
   coverFile: 'dashboard.png',
   clearCover: true,

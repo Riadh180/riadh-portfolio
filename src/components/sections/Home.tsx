@@ -16,7 +16,7 @@ export function Home({ work = null }: { work?: string | null }) {
       <div aria-hidden className="h-[150svh]" />
       <WorkSection initial={work} />
       <SystemSection />
-      <DepthSection />
+      <DepthSection initial={work} />
       <ContactSection />
       {/* The visual loop: scroll room for the camera to pull back until the view is the
           hero's, then the page returns to the top. Not part of the page's content. */}

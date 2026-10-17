@@ -9,6 +9,7 @@ import type { WorkFilter } from '@/content/site'
  * - `swipe`: phones, how far the card swipe has gone, in cards (0 = first card).
  * - `routed`: the URL has been read on the client.
  * - `filter`: the active work filter (jobs outside it dim, in the list and in 3D).
+ * - `gallery`: which of the capstone's images its opened panel shows.
  */
 type WorkState = {
   focused: string | null
@@ -23,6 +24,8 @@ type WorkState = {
   routed: boolean
   filter: WorkFilter | null
   setFilter: (filter: WorkFilter | null) => void
+  gallery: number
+  setGallery: (index: number) => void
 }
 
 export const useWork = create<WorkState>()((set, get) => ({
@@ -32,11 +35,13 @@ export const useWork = create<WorkState>()((set, get) => ({
     if (get().focused !== slug) set({ focused: slug, since: performance.now() })
   },
   opened: null,
-  open: (slug) => set({ opened: slug, focused: slug }),
+  open: (slug) => set({ opened: slug, focused: slug, gallery: 0 }),
   close: () => set({ opened: null }),
   swipe: 0,
   setSwipe: (swipe) => set({ swipe }),
   routed: false,
   filter: null,
   setFilter: (filter) => set({ filter }),
+  gallery: 0,
+  setGallery: (gallery) => set({ gallery }),
 }))

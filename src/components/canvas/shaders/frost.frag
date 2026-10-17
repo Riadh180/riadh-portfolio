@@ -22,6 +22,11 @@ uniform vec2 uCursor;
 uniform float uHover;
 /** Opened: a soft light band sweeping across once the image is sharp (-0.3 → 1.3). */
 uniform float uSweep;
+/**
+ * A glass wipe across an opened pane (-0.3 → 1.3; -1 = none): a band of frost passes over it
+ * while its image changes underneath (the capstone's gallery).
+ */
+uniform float uWipe;
 /** 1 for live scenes: darken the lower part here, where the title sits (covers are pre-shaded). */
 uniform float uShade;
 /** 0..1: lighter frost (live scenes, the capstone's dashboard) so the media read. */
@@ -51,6 +56,9 @@ void main() {
   // Hover: the frost thins round the cursor.
   float spot = uHover * (1.0 - smoothstep(0.08, 0.32, distance(vUv * vec2(1.6, 1.0), uCursor * vec2(1.6, 1.0))));
   float glass = (1.0 - clear) * (1.0 - spot * 0.75);
+  // The wipe: a soft band of frost crossing the cleared pane, slanted like the streaks.
+  float wipeBand = uWipe > -0.5 ? exp(-pow((vUv.x + vUv.y * 0.25 - uWipe) * 4.0, 2.0)) : 0.0;
+  glass = max(glass, wipeBand);
 
   // The cast relief, baked once per card (frostField.frag): image shift, ripple, swell.
   vec4 relief = texture2D(uField, vUv);

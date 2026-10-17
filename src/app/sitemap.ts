@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { jobs } from '@/content/site'
+import { capstone, jobs } from '@/content/site'
 import { siteUrl } from '@/lib/siteUrl'
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -9,7 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: url('/cv'), changeFrequency: 'monthly', priority: 0.8 },
     { url: url('/impressum'), changeFrequency: 'yearly', priority: 0.1 },
     { url: url('/datenschutz'), changeFrequency: 'yearly', priority: 0.1 },
-    ...jobs.map((job) => ({
+    ...[...jobs, capstone].map((job) => ({
       url: url(`/work/${job.slug}`),
       changeFrequency: 'yearly' as const,
       priority: 0.6,

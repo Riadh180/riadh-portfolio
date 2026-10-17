@@ -1,17 +1,29 @@
+'use client'
+
 import { capstone, depth } from '@/content/site'
+import { useWork } from '@/stores/work'
 
 /**
  * Depth's content as real HTML, kept short on screen: the heading, one sentence, the
- * capstone with its repository; the programme and both stacks sit in a small expandable
- * "Stack" line (still in the HTML). Data vocabulary lives here only.
+ * capstone (a button: it opens the capstone's panel, as the 3D panel does) with its
+ * repository; the programme and both stacks sit in a small expandable "Stack" line (still in
+ * the HTML). Data vocabulary lives here only.
  */
 export function DepthPanel() {
+  const open = useWork((state) => state.open)
   return (
     <div className="flex max-w-[44ch] flex-col gap-3">
       <h2 className="ui text-xs text-muted">{depth.title}</h2>
       <p className="copy text-sm leading-relaxed text-text/90">{depth.lead}</p>
       <p className="ui text-xs text-text">
-        Capstone · {capstone.company}
+        <button
+          type="button"
+          data-work={capstone.slug}
+          onClick={() => open(capstone.slug)}
+          className="ui text-xs text-text underline-offset-4 transition-colors duration-(--motion-duration-ui) hover:text-violet hover:underline"
+        >
+          Capstone · {capstone.company}
+        </button>
         {capstone.repo && (
           <>
             {' · '}

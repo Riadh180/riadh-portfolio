@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { jobs } from '@/content/site'
+import { capstone, jobs } from '@/content/site'
 import { useWork } from '@/stores/work'
 
 type Routes = {
@@ -22,7 +22,8 @@ type Routes = {
  */
 export function useWorkUrl({ toUrl, base, fromLocation, onArrive }: Routes) {
   useEffect(() => {
-    const known = (slug: string | null) => (jobs.some((job) => job.slug === slug) ? slug : null)
+    const known = (slug: string | null) =>
+      slug === capstone.slug || jobs.some((job) => job.slug === slug) ? slug : null
     const initial = known(fromLocation(window.location))
     if (initial) {
       useWork.getState().open(initial)

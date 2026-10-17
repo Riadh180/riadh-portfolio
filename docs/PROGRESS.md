@@ -953,6 +953,17 @@ only on /impressum.
   (with its login screenshot) were taller than the space under the opened card and covered it
   (before and after this loop); the panel now holds at most 50svh and scrolls, so the card
   above stays clear (Close stays reachable by scrolling, Esc and Back).
+- **Stage 6: the capstone shares the work store's open state** (`opened` = "capstone"): one
+  open / close / URL system for the cards and the panel (Back and Esc work the same), and the
+  cursor field and the job cards already treat any open card alike. Work's HTML only shows a
+  job's details; Depth's shows the capstone's.
+- **Stage 6: both images in `public/work/capstone/` are in the gallery.** The dashboard (its chart
+  crop, as the cover) and the medallion flow (whole, centred): both sit on dark grounds, so
+  neither glares in the scene. The list comes from the folder at build time (`/assets.json`),
+  so a new screenshot dropped in appears after the next build; alt texts by file name live
+  with the content (`capstone.galleryAlt`).
+- **Stage 6: the capstone's close reads "← Close (Esc)"** as the brief gives it (the job cards'
+  details keep "× Close (Esc)").
 - **Integrated-GPU numbers need pauses.** Back-to-back runs on the HD 630 drift down by 5–15 fps
   (heat, GPU switching): the same build measured 44–52 at the hero in a long sequence and 60 with
   20 s pauses. Before / after comparisons are now alternated with pauses (`ab.sh` in the session
@@ -1943,3 +1954,51 @@ Self-review against at_08 / at_09:
 
 FPS (production, Retina, a card open): 59.9–60.3 on the discrete GPU, the HD 630 and the HD 630
 lite.
+
+## Stage 6 — the capstone opens (tag `loop1-stage-6`)
+Files: `depth/CapstonePanel.tsx` (hover, open, dissolve, gallery), `depth/DepthPlace.tsx` (the
+word fades while it is open), `components/depth/CapstoneDetail.tsx` (new: the detail view),
+`components/depth/DepthPanel.tsx` (the "Capstone · AI × Work" line is a button),
+`sections/DepthSection.tsx`, `sections/Home.tsx`, `work/WorkSection.tsx` (arriving at
+/work/capstone flies to Depth), `work/useWorkUrl.ts`, `stores/work.ts` (`gallery`),
+`app/(site)/work/[slug]/page.tsx`, `proxy.ts`, `app/sitemap.ts`, `app/assets.json/route.ts`
+(the gallery list), `canvas/assets.ts`, `content/site.ts` (`galleryAlt`), `work/cardFace.ts`
+(a crop per image, whole images centred), `work/WorkCards.tsx` (the dust, open frame and timing
+shared), `shaders/frost.frag` (`uWipe`: inactive on the job cards); tool
+`scripts/capture-capstone.mjs`.
+1. **Hover.** The panel tilts towards the cursor, grows a little, the frost thins round the cursor
+   (the cards' defrost spot) and the cursor reads "OPEN".
+2. **Open.** A click on the panel, Enter on the "Capstone · AI × Work" button, or its URL: the
+   panel flies in exactly like a job card (Stage 5's frame: right of the details, square to the
+   screen, 66.5–72% of the height), defrosts behind the particle dissolve (glass chips) and shows
+   its media sharp in the family grade; the lattice, roots and water stay round it (Depth's
+   palette).
+3. **Details** (left, small mono, the job cards' layout): the programme line, "AI × Work —
+   Capstone", the one-liner, the data stack (Python, dbt, PostgreSQL (Neon), Cloudflare R2,
+   Apache Airflow, Docker, Streamlit, Plotly), the gallery controls, "Repository on GitHub ↗",
+   "← Close (Esc)".
+4. **Gallery.** Both images of the folder (dashboard chart, medallion flow): arrows, thumbnails
+   (desktop), ← / → keys, or a sideways swipe (phones); a band of frost crosses the pane and the
+   image changes behind it (0.7 s). The counter is a polite live region with the image's
+   description.
+5. **Route.** /work/capstone: prerendered, its own title and description, the shared OG image,
+   in the sitemap; deep-linkable (it opens on load and the camera flies to Depth); Back and Esc
+   close it and return to / at the same scroll position (checked: 9900 → 9900).
+6. **Accessibility.** The opener is a real button; focus moves into the dialog when it opens and
+   back to the button when it closes (checked); Esc closes; the dialog is labelled by its title;
+   screen readers get the same text as the panel.
+7. **Phone.** Opens across the width in the upper part, the details below (scrolling within half
+   the screen), the gallery swipeable (checked: 01 → 02).
+
+Sheet: `docs/screens/loop1-capstone.jpg` (desktop: closed, hover, opened with the dashboard and
+with the medallion flow, closed again; phone: the deep link opened, then after a swipe).
+
+Self-review against at_08 / at_10–at_11 (the reference's Lab panel opens a page; ours opens in
+place, like its project cards):
+- Closer: Depth is no longer a dead end: its panel answers the cursor and opens like the cards,
+  in the same glass and grade.
+- Closer: the capstone's real dashboard reads sharp in the scene, not as a glare.
+- Still different: a dissolve as dense as the reference's (Stage 5's note) is still to come.
+
+FPS (production, Retina, the capstone open): 59.9–60.4 on the discrete GPU, the HD 630 and the
+HD 630 lite.

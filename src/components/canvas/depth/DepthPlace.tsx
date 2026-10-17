@@ -2,6 +2,8 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useRef } from 'react'
 import { Color, type Group } from 'three'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { capstone } from '@/content/site'
+import { useWork } from '@/stores/work'
 import { sceneColors } from '@/styles/scene'
 import { SceneWord } from '../journey/SceneWord'
 import { DEPTH, type JourneyState, PLACES } from '../journey/path'
@@ -50,8 +52,11 @@ export function DepthPlace({ journey, clock }: Props) {
         reducedMotion={reducedMotion}
         accent={sceneColors.teal}
         ripple
+        // Gone while the capstone is open: its panel and details take the frame.
         amount={() =>
-          short ? 0 : ease((journey.toDepth - 0.35) / 0.45) * (1 - ease(journey.toContact * 2.5))
+          short || useWork.getState().opened === capstone.slug
+            ? 0
+            : ease((journey.toDepth - 0.35) / 0.45) * (1 - ease(journey.toContact * 2.5))
         }
       />
       <Drift journey={journey} seed={37} weight={1.2}>

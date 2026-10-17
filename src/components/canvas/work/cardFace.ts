@@ -112,9 +112,14 @@ export class CardFace {
 
   /**
    * Uses the real cover once it has loaded; with a `second` portrait screenshot, the two
-   * are composed as a product shot (two phones side by side).
+   * are composed as a product shot (two phones side by side). `crop` (source pixels): the
+   * job's cover crop by default; null shows the image whole (the capstone's other images).
    */
-  setCover(url: string, second?: string) {
+  setCover(
+    url: string,
+    second?: string,
+    crop: [number, number, number, number] | null | undefined = this.job.coverCrop,
+  ) {
     if (second) {
       void Promise.all([url, second].map(loadImage)).then((images) => this.drawPhones(images))
       return
@@ -128,11 +133,15 @@ export class CardFace {
         // A diagram: shown whole on the dark screen, never cropped.
         context.fillStyle = palette.bg
         context.fillRect(0, 0, WIDTH, HEIGHT)
-        const [sx, sy, sw, sh] = this.job.coverCrop ?? [0, 0, image.width, image.height]
-        const fit = Math.min((WIDTH * 0.94) / sw, (HEIGHT * 0.62) / sh)
+        const [sx, sy, sw, sh] = crop ?? [0, 0, image.width, image.height]
+        // Shown whole (an opened gallery, no title over it): larger and centred; as a cover,
+        // in the upper part, clear of the title.
+        const whole = crop === null
+        const fit = Math.min((WIDTH * 0.94) / sw, (HEIGHT * (whole ? 0.86 : 0.62)) / sh)
         const w = sw * fit
         const h = sh * fit
-        context.drawImage(image, sx, sy, sw, sh, (WIDTH - w) / 2, HEIGHT * 0.06, w, h)
+        const top = whole ? (HEIGHT - h) / 2 : HEIGHT * 0.06
+        context.drawImage(image, sx, sy, sw, sh, (WIDTH - w) / 2, top, w, h)
       } else if (image.width < image.height) {
         // A phone screenshot: shown whole, right of centre, over a blurred, darkened
         // enlargement of itself (so the card stays full and its colours carry).
@@ -165,7 +174,7 @@ export class CardFace {
         context.restore()
       } else {
         // Cover-fit (a crop of it when the job names one).
-        const [sx, sy, sw, sh] = this.job.coverCrop ?? [0, 0, image.width, image.height]
+        const [sx, sy, sw, sh] = crop ?? [0, 0, image.width, image.height]
         const scale = Math.max(WIDTH / sw, HEIGHT / sh)
         const w = sw * scale
         const h = sh * scale

@@ -225,6 +225,8 @@ export function createScreenMaterial(
       uCursor: { value: new Vector2(0.5, 0.5) },
       uHover: { value: 0 },
       uSweep: { value: -1 },
+      // A glass wipe across the open pane (the capstone's gallery): -1 = none.
+      uWipe: { value: -1 },
       uTime: { value: 0 },
       uPane: { value: [CARD.width, CARD.height, CARD.radius] },
     },
@@ -235,7 +237,7 @@ export function createScreenMaterial(
 /** Particles a card breaks into: random spots over its face, shared by all cards. */
 const DUST_COUNT = 14000
 
-function createDustGeometry() {
+export function createDustGeometry() {
   const spots = new Float32Array(DUST_COUNT * 2)
   const seeds = new Float32Array(DUST_COUNT * 4)
   for (let i = 0; i < DUST_COUNT; i++) {
@@ -249,7 +251,7 @@ function createDustGeometry() {
   return geometry
 }
 
-function createDustMaterial(face: CardFace, seed: number, live?: Texture) {
+export function createDustMaterial(face: CardFace, seed: number, live?: Texture) {
   return new ShaderMaterial({
     vertexShader: `${noise}\n${dissolve}\n${cardDustVertex}`,
     fragmentShader: `${glassGrain}\n${cardDustFragment}`,
@@ -273,7 +275,7 @@ function createDustMaterial(face: CardFace, seed: number, live?: Texture) {
 const smooth01 = (x: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, x)))) / 2
 
 /** Easing for the fly-in: heavy in, heavy out (the site's default curve, roughly). */
-const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2)
+export const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2)
 
 /** The details column's share of the width (desktop, left) and the margin kept round the card. */
 const OPEN = { details: 0.31, margin: 0.025 }
@@ -284,7 +286,7 @@ const OPEN = { details: 0.31, margin: 0.025 }
  * smaller where that area isn't wide enough (16:10 screens), so it is never cut by the frame
  * or laid over the details. Phones: 85% of the width, in the upper part, the details below.
  */
-function openFrame(layout: CardLayout, aspect: number) {
+export function openFrame(layout: CardLayout, aspect: number) {
   const cardAspect = CARD.width / CARD.height
   if (layout === 'column') return { height: (0.85 * aspect) / cardAspect, x: 0, y: 0.45 }
   const room = 1 - OPEN.details - OPEN.margin
@@ -294,7 +296,7 @@ function openFrame(layout: CardLayout, aspect: number) {
 }
 
 /** How long the fly-in and the dissolve take, in seconds (MOTION.md: fly-in ~1s). */
-const TIMING = { fly: 1, dissolve: 0.9 }
+export const TIMING = { fly: 1, dissolve: 0.9 }
 
 type Props = { layout: CardLayout; clock: SceneClock }
 

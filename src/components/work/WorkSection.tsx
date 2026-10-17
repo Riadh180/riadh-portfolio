@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { jobs, sections } from '@/content/site'
+import { capstone, jobs, sections } from '@/content/site'
 import { isShown, useJourney } from '@/stores/journey'
 import { useWork } from '@/stores/work'
 import { useWorkUrl } from './useWorkUrl'
@@ -17,8 +17,9 @@ const siteRoutes = {
   fromLocation: (location: Location) => /^\/work\/([^/]+)/.exec(location.pathname)?.[1] ?? null,
   onArrive: (slug: string) => {
     const index = jobs.findIndex((job) => job.slug === slug)
-    // After layout, so the section anchors are measured.
-    requestAnimationFrame(() => useJourney.getState().jump(2 + index / (jobs.length - 1)))
+    // After layout, so the section anchors are measured. The capstone opens in Depth.
+    const progress = slug === capstone.slug ? 5 : 2 + index / (jobs.length - 1)
+    requestAnimationFrame(() => useJourney.getState().jump(progress))
   },
 }
 
@@ -49,7 +50,9 @@ export function WorkSection({ initial = null }: { initial?: string | null }) {
   const here = useJourney((state) => isShown(state.progress, 'work'))
   const opened = useWork((state) => state.opened)
   const routed = useWork((state) => state.routed)
-  const shown = routed ? opened : initial
+  // A job's details only (the capstone's open in Depth).
+  const pick = routed ? opened : initial
+  const shown = jobs.some((job) => job.slug === pick) ? pick : null
   const current = jobs[useCurrentCard()]
   const open = useWork((state) => state.open)
 
