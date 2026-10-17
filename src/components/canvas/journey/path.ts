@@ -1,5 +1,6 @@
 import { useFrame } from '@react-three/fiber'
 import { useState } from 'react'
+import { Vector3 } from 'three'
 import { useJourney } from '@/stores/journey'
 import { DESCENT } from './descent'
 
@@ -82,8 +83,25 @@ export function statementLift(width: number, height: number) {
   return width < 700 && height < 760 ? 0.9 : 0
 }
 
-/** Seconds The Core takes to travel to the statement (or back). */
-const OBJECTS_TRAVEL = 1.4
+/**
+ * Where The Core floats at the hero and at the statement: there it has come closer and
+ * stands in front of the tagline's right end, so its glass bends the type behind it.
+ */
+export const CORE = {
+  /** Slightly above centre: the first frame's undeniable subject. */
+  hero: new Vector3(0, 0.45, 0),
+  statement: new Vector3(-0.2, PLACES.statement - 0.65, 3),
+}
+
+/**
+ * The first scroll: how far the camera has come down from the hero to the statement, 0 → 1,
+ * read from the camera's own height (the rig's spring), so what rides with it (The Core and
+ * its gold cloud) stays with the camera however fast the scroll. 1 from the statement on.
+ */
+export function firstLeg(journey: JourneyState) {
+  const leg = (PLACES.hero - journey.view.y) / (PLACES.hero - PLACES.statement)
+  return Math.min(1, Math.max(0, leg))
+}
 
 const smooth = (p: number) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, p)))) / 2
 
@@ -97,16 +115,13 @@ function descend(toWork: number) {
 /**
  * The journey as the scene sees it, updated once per frame before anything else.
  * `camera` (hero → statement), `toWork` (statement → Work), `inWork` (down the cards) and
- * `toSystem` (on to the skills graph), `toDepth`, `toContact` and `loop` follow the smoothed scroll directly (Lenis settles a
- * tick in ~0.7s); `objects` (The Core's move to the statement) plays on its own clock once
- * triggered. With reduced motion there is no flight: it cuts between places and cards.
+ * `toSystem` (on to the skills graph), `toDepth`, `toContact` and `loop` follow the smoothed
+ * scroll directly (Lenis settles a tick in ~0.7s). With reduced motion there is no flight:
+ * it cuts between places and cards.
  */
 export class JourneyState {
   /** 0 (hero) → 1 (statement). */
   camera = 0
-  /** 0 (hero) → 1 (statement) for the objects that move with it, on their own clock. */
-  objects = 0
-  private heading = 0
   /** 0 (statement) → 1 (arrived at Work). */
   toWork = 0
   /** 0 (first card) → 1 (last card). */
@@ -185,22 +200,6 @@ export class JourneyState {
     this.toDepth = toDepth
     this.toContact = toContact
     this.loop = loop
-    // The Core's move to the statement plays on its own clock once triggered (~1.4s), so
-    // the slit always lands in front of the tagline, however fast the scroll.
-    if (camera > 0.55) this.heading = 1
-    else if (camera < 0.35) this.heading = 0
-    // At Contact The Core is back in its hero pose: reset, so the loop's return to the top
-    // finds it at the hero, not on its way back from the statement.
-    if (toContact > 0.1) {
-      this.heading = 0
-      this.objects = 0
-    }
-    const step = Math.min(delta, 1 / 30) / OBJECTS_TRAVEL
-    if (toContact <= 0.1) {
-      this.objects = reducedMotion
-        ? this.heading
-        : this.objects + Math.max(-step, Math.min(step, this.heading - this.objects))
-    }
 
     // Hero → statement → the top of the Work column, then down it card by card.
     const statementY = PLACES.hero + (PLACES.statement - PLACES.hero) * smooth(camera)

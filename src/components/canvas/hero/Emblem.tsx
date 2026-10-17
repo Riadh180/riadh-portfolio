@@ -1,11 +1,13 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import { type Group, type Mesh, Vector3 } from 'three'
+import { type Group, type Mesh } from 'three'
 import { sceneConfig } from '@/styles/scene'
 import {
   contactDrop,
   contactEntry,
   contactRest,
+  CORE,
+  firstLeg,
   type JourneyState,
   PLACES,
   statementLift,
@@ -38,14 +40,13 @@ type Props = {
 }
 
 /**
- * Where The Core floats at each place. At the statement it has come closer and stands in
- * front of the tagline's right end, so its glass bends the type behind it.
+ * The first scroll (seg_12): The Core rides down with the camera, face-on in its gold cloud
+ * at first, then turning edge-on as the tagline rises (`turn`: from → to, shares of the
+ * leg). While the camera moves it trails it a little (`trail`: world units per unit of camera
+ * speed, capped), in place of the shared drag, which pulls subjects along and would sink it
+ * into the tagline.
  */
-const POSES = {
-  /** Slightly above centre: the first frame's undeniable subject. */
-  hero: new Vector3(0, 0.45, 0),
-  statement: new Vector3(-0.2, PLACES.statement - 0.65, 3),
-}
+const RIDE = { turn: { from: 0.3, to: 0.9 }, trail: 0.05, cap: 0.3 }
 
 /**
  * At the statement The Core stops spinning and holds near edge-on (a tall slit of thick
@@ -129,8 +130,10 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
   const pull = useRef({ x: new Spring(0, MOTION.pointer), y: new Spring(0, MOTION.pointer) })
   /** Spin clock: runs with scene time at the hero, slows to a stop at the statement. */
   const spinClock = useRef({ time: 0, last: 0 })
-  /** The edge-on angle held at the statement, picked once as The Core starts to travel. */
+  /** The edge-on angle held at the statement, picked as The Core's spin stops. */
   const hold = useRef<number | null>(null)
+  /** How far it trails the camera on the first scroll (MOTION.lag: soft, a little late). */
+  const trail = useRef(new Spring(0, MOTION.lag))
   const frame = useMemo(() => createFrame(), [])
   const innerShape = useMemo(() => createInner(), [])
   /** The frame's bounds, for the measurement export only. */
@@ -164,27 +167,31 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     // At Contact The Core comes into the frame early in the leg and spins again, posed
     // exactly as on the hero, so the loop back to the hero is seamless.
     const contact = journey && !anchored ? contactEntry(journey.toContact) : 0
-    // Travels with the objects' slower settle, so it trails the camera down the path.
-    const objects = journey ? journey.objects : 0
-    const travel = objects * objects * (3 - 2 * objects) * (1 - contact)
+    // The first scroll: rides down with the camera (back at the hero pose for Contact, so
+    // the loop's return to the top finds it there). `travel` places it, `edge` turns it.
+    const leg = journey && journey.toContact <= 0.1 ? firstLeg(journey) : 0
+    const travel = leg * (1 - contact)
+    const { from, to } = RIDE.turn
+    const edge = smooth01((leg - from) / (to - from)) * (1 - contact)
 
     // The idle turn is continuous, never damped: highlights slide along the bands as it
-    // turns. It winds down as The Core leaves for the statement.
+    // turns. It stops as The Core starts down with the camera, so from there it turns
+    // steadily edge-on, wherever the scroll pauses.
     const spinClockState = spinClock.current
-    spinClockState.time += Math.max(0, t - spinClockState.last) * (1 - travel)
+    spinClockState.time += Math.max(0, t - spinClockState.last) * (1 - smooth01(travel / 0.04))
     spinClockState.last = t
     const spin = reducedMotion ? 0 : idleSpin(spinClockState.time, emblem.halfTurn, emblem.dwell)
     const heroTurn = REST.y + tilt.current.y + spin
-    if (travel > 0.001) hold.current ??= nearestEdge(heroTurn)
-    else hold.current = null
+    // The held angle: the edge nearest the turn The Core's spin stops at.
+    if (travel < 0.04) hold.current = nearestEdge(heroTurn)
     const heldTurn = (hold.current ?? heroTurn) + Math.sin(t * 0.4) * 0.05 + tilt.current.y * 0.5
 
     const g = group.current
     // Out of sight down at Work (and no transmission pass for it there).
     g.visible = anchored ? true : !journey || journey.toWork < 0.85 || contact > 0.001
     const heroTiltX = REST.x + tilt.current.x + Math.sin(t * 0.3) * 0.05
-    g.rotation.x = heroTiltX + (tilt.current.x * 0.4 - heroTiltX) * travel
-    g.rotation.y = heroTurn + (heldTurn - heroTurn) * travel
+    g.rotation.x = heroTiltX + (tilt.current.x * 0.4 - heroTiltX) * edge
+    g.rotation.y = heroTurn + (heldTurn - heroTurn) * edge
     // Contact: The Core turns to face the visitor as the camera arrives (back to its own
     // turn over the loop, so the hero is unchanged).
     const greet = contact * (1 - smooth01(journey ? journey.loop * 1.5 : 0))
@@ -192,11 +199,24 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
       const faceOn = Math.round(g.rotation.y / Math.PI) * Math.PI + REST.y
       g.rotation.y += (faceOn - g.rotation.y) * greet * 0.9
     }
-    g.position.lerpVectors(POSES.hero, POSES.statement, travel)
+    g.position.lerpVectors(CORE.hero, CORE.statement, travel)
     g.position.y += statementLift(size.width, size.height) * travel
     // Narrow screens: stay over the (narrower) tagline.
     g.position.x *= Math.min(1, size.width / size.height / 1.6)
     g.position.y += Math.sin(t * 0.5) * emblem.float
+    // On the way down it trails the camera a little instead of the shared drag (gone again
+    // as the camera leaves the statement for Work, where the drag takes over as before).
+    const riding = travel > 0 && journey ? 1 - smooth01(journey.toWork * 20) : 0
+    const speed = journey ? journey.velocity : 0
+    const behind = trail.current.step(
+      Math.max(-RIDE.cap, Math.min(RIDE.cap, -speed * RIDE.trail)) * riding,
+      dt,
+    )
+    if (riding > 0) {
+      const lag = g.parent?.userData.lag
+      if (typeof lag === 'number') g.position.y -= lag * riding
+    }
+    g.position.y += behind
     // Comes down into the frame from above, then rides with the camera at its resting place
     // in the frame: never lower on screen than at rest, so never through "LET'S TALK".
     if (journey && contact > 0) {
@@ -219,7 +239,7 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     g.scale.setScalar(
       emblem.scale *
         portrait *
-        (heroScale + (STATEMENT.scale - heroScale) * travel) *
+        (heroScale + (STATEMENT.scale - heroScale) * edge) *
         (1 - leave * 0.94),
     )
     if (anchored) {
@@ -273,9 +293,9 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     const { warmPeriod, warmth, rimWarm } = sceneConfig.light
     const hero = anchored || !journey ? 0 : 1 - Math.min(1, journey.toWork * 3)
     applyGlassLook(glass, look, {
-      facing: faceOn + (0.7 - faceOn) * travel,
-      depth: 1 + 2 * travel,
-      rainbow: travel,
+      facing: faceOn + (0.7 - faceOn) * edge,
+      depth: 1 + 2 * edge,
+      rainbow: edge,
       // A small anchored Core reflects only: no refraction pass (it would re-render the
       // scene for an emblem a few hundred pixels wide).
       reflectOnly: !!anchored || lite,

@@ -2551,6 +2551,47 @@ Open points:
 - The medium swipe's drift near the stop is 0.22 s on full (target 0.3–0.6 s); the field's
   largest displacement comes at +0.3 s for fast swipes.
 
+## Stage 3 — the first scroll: travel with the camera (tag `loop2-stage-3`)
+Files: `journey/path.ts` (`CORE` poses and `firstLeg`; the old `objects` clock removed),
+`hero/Emblem.tsx` (The Core's path on the first leg), `journey/GoldCloud.tsx` (the cloud's
+density, look and placement).
+
+Before: The Core waited at the hero until the scroll passed 0.55, then flew to the statement
+on its own 1.4 s clock. In between it left the frame upward (0.35–0.70: only the cloud), and
+it came back up from below as the tagline rose.
+
+1. **The Core rides with the camera.** Its path is read from the camera's own height (the
+   rig's spring): 0 at the hero, 1 at the statement, so it stays in frame however fast the
+   scroll. Its idle spin stops as the ride starts, and it turns steadily to the nearest edge
+   angle over 30–90% of the leg (face-on in its cloud first, as in seg_12 at 12–13 s). It
+   arrives as the slit in front of the tagline. On the way it trails the camera a little
+   (≤ 0.3 units, on `MOTION.lag`) in place of the shared drag, which would pull it down into
+   the rising tagline.
+2. **The gold cloud wraps it.** The cloud now travels with The Core (its path, 0.7 of its
+   approach in depth) and holds 8000 glass beads in gold tones (was 7000 soft dust points):
+   - a shell wrapping The Core (30%), 12 clumps round it (45%) and a thin, wide band (25%);
+   - beads of 2–6 px, in focus round The Core as it comes closer;
+   - wisps a little stronger (0.25, was 0.2);
+   - it thins out over 55–95% of the leg.
+   It moves with the cursor (Stage 2).
+3. **Rest states unchanged.** At 0 the hero is as before, and at 1 the statement's composition
+   (position, size, the edge angle family) matches loop 1 on desktop and phone. Reduced motion
+   cuts between the two, as before.
+
+Passes:
+- **Pass 1:** the camera-driven path. The Core stayed in frame, but its angle wandered (the
+  idle spin kept running mid-leg) and the cloud's beads were too fine to read.
+- **Pass 2:** beads 3.2× larger in shell, clumps and band. The cloud read as a dense, even
+  "galaxy", and the edge angle was picked before the spin stopped.
+- **Pass 3:** the angle is picked as the spin stops, the turn comes later in the leg, and the
+  cloud is clumpier with gaps. Pass 3 kept.
+
+FPS (production, Retina, the cursor moving) inside the cloud (0.3): full 59.9–60.4; lite on the
+HD 630 59.9–60.3.
+
+Sheet: `docs/screens/loop2-first-scroll.jpg`: the reference (seg_12, 11.5–15 s of the
+recording), then 0–1.1 at 0.05 on desktop full, desktop lite and phone (390×844).
+
 ## Decisions I made
 - **The recording shows no cursor over the particles.** Across Work (26–51 s) the pointer
   hovers the cards (a hand over the card's edge), and in the hero's strip it crosses empty
@@ -2602,3 +2643,15 @@ Open points:
   After the first touch the cards and pockets mount but the column doesn't; it is the locked
   loading order (Deferred / Soon), so it is noted, not changed. The phone captures wake the
   scene with two passes first.
+- **The Core's path follows the camera's height, not a clock.** The 1.4 s clock was there so
+  the slit always lands in front of the tagline however fast the scroll. Reading the
+  camera's own height keeps that (at rest it is exactly the statement pose) and keeps The
+  Core in frame all the way, which the clock could not.
+- **The spin stops as the ride starts.** A scroll that pauses half-way would otherwise show a
+  half-spinning, half-held Core at a random angle. The turn to the edge comes later in the leg,
+  because seg_12 keeps the object face-on in its cloud until the headline rises.
+- **The gold cloud's dust became Stage 1 beads**, as the brief asks ("smoky wisps + Stage 1
+  beads"), laid out after seg_12's cloud: clumps and a band round the object, not an even
+  blob.
+- **seg_12's transition is at 11.5–15 s of the recording** (the strip starts at ~12 s; the
+  brief's "8–11.5 s" is the strip's own first tiles). The sheet uses frames from 11.5–15 s.
