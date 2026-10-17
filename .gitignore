@@ -49,3 +49,6 @@ next-env.d.ts
 /docs/reference/work-frames/
 /docs/reference/work-frames-ours/
 /docs/reference/work-masks/
+
+# A source model (not served; scripts/build-spine.mjs reads it)
+public/models/spine-raw.glb

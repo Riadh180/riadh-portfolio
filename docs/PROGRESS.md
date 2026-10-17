@@ -2944,3 +2944,83 @@ phone 22/22, reduced motion 108/108.
 - `docs/screens/loop2-journey.jpg`: 0–7 at 0.5 on desktop full, desktop lite and phone 390×844
   (gate).
 - Metrics: `docs/screens/metrics/loop2/` (stage 1, final, with and without the UI).
+
+# Look round (2026-10-18)
+Branch `look-round` from `main` at `v3` (polish loop 2 merged; the same commit is tagged
+`before-look`). Nothing goes to `main`. Every stage ends with a commit, a tag `look-stage-N` and
+a push of the branch.
+
+## Inputs
+- **`public/models/spine-raw.glb`: found.** A trimesh export: 8,320 triangles, 6,653 vertices
+  (position + uv, no normals), one 1024² colour texture, no normal map. It is 1.0 tall × 0.27 ×
+  0.39 (Y up): a short spine of eight vertebrae, with processes curving out to the sides.
+  Stage 1 follows route A, "a short piece": copies along the column path.
+- **`public/work/bliggit/demo.mp4`: not found.** Bliggit's loop is the fallback, made from the
+  two screenshots (cover.png, login.png).
+- **Dashboard URL:** https://aiwork-eu.streamlit.app/ (the capstone repo's README). It answers
+  slowly with a redirect (a sleeping Streamlit app). It is recorded with a headless browser if
+  it wakes; otherwise the fallback: a slow pan / zoom across dashboard.png with a light sweep.
+
+## Plan
+**Stage 1: the sculpted column.**
+- New `scripts/build-spine.mjs` (gltf-transform + three in Node), steps in order:
+  1. Weld, drop stray islands, centre, keep Y up.
+  2. Compute the oil material's `crevice` (a cavity measure) and `thin` (distance out along a
+     process).
+  3. Lay copies down the column's existing path (its S-curve, twist and width swell), each with
+     its own turn, scale 0.8–1.2, a slight non-uniform scale and some mirrored, with
+     overlapping joints.
+  4. Crease-angle normals; a decimated lite LOD; meshopt compression.
+- Outputs: `public/models/spine.glb` and `spine-lite.glb`.
+- `work/spineModel.ts` and `Spine.tsx`: the LOD per tier (phones lite), the attributes, the
+  column's own extent (the ends dissolve as now); the procedural column stays as the fallback.
+- The `assets.json` route lists the files. The material stays the oil material; a detail
+  normal map only if the close camera shows the model too smooth.
+- Budgets: full ≤ 150k triangles, lite ≤ 60k, ≤ 3 MB. Sheet `look-column.jpg`.
+
+**Stage 2: moving imagery in the cards.**
+- New `scripts/` steps to make the loops:
+  - Bliggit: a pan through the home screen in the front phone, the login still in the second
+    phone, a light sweep.
+  - The capstone: a recording of the dashboard, graded, or the fallback.
+  - The five confidential jobs: offline renders of each card's own live scene, filmic, no text
+    or logos.
+- Each loop to spec: 6–10 s, 1280×800 plus a 640×400 variant, MP4 + WebM, poster.jpg, ≤ 2.5 MB.
+- In the cards: `work/cardFace.ts`, `WorkCards.tsx` and `depth/CapstonePanel.tsx` take video
+  textures under the frost, play only in view, use posters until ready, and stop the live
+  scenes' per-frame renders.
+- The `assets.json` route lists the loops (the capstone's gallery leaves the poster out).
+- Sheet `look-card-media.jpg`.
+
+**Stage 3: true glass beads.** `shaders/glassGrain.glsl` and the grain fragment shaders:
+refraction of the scene behind medium and large beads on full; a dark core, a bright thin edge
+and a sharp sparkle, film-tinted; bokeh discs with a faint edge out of focus; lite without
+refraction. Sheet `look-glass-beads.jpg`.
+
+**Stage 4: clinging clouds.** `work/Pebbles.tsx` (placement, counts):
+- 60% of Work's beads hug the column's surface (sampled from the Stage 1 model).
+- Smaller clouds gather along the cards' edges near the column (never on a focused face or a
+  title).
+- Cores 1.5–2× denser.
+Sheet `look-pockets.jpg`.
+
+**Stage 5: a visible mouse effect.** A sparse glass bead layer round The Core in the hero, the
+shimmer a little stronger. Video `look-cursor.mp4`.
+
+**Stage 6: blue-violet air at Work.** `Backdrop.tsx`: Work's haze, fog and backlight toward
+deep blue-violet, at the same darkness. Sheet `look-air.jpg`.
+
+**Gate**, then the final report here and as the last message.
+
+## LOCKED (unchanged this round)
+The hero, the statement, the transitions and their timing, the first scroll, the cards' layout,
+sizes and positions, the card titles (Departure Mono, two lines), the cards' frost structure
+and bevel, the gallery composition, the opened-card layout and backdrop, click to close,
+System, Depth's layout, Contact, UI copy and content, SEO, legal pages, the CV, the tier system.
+The phone number only on /impressum.
+
+## Decisions I made
+- **The raw model stays out of git.** `spine-raw.glb` is a source asset, possibly licensed for
+  use, not for redistribution, and the repository is public. Only the processed,
+  compressed column the site loads is committed; `scripts/build-spine.mjs` rebuilds it from the
+  raw file. The raw file is git-ignored.
