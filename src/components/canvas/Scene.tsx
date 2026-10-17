@@ -25,6 +25,7 @@ import { HeroAura } from './hero/HeroAura'
 import { IntroBurst } from './hero/IntroBurst'
 import { Warmup } from './hero/Warmup'
 import { CursorField } from './particles/CursorField'
+import { OpenBackdrop } from './work/OpenBackdrop'
 import { ParticleField } from './particles/ParticleField'
 import { Effects } from './post/Effects'
 import type { Pointer } from './usePointer'
@@ -153,6 +154,8 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
         // Paused below the hero's world; back for the loop, which becomes the hero again.
         resting={() => journey.toWork > 0.95 && journey.loop < 0.4}
       />
+      {/* Behind an opened card or the capstone: the scene falls back into smoke. */}
+      <OpenBackdrop clock={clock} />
       {/* At Work: no multisampling (heavy mass, capped DPR; see quality.ts). */}
       <Effects reducedMotion={reducedMotion} antialias={!atWork} />
     </>

@@ -21,6 +21,7 @@ import {
 } from 'three'
 import { capstone } from '@/content/site'
 import { useCursor } from '@/stores/cursor'
+import { useTier } from '@/stores/tier'
 import { useWork } from '@/stores/work'
 import { depthPalette } from './depthPalette'
 import { loadAssets } from '../assets'
@@ -36,12 +37,15 @@ import {
   createBlockGlass,
   createDustGeometry,
   createDustMaterial,
+  DUST,
+  DUST_SIZE,
   createScreenGeometry,
   createScreenMaterial,
   easeInOut,
   openFrame,
   TIMING,
 } from '../work/WorkCards'
+import { reportOpen } from '../work/openView'
 import { FrostField } from '../work/frostField'
 
 /** Where the panel hangs in Depth's space; the data roots converge on it. */
@@ -172,6 +176,8 @@ export function CapstonePanel({ clock }: Props) {
     screen: new Quaternion(),
     tilt: new Quaternion(),
     euler: new Euler(),
+    /** Flown in: its distance from the camera (the backdrop stands behind it). */
+    openDistance: 0,
   })
   const uniforms = useMemo(() => ({ uTime: { value: 0 } }), [])
 
@@ -274,7 +280,10 @@ export function CapstonePanel({ clock }: Props) {
         // Almost still once open: a breath of the drift, nothing more.
         s.euler.set(Math.sin(t * 0.21) * 0.01, Math.sin(t * 0.17) * 0.012, 0)
         g.quaternion.multiply(s.tilt.setFromEuler(s.euler))
+        s.openDistance = distance
       }
+      // The scene behind it falls back into smoke as it flies in (OpenBackdrop).
+      reportOpen(capstone.slug, flown, s.openDistance, g)
 
       // The gallery: a band of frost crosses the open pane; the image changes behind it.
       if (gallery !== s.shown && s.wipe < -0.5 && s.images.length > 1) s.wipe = -0.3
@@ -307,8 +316,12 @@ export function CapstonePanel({ clock }: Props) {
       blockGlass.visible = blockGlass.opacity > 0.01
       const dustShader = dustPoints.current.material as ShaderMaterial
       dustShader.uniforms.uDissolve!.value = s.dissolve
-      dustShader.uniforms.uPointScale!.value = size.height * viewport.dpr * 0.012
+      dustShader.uniforms.uPointScale!.value = size.height * viewport.dpr * DUST_SIZE
       dustPoints.current.visible = s.dissolve > 0
+      dustPoints.current.geometry.setDrawRange(
+        0,
+        useTier.getState().tier === 'lite' ? DUST.lite : Infinity,
+      )
     }
     const mesh = gems.current
     if (mesh) {

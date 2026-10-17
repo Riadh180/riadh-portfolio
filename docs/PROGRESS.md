@@ -2592,6 +2592,50 @@ HD 630 59.9–60.3.
 Sheet: `docs/screens/loop2-first-scroll.jpg`: the reference (seg_12, 11.5–15 s of the
 recording), then 0–1.1 at 0.05 on desktop full, desktop lite and phone (390×844).
 
+## Stage 4 — the opened card's backdrop (tag `loop2-stage-4`)
+Files: new `work/openView.ts` (the card or capstone flown in: how far, how far from the
+camera, its object), new `work/OpenBackdrop.tsx` and `shaders/openBackdrop.vert/.frag`,
+`work/WorkCards.tsx` and `depth/CapstonePanel.tsx` (report the open view; a denser dissolve),
+`Scene.tsx` (mounts the backdrop); tools: new `scripts/fps-open.mjs` (open / hold / close, four
+cards, 1 s windows).
+
+1. **The scene falls back into smoke.** While a card or the capstone is open, a backdrop stands
+   just behind it, square to the camera. Full tier: a picture of the scene without the card,
+   at a quarter of the resolution, every other frame, blurred, keeping 22% of its light, under
+   a slow drift of streaky charcoal-teal smoke. The column and the other cards stay only as
+   dim, soft shapes. Lite: the same darkening and a still fog, no picture. It follows the card's
+   fly-in and fly-home, so closing restores the scene smoothly at the same scroll position (the
+   capstone: 9900 → 9900).
+2. **A denser dissolve.** 24k beads per card (was 14k), each ~17% larger, the Stage 1 bead look.
+   Lite draws the first 14k.
+
+Brightness behind the opened card (mean luma outside the card and the details column, six
+cards, desktop full): loop 1 32.3 → 22.8 now. The grade's lifted blacks put the floor at ~14,
+so what is visible above the floor went 18.3 → 8.8 (−52%). Lite: 19.7.
+
+Passes:
+- **Pass 1:** the backdrop as above. The background came out brighter (48.4): every point sprite
+  keeps its full-screen size in pixels, so in the quarter-size picture the dust swelled into
+  bright blobs.
+- **Pass 2:** the picture leaves the dust out (behind the smoke it isn't missed; at_08 shows
+  none). Still brighter (36.6): the smoke colour was mostly teal (see Decisions).
+- **Pass 3:** a dark charcoal smoke with a trace of teal: 31.4, soft but not darker.
+- **Pass 4:** 30% of the light kept and a streakier smoke (dark between brighter wisps): 24.6.
+- **Pass 5:** 22% kept: 22.8 (−52% above the floor).
+Passes 1–3 fixed defects; the tuning passes are 4 and 5.
+
+FPS (production, Retina; scripts/fps-open.mjs):
+- Full (discrete GPU): 55.9–60.9 in every 1 s window while opening, holding and closing four
+  cards.
+- Lite (HD 630, alternating runs; the machine moved between a cool and a throttled state):
+  cool, the new build matched loop 1 (min 48.7 vs 48.8, the same windows) once lite's share of
+  the backdrop was cut to loop 1's cost (a still fog for the smoke, loop 1's 14k beads). The
+  windows under 55 while a card is open (≈49–55) are loop 1's own (the live card scene and
+  the dissolve).
+
+Sheet: `docs/screens/loop2-open-card.jpg`: at_08 | loop 1 | new, for three cards and the
+capstone, on desktop and phone.
+
 ## Decisions I made
 - **The recording shows no cursor over the particles.** Across Work (26–51 s) the pointer
   hovers the cards (a hand over the card's edge), and in the hero's strip it crosses empty
@@ -2655,3 +2699,17 @@ recording), then 0–1.1 at 0.05 on desktop full, desktop lite and phone (390×8
   blob.
 - **seg_12's transition is at 11.5–15 s of the recording** (the strip starts at ~12 s; the
   brief's "8–11.5 s" is the strip's own first tiles). The sheet uses frames from 11.5–15 s.
+- **The backdrop is a plane behind the card showing a picture of the scene, not a post effect.**
+  A post effect sees one image and can't tell the card and its dissolve from what is behind
+  them. The picture is drawn without the card, so the card and its beads stay sharp in front.
+- **The dust is left out of the backdrop's picture.** Point sprites are sized in screen pixels,
+  so in a quarter-size picture each bead would cover 16× its share and the pockets would glow.
+  Behind the smoke they are not missed; at_08 shows none.
+- **"~55% darker" is measured above the grade's floor.** The lifted blacks never go below ~14,
+  so halving the whole frame's mean is impossible. What shows above the floor went 18.3 → 8.8.
+- **Lite's backdrop costs what loop 1 cost.** On the HD 630 the backdrop's smoke and the denser
+  dissolve showed in the open-card windows. Lite now uses a still fog and loop 1's 14k beads, and
+  matched loop 1 in a cool A/B. The full tier keeps the full look.
+- **HD 630 numbers move with the machine's state.** This afternoon the editor and an open
+  browser tab shared the GPU, and the same build ran 49–61 FPS in one run and 29–44 in the
+  next. Only alternating A/B runs at the same moment are compared.

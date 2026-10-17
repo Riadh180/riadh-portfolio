@@ -38,6 +38,7 @@ import cardDustFragment from '../shaders/cardDust.frag'
 import cardDustVertex from '../shaders/cardDust.vert'
 import glassGrain from '../shaders/glassGrain.glsl'
 import { grainMotion, grainUniforms, keepClear } from '../particles/CursorField'
+import { reportOpen } from './openView'
 import { MOTION, Spring } from '../motion/motion'
 import dissolve from '../shaders/dissolve.glsl'
 import noise from '../shaders/noise.glsl'
@@ -261,8 +262,14 @@ export function createScreenMaterial(
   })
 }
 
-/** Particles a card breaks into: random spots over its face, shared by all cards. */
-const DUST_COUNT = 14000
+/**
+ * Particles a card breaks into: random spots over its face, shared by all cards; a dense
+ * stream of beads, as in at_08 (`DUST_SIZE`: their size per px of screen height). Lite draws
+ * the first `lite` of them (the integrated GPUs can't afford the full stream).
+ */
+const DUST_COUNT = 24000
+export const DUST = { lite: 14000 }
+export const DUST_SIZE = 0.014
 
 export function createDustGeometry() {
   const spots = new Float32Array(DUST_COUNT * 2)
@@ -486,6 +493,8 @@ function Card({
     scrambling: false,
     /** The card's screen area while it's in focus (kept clear by the air). */
     area: new Vector4(),
+    /** Flown in: its distance from the camera (the backdrop stands behind it). */
+    openDistance: 0,
     pointer: { x: 0, y: 0 },
     /** The cursor's pull: the shared pointer spring (the camera's own parallax lag). */
     pull: { x: new Spring(0, MOTION.pointer), y: new Spring(0, MOTION.pointer) },
@@ -577,7 +586,10 @@ function Card({
         .addScaledVector(s.lift, frame.y * distance * tan)
       g.parent?.worldToLocal(s.open)
       g.position.lerp(s.open, flown)
+      s.openDistance = distance
     }
+    // The scene behind it falls back into smoke as it flies in (OpenBackdrop).
+    reportOpen(job.slug, flown, s.openDistance, g)
 
     s.rest.setFromAxisAngle(s.up, target.turn)
     g.lookAt(camera.position)
@@ -638,8 +650,12 @@ function Card({
     glass.opacity = (1 - Math.min(1, s.dissolve * 1.2)) * near
     glass.visible = glass.opacity > 0.01
     dustShader.uniforms.uDissolve!.value = s.dissolve
-    dustShader.uniforms.uPointScale!.value = size.height * viewport.dpr * 0.012
+    dustShader.uniforms.uPointScale!.value = size.height * viewport.dpr * DUST_SIZE
     dustPoints.current!.visible = s.dissolve > 0
+    dustPoints.current!.geometry.setDrawRange(
+      0,
+      useTier.getState().tier === 'lite' ? DUST.lite : Infinity,
+    )
 
     // The live scene renders only while its card can be seen (and not while another card
     // is open, or once this one has broken away completely).
@@ -719,7 +735,7 @@ function Card({
       <mesh ref={blockMesh} geometry={block} material={blockGlass} />
       {screen && <mesh ref={screenMesh} geometry={plane} material={screen} position-z={front} />}
       {dustMaterial && (
-        // Not interactive: no raycasting (14k points per card would be tested on every
+        // Not interactive: no raycasting (24k points per card would be tested on every
         // pointer / wheel event that reaches the card's handlers).
         <points
           ref={dustPoints}
