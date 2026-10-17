@@ -40,6 +40,7 @@ import { grainUniforms } from '../particles/CursorField'
 import { MOTION, Spring } from '../motion/motion'
 import dissolve from '../shaders/dissolve.glsl'
 import noise from '../shaders/noise.glsl'
+import type { JourneyState } from '../journey/path'
 import type { SceneClock } from '../useSceneClock'
 import { CardFace } from './cardFace'
 import { FrostField } from './frostField'
@@ -70,7 +71,13 @@ declare global {
 const corner = new Vector3()
 
 /** Writes the card's eight box corners, projected to the screen, for the frame metrics. */
-function exportCorners(slug: string, card: Group, camera: PerspectiveCamera, width: number, height: number) {
+function exportCorners(
+  slug: string,
+  card: Group,
+  camera: PerspectiveCamera,
+  width: number,
+  height: number,
+) {
   const out: number[] = []
   const halfDepth = BLOCK.depth / 2 + BLOCK.bevel
   for (const x of [-1, 1]) {
@@ -299,7 +306,15 @@ export function openFrame(layout: CardLayout, aspect: number) {
 /** How long the fly-in and the dissolve take, in seconds (MOTION.md: fly-in ~1s). */
 export const TIMING = { fly: 1, dissolve: 0.9 }
 
-type Props = { layout: CardLayout; clock: SceneClock }
+/** `journey`: the camera's state on the site (the labs have none). */
+type Props = { layout: CardLayout; clock: SceneClock; journey?: JourneyState }
+
+/**
+ * Lite tier: while the camera rushes down the column (a fast scroll, faster than this in world
+ * units per second) the live scenes inside the frost hold still, which no one can see as the
+ * cards fly past; an open card always plays. A card-to-card step stays well under it.
+ */
+const RUSH = 3
 
 /**
  * The job cards: glass cards with a screen inside showing the job's cover (or a
@@ -307,7 +322,7 @@ type Props = { layout: CardLayout; clock: SceneClock }
  * HTML list through the work store) turns a card towards the viewer, brings it forward,
  * brightens it and scrambles its title until it resolves.
  */
-export function WorkCards({ layout, clock }: Props) {
+export function WorkCards({ layout, clock, journey }: Props) {
   const block = useMemo(() => createBlock(), [])
   const plane = useMemo(() => createScreenGeometry(), [])
   const dust = useMemo(() => createDustGeometry(), [])
@@ -368,6 +383,7 @@ export function WorkCards({ layout, clock }: Props) {
           index={i}
           layout={layout}
           clock={clock}
+          journey={journey}
           block={block}
           plane={plane}
           dust={dust}
@@ -385,6 +401,7 @@ type CardProps = {
   index: number
   layout: CardLayout
   clock: SceneClock
+  journey?: JourneyState
   block: ExtrudeGeometry
   plane: ShapeGeometry
   dust: BufferGeometry
@@ -407,7 +424,19 @@ function shown(object: { visible: boolean; parent: unknown } | null): boolean {
 /** How far a card's own tilt goes (radians): a few degrees, never flat. */
 const TILT = { drift: 0.06, cursor: 0.12 }
 
-function Card({ job, index, layout, clock, block, plane, dust, screen, face, live }: CardProps) {
+function Card({
+  job,
+  index,
+  layout,
+  clock,
+  journey,
+  block,
+  plane,
+  dust,
+  screen,
+  face,
+  live,
+}: CardProps) {
   const group = useRef<Group>(null)
   const screenMesh = useRef<Mesh>(null)
   const blockMesh = useRef<Mesh>(null)
@@ -503,8 +532,7 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     // At its stop the card comes forward, in front of its neighbours (the camera holds its
     // distance): the gallery shows the cards round it at the edges and behind the column.
     const stop = (useJourney.getState().progress - 2) * (jobs.length - 1)
-    const nearStop =
-      layout === 'orbit' ? smooth01(1 - Math.abs(stop - index) / APPROACH.width) : 0
+    const nearStop = layout === 'orbit' ? smooth01(1 - Math.abs(stop - index) / APPROACH.width) : 0
     g.position.lerp(s.eye, APPROACH.share * nearStop * (1 - flown))
     // Focused: comes forward, towards the camera.
     g.position.lerp(s.eye, s.focus * 0.12 * (1 - flown))
@@ -596,7 +624,8 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     // difference doesn't show, and it halves the cost; focused or open, every frame.
     s.frame++
     const lite = useTier.getState().tier === 'lite'
-    const due = isFocused || isOpen || (s.frame + index) % (lite ? 3 : 2) === 0
+    const rushing = lite && !!journey && Math.abs(journey.velocity) > RUSH
+    const due = isOpen || (!rushing && (isFocused || (s.frame + index) % (lite ? 3 : 2) === 0))
     // Lite tier: the frost's cheaper variant and plain glossy glass for the block (no
     // thin film or clear coat), compiled once, on the switch.
     if (lite && !screenMaterial.defines.LITE) {

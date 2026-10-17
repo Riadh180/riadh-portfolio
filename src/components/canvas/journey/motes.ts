@@ -22,7 +22,11 @@ export const grainMotes = {
  * Uniforms for the motes shader (shaders/motes.vert + particles.frag); `grain`: drawn as glass
  * grains (see grainMotes), with the shared grain uniforms.
  */
-export function createMotesUniforms(colors: [Color, Color, Color], origin = new Vector3(), grain = false) {
+export function createMotesUniforms(
+  colors: [Color, Color, Color],
+  origin = new Vector3(),
+  grain = false,
+) {
   return {
     ...(grain ? grainUniforms : {}),
     uTime: { value: 0 },

@@ -1,6 +1,7 @@
 import { useThree } from '@react-three/fiber'
 import { useEffect } from 'react'
 import { useLoading } from '@/stores/loading'
+import { compileForTarget } from '../compile'
 
 /**
  * Once the scene is mounted: compiles its shaders ahead of the first frames (in parallel
@@ -18,12 +19,9 @@ export function Warmup() {
     // in, so everything mounted with the hero exists.
     const frame = requestAnimationFrame(() =>
       requestAnimationFrame(() => {
-        void gl
-          .compileAsync(scene, camera)
-          .catch(() => undefined)
-          .then(() => {
-            if (!cancelled) complete('shaders')
-          })
+        void compileForTarget(gl, scene, camera).then(() => {
+          if (!cancelled) complete('shaders')
+        })
       }),
     )
     return () => {

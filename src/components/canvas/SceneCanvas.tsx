@@ -1,5 +1,7 @@
 'use client'
 
+// Before any canvas exists: three's console hook (see threeConsole.ts).
+import './threeConsole'
 import { PerformanceMonitor } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { lazy, Suspense, useEffect, useState } from 'react'

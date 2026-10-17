@@ -83,7 +83,12 @@ export function Scene({ simSize, pointer, reducedMotion }: Props) {
       />
       <CameraRig pointer={pointer} journey={journey} enabled={!reducedMotion} />
       {/* The air's answer to the cursor and each place's light, for every glass grain. */}
-      <CursorField pointer={pointer} journey={journey} clock={clock} reducedMotion={reducedMotion} />
+      <CursorField
+        pointer={pointer}
+        journey={journey}
+        clock={clock}
+        reducedMotion={reducedMotion}
+      />
       <Backdrop journey={journey} />
       <Drift journey={journey} seed={3} weight={1.3} rotate={false}>
         <Emblem

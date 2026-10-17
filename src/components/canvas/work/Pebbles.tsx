@@ -123,7 +123,8 @@ const COLUMN_POCKETS: Pocket[] = [
  * (three pockets).
  */
 function createPebbles(layout: Layout) {
-  const count = layout === 'column' ? Math.round(sceneConfig.pebbles.count * 0.25) : sceneConfig.pebbles.count
+  const count =
+    layout === 'column' ? Math.round(sceneConfig.pebbles.count * 0.25) : sceneConfig.pebbles.count
   const halfHeight = sceneConfig.spine.height / 2
   const pockets = layout === 'column' ? COLUMN_POCKETS : orbitPockets()
   const orbit = new Float32Array(count * 4)
@@ -295,7 +296,10 @@ export function ChipCluster({
 }) {
   const material = useRef<ShaderMaterial>(null)
   const geometry = useMemo(() => createCluster(clusters, count), [clusters, count])
-  const uniforms = useMemo(() => createGlitterUniforms(focusDistance, palette), [focusDistance, palette])
+  const uniforms = useMemo(
+    () => createGlitterUniforms(focusDistance, palette),
+    [focusDistance, palette],
+  )
   useEffect(() => () => geometry.dispose(), [geometry])
   useFrame((state) =>
     updateGlitter(material.current, clock, state.size.height * state.viewport.dpr, size),

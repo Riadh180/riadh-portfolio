@@ -1,8 +1,8 @@
 import {
+  BufferAttribute,
   BufferGeometry,
   CatmullRomCurve3,
   Curve,
-  Float32BufferAttribute,
   Shape,
   Vector2,
   Vector3,
@@ -88,16 +88,22 @@ export function createBandGeometry(curve: Curve<Vector3>, band: Band) {
 
   const length = Math.max(1, Math.round(curve.getLength() / 2)) * 2
   const n = band.segments
-  const positions: number[] = []
-  const normals: number[] = []
-  const uvs: number[] = []
-  const indices: number[] = []
+  // Typed arrays filled in place (this runs while the hero mounts): (n + 1) rings of two
+  // vertices per profile edge.
+  const ring = BAND_EDGES * 2
+  const count = (n + 1) * ring
+  const positions = new Float32Array(count * 3)
+  const normals = new Float32Array(count * 3)
+  const uvs = new Float32Array(count * 2)
+  const indices =
+    count < 65536 ? new Uint16Array(n * BAND_EDGES * 6) : new Uint32Array(n * BAND_EDGES * 6)
   const point = new Vector3()
   const tangent = new Vector3()
   const across = new Vector3()
   const up = new Vector3()
   const forward = new Vector3(0, 0, 1)
 
+  let vertex = 0
   for (let i = 0; i <= n; i++) {
     const t = (i % n) / n
     curve.getPointAt(t, point)
@@ -105,31 +111,39 @@ export function createBandGeometry(curve: Curve<Vector3>, band: Band) {
     across.crossVectors(tangent, forward).normalize()
     up.crossVectors(across, tangent).normalize()
 
-    for (const [e, { p, q, normal }] of edges.entries()) {
-      for (const [k, v] of [p, q].entries()) {
-        positions.push(
-          point.x + across.x * v.x + up.x * v.y,
-          point.y + across.y * v.x + up.y * v.y,
-          point.z + across.z * v.x + up.z * v.y,
-        )
-        normals.push(
-          across.x * normal.x + up.x * normal.y,
-          across.y * normal.x + up.y * normal.y,
-          across.z * normal.x + up.z * normal.y,
-        )
-        uvs.push(t * length, (e + k) / BAND_EDGES)
+    for (let e = 0; e < BAND_EDGES; e++) {
+      const { p, q, normal } = edges[e]!
+      const nx = across.x * normal.x + up.x * normal.y
+      const ny = across.y * normal.x + up.y * normal.y
+      const nz = across.z * normal.x + up.z * normal.y
+      for (let k = 0; k < 2; k++) {
+        const v = k === 0 ? p : q
+        positions[vertex * 3] = point.x + across.x * v.x + up.x * v.y
+        positions[vertex * 3 + 1] = point.y + across.y * v.x + up.y * v.y
+        positions[vertex * 3 + 2] = point.z + across.z * v.x + up.z * v.y
+        normals[vertex * 3] = nx
+        normals[vertex * 3 + 1] = ny
+        normals[vertex * 3 + 2] = nz
+        uvs[vertex * 2] = t * length
+        uvs[vertex * 2 + 1] = (e + k) / BAND_EDGES
+        vertex++
       }
     }
   }
 
-  const ring = BAND_EDGES * 2
+  let index = 0
   for (let i = 0; i < n; i++) {
     for (let e = 0; e < BAND_EDGES; e++) {
       const p0 = i * ring + e * 2
       const q0 = p0 + 1
       const p1 = p0 + ring
       const q1 = q0 + ring
-      indices.push(p0, p1, q0, q0, p1, q1)
+      indices[index++] = p0
+      indices[index++] = p1
+      indices[index++] = q0
+      indices[index++] = q0
+      indices[index++] = p1
+      indices[index++] = q1
     }
   }
 
@@ -139,20 +153,18 @@ export function createBandGeometry(curve: Curve<Vector3>, band: Band) {
   for (let i = 0; i < positions.length; i += 3) {
     extent = Math.max(extent, Math.abs(positions[i] ?? 0), Math.abs(positions[i + 1] ?? 0))
   }
-  const planar: number[] = []
-  for (let i = 0; i < positions.length; i += 3) {
-    planar.push(
-      ((positions[i] ?? 0) / extent) * 0.5 + 0.5,
-      ((positions[i + 1] ?? 0) / extent) * 0.5 + 0.5,
-    )
+  const planar = new Float32Array(count * 2)
+  for (let i = 0, j = 0; i < positions.length; i += 3, j += 2) {
+    planar[j] = ((positions[i] ?? 0) / extent) * 0.5 + 0.5
+    planar[j + 1] = ((positions[i + 1] ?? 0) / extent) * 0.5 + 0.5
   }
 
   const geometry = new BufferGeometry()
-  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
-  geometry.setAttribute('uv1', new Float32BufferAttribute(planar, 2))
-  geometry.setAttribute('normal', new Float32BufferAttribute(normals, 3))
-  geometry.setAttribute('uv', new Float32BufferAttribute(uvs, 2))
-  geometry.setIndex(indices)
+  geometry.setAttribute('position', new BufferAttribute(positions, 3))
+  geometry.setAttribute('uv1', new BufferAttribute(planar, 2))
+  geometry.setAttribute('normal', new BufferAttribute(normals, 3))
+  geometry.setAttribute('uv', new BufferAttribute(uvs, 2))
+  geometry.setIndex(new BufferAttribute(indices, 1))
   return geometry
 }
 

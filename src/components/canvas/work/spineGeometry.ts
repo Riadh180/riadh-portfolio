@@ -82,7 +82,8 @@ function process(length: number, radius: number, drop: number, curl: number, rol
     side.crossVectors(tangent, worldUp).normalize()
     up.crossVectors(side, tangent).normalize()
     // A leaf-shaped wing: broad near the root, swelling a little, then tapering to a point.
-    const taper = radius * (0.06 + 0.94 * Math.sin(Math.min(1, 0.35 + t) * Math.PI) ** 0.8 * (1 - t) ** 0.6)
+    const taper =
+      radius * (0.06 + 0.94 * Math.sin(Math.min(1, 0.35 + t) * Math.PI) ** 0.8 * (1 - t) ** 0.6)
     for (let a = 0; a < around; a++) {
       const v = (a / around) * Math.PI * 2
       const broad = Math.cos(v) * taper * 2.2
@@ -166,7 +167,10 @@ function segmentAt(segments: Segment[], y: number) {
   const segment = segments[index === -1 ? segments.length - 1 : index]!
   const t = Math.min(1, Math.max(0, (segment.top - y) / segment.length))
   // Asymmetric: rises to the belly, then falls; rounded (sine-shaped) on both sides.
-  const u = t < segment.belly ? (t / segment.belly) * 0.5 : 0.5 + ((t - segment.belly) / (1 - segment.belly)) * 0.5
+  const u =
+    t < segment.belly
+      ? (t / segment.belly) * 0.5
+      : 0.5 + ((t - segment.belly) / (1 - segment.belly)) * 0.5
   // Chunky at the centre only: the lobe falls away quickly towards the necks.
   const lobe = Math.sin(u * Math.PI) ** 1.1
   return { segment, t, lobe }
@@ -371,7 +375,8 @@ export function createSpineGeometry(edge = 0.1) {
         Math.PI * (0.3 + hash(seed, 60, 3) * 0.25) * (hash(seed, 61, 3) < 0.5 ? 1 : -1),
       )
       const angle = start + (s / count) * Math.PI * 2 + (hash(seed, 57, 3) - 0.5) * 0.9
-      const height = segment.top - segment.length * (segment.belly + (hash(seed, 59, 3) - 0.5) * 0.35)
+      const height =
+        segment.top - segment.length * (segment.belly + (hash(seed, 59, 3) - 0.5) * 0.35)
       part.translate(0.26, 0, 0)
       part.rotateY(angle)
       part.translate(0, height, 0)

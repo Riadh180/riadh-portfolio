@@ -44,7 +44,10 @@ export function Backdrop({ journey }: { journey?: JourneyState }) {
       uFog: { value: 0 },
       uOctaves: { value: 4 },
       uBacklight: {
-        value: new Color().copy(sceneColors.violet).lerp(sceneColors.teal, 0.15).multiplyScalar(0.05),
+        value: new Color()
+          .copy(sceneColors.violet)
+          .lerp(sceneColors.teal, 0.15)
+          .multiplyScalar(0.05),
       },
       uBacklightOuter: { value: new Color().copy(sceneColors.teal).multiplyScalar(0.012) },
       uBacklightAt: { value: new Vector2(0.5, 0.5) },

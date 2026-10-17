@@ -26,6 +26,16 @@ function texture(width: number, height: number, repeat: number) {
 const edgeAt = (y: number, height: number) => Math.floor((y / height) * BAND_EDGES)
 const byte = (x: number) => Math.round(Math.min(1, Math.max(0, x)) * 255)
 
+/** Every texel the same (one 32-bit fill): a texture's stand-in until its detail is drawn. */
+export function fillTexels(map: DataTexture, r: number, g: number, b: number, a: number) {
+  const { data } = map.image as { data: Uint8Array }
+  const bytes = new Uint8Array([r, g, b, a])
+  new Uint32Array(data.buffer, data.byteOffset, data.length / 4).fill(
+    new Uint32Array(bytes.buffer)[0] ?? 0,
+  )
+  map.needsUpdate = true
+}
+
 const smooth = (a: number, b: number, x: number) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
   return t * t * (3 - 2 * t)
@@ -71,7 +81,12 @@ export function writeFilmTexture(map: DataTexture, look: GlassLook) {
       const film = Math.max(body, hot)
       const bodyThickness = FILM.teal + (FILM.violet - FILM.teal) * tone
       const thickness = bodyThickness + (FILM.pink - bodyThickness) * Math.min(1, hot * 1.5)
-      data.set([byte(film), byte(thickness), 0, 255], (y * width + x) * 4)
+      // Channel by channel: no array per texel (this runs while the hero mounts).
+      const i = (y * width + x) * 4
+      data[i] = byte(film)
+      data[i + 1] = byte(thickness)
+      data[i + 2] = 0
+      data[i + 3] = 255
     }
   }
   map.needsUpdate = true
@@ -131,7 +146,10 @@ export function writeSurfaceTexture(map: DataTexture, look: GlassLook) {
       const mark = face ? (field[k] ?? 0) * look.mottling : 0
       const roughness = look.roughness + mark * 0.4
       const specular = face ? 1 - look.mottling * 0.4 + mark * 0.8 : 1
-      data.set([0, byte(roughness), 0, byte(specular)], k * 4)
+      data[k * 4] = 0
+      data[k * 4 + 1] = byte(roughness)
+      data[k * 4 + 2] = 0
+      data[k * 4 + 3] = byte(specular)
     }
   }
   map.needsUpdate = true
@@ -148,7 +166,8 @@ export function createRimTexture() {
   for (let y = 0; y < height; y++) {
     const edge = edgeAt(y, height)
     const rim = CHAMFER_EDGES.includes(edge) ? 255 : GROOVE_EDGES.includes(edge) ? 150 : 0
-    for (let x = 0; x < width; x++) data.set([rim, rim, rim, 255], (y * width + x) * 4)
+    for (let x = 0; x < width; x++) data.fill(rim, (y * width + x) * 4, (y * width + x) * 4 + 3)
+    for (let x = 0; x < width; x++) data[(y * width + x) * 4 + 3] = 255
   }
   map.magFilter = map.minFilter = NearestFilter
   map.needsUpdate = true
@@ -175,8 +194,7 @@ const ENGRAVING: [number, number][] = [
  */
 export function createEngravingTexture() {
   const width = 64
-  const rows = 64
-  const height = rows * BAND_EDGES
+  const height = ENGRAVING_ROWS * BAND_EDGES
   const map = new DataTexture(new Uint8Array(width * height * 4), width, height, RGBAFormat)
   map.wrapS = RepeatWrapping
   map.wrapT = ClampToEdgeWrapping
@@ -185,7 +203,16 @@ export function createEngravingTexture() {
   map.generateMipmaps = true
   // One tile per world unit of the path.
   map.repeat.set(1, 1)
-  const { data } = map.image as { data: Uint8Array }
+  // Flat until the lines are cut (writeEngravingTexture, a moment after the first frame).
+  fillTexels(map, 128, 128, 255, 255)
+  return map
+}
+
+const ENGRAVING_ROWS = 64
+
+export function writeEngravingTexture(map: DataTexture) {
+  const { data, width, height } = map.image as { data: Uint8Array; width: number; height: number }
+  const rows = ENGRAVING_ROWS
   for (let y = 0; y < height; y++) {
     const edge = Math.floor(y / rows)
     // Only the two wide faces (the narrow strips by the groove stay clean).
@@ -206,9 +233,12 @@ export function createEngravingTexture() {
       // Tangent space: the tilt is across the face (the v direction).
       const ny = Math.max(-0.9, Math.min(0.9, tilt * 0.75))
       const nz = Math.sqrt(1 - ny * ny)
-      data.set([128, byte(ny * 0.5 + 0.5), byte(nz * 0.5 + 0.5), 255], (y * width + x) * 4)
+      const i = (y * width + x) * 4
+      data[i] = 128
+      data[i + 1] = byte(ny * 0.5 + 0.5)
+      data[i + 2] = byte(nz * 0.5 + 0.5)
+      data[i + 3] = 255
     }
   }
   map.needsUpdate = true
-  return map
 }

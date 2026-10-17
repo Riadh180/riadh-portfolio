@@ -59,16 +59,13 @@ export function WorkPlace({ journey, clock }: Props) {
       <Drift journey={journey} seed={11} weight={1.4}>
         {/* Phones: the column is a mass behind the cards (~60% of the screen wide), further
             back, lifted so its dissolving foot clears the frame before System. */}
-        <group
-          scale={column ? [0.85, 1, 0.85] : 1}
-          position={column ? [0, -1.5, -2.4] : [0, 0, 0]}
-        >
+        <group scale={column ? [0.85, 1, 0.85] : 1} position={column ? [0, -1.5, -2.4] : [0, 0, 0]}>
           <Spine clock={clock} />
           {column && <Pebbles clock={clock} focusDistance={6} layout="column" />}
         </group>
         {/* Focus on the card the camera holds at (dollied in, card in front of the column). */}
         {!column && <Pebbles clock={clock} focusDistance={WORK.distance - WORK.dolly - 2} />}
-        <WorkCards layout={column ? 'column' : 'orbit'} clock={clock} />
+        <WorkCards layout={column ? 'column' : 'orbit'} clock={clock} journey={journey} />
       </Drift>
     </group>
   )

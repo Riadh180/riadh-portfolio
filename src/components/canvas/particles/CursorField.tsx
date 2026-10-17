@@ -80,10 +80,22 @@ export function syncGrainTier(material: ShaderMaterial | null | undefined) {
 /** Each place's light, the direction it comes from (world) and its colour. */
 const LIGHTS = {
   hero: { from: new Vector3(0.45, 0.75, 0.5), color: sceneColors.glass },
-  work: { from: new Vector3(-0.45, 0.7, 0.55), color: new Color().copy(sceneColors.glass).lerp(sceneColors.violet, 0.25) },
-  system: { from: new Vector3(0.1, 0.9, 0.4), color: new Color().copy(sceneColors.glass).lerp(sceneColors.blue, 0.35) },
-  depth: { from: new Vector3(0, 1, 0.15), color: new Color().copy(sceneColors.glow).lerp(sceneColors.glass, 0.4) },
-  contact: { from: new Vector3(0.6, 0.65, 0.45), color: new Color().copy(sceneColors.warm).lerp(sceneColors.glass, 0.3) },
+  work: {
+    from: new Vector3(-0.45, 0.7, 0.55),
+    color: new Color().copy(sceneColors.glass).lerp(sceneColors.violet, 0.25),
+  },
+  system: {
+    from: new Vector3(0.1, 0.9, 0.4),
+    color: new Color().copy(sceneColors.glass).lerp(sceneColors.blue, 0.35),
+  },
+  depth: {
+    from: new Vector3(0, 1, 0.15),
+    color: new Color().copy(sceneColors.glow).lerp(sceneColors.glass, 0.4),
+  },
+  contact: {
+    from: new Vector3(0.6, 0.65, 0.45),
+    color: new Color().copy(sceneColors.warm).lerp(sceneColors.glass, 0.3),
+  },
 }
 
 /** The spring field: two half-float targets, ping-ponged by a full-screen pass. */
@@ -214,9 +226,7 @@ class Air {
     // Phones keep the card in view focused (it scrambles), so there only an open card counts.
     const { focused, opened } = useWork.getState()
     const onCard = opened || (!this.touch && focused)
-    const overText = this.touch
-      ? pointer.uv.y < 0.35
-      : pointer.uv.x < 0.33 && pointer.uv.y < 0.55
+    const overText = this.touch ? pointer.uv.y < 0.35 : pointer.uv.x < 0.33 && pointer.uv.y < 0.55
     if (!pointer.active || Math.abs(journey.velocity) > 0.6 || onCard || overText) {
       this.velocity.set(0, 0)
     }
@@ -256,7 +266,10 @@ class Air {
     // The hero's light drifts to warm copper with The Core's (full tier).
     const warm = lite ? 0 : lightDrift(clock.time, sceneConfig.light.warmPeriod) * hero
     const { color, scratch } = this
-    color.copy(LIGHTS.hero.color).lerp(sceneColors.warm, warm * 0.8).multiplyScalar(hero)
+    color
+      .copy(LIGHTS.hero.color)
+      .lerp(sceneColors.warm, warm * 0.8)
+      .multiplyScalar(hero)
     color.add(scratch.copy(LIGHTS.work.color).multiplyScalar(work))
     color.add(scratch.copy(LIGHTS.system.color).multiplyScalar(system))
     color.add(scratch.copy(LIGHTS.depth.color).multiplyScalar(depth))

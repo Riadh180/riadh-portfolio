@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { AdditiveBlending, type Color, type Group, type ShaderMaterial } from 'three'
+import { useTier } from '@/stores/tier'
 import { valueNoise3 } from '../noise'
 import type { SceneClock } from '../useSceneClock'
 import { syncGrainTier } from '../particles/CursorField'
@@ -8,6 +9,13 @@ import { createMotesGeometry, createMotesUniforms, gaussian, grainMotes } from '
 
 /** The sheet: a wide disc of dust, thin, gathered into clouds with dark gaps between. */
 const SHEET = { radius: 22, thickness: 0.45, count: 18000 }
+
+/**
+ * Lite tier: flying through the wall is the heaviest moment of a fast scroll on an integrated
+ * GPU at Retina (additive motes swelling near the lens), so it draws 60% of the motes, each
+ * capped smaller.
+ */
+const LITE = { share: 0.6, maxSize: 5 }
 
 /** Cells of the density grid the sheet is sampled from. */
 const GRID = 64
@@ -80,6 +88,8 @@ export function ParticleWall({ clock, y, tilt, colors, seed }: Props) {
     g.visible = amount > 0.01
     if (!g.visible) return
     syncGrainTier(material.current)
+    const lite = useTier.getState().tier === 'lite'
+    geometry.setDrawRange(0, lite ? Math.floor(SHEET.count * LITE.share) : SHEET.count)
     const u = material.current.uniforms
     u.uTime!.value = clock.time
     u.uOpacity!.value = amount * amount * 4.8
@@ -89,7 +99,7 @@ export function ParticleWall({ clock, y, tilt, colors, seed }: Props) {
     u.uDrift!.value = 0.08
     // Close motes stay sparks rather than huge discs, so the wall reads as dense dust.
     u.uAperture!.value = 0.6
-    u.uMaxSize!.value = 8 * viewport.dpr
+    u.uMaxSize!.value = (lite ? LITE.maxSize : 8) * viewport.dpr
     u.uFocusDistance!.value = 6
     u.uFogFar!.value = 40
     u.uViewportHeight!.value = size.height * viewport.dpr

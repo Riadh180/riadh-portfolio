@@ -72,6 +72,13 @@ export class CardFace {
   private canvas = document.createElement('canvas')
   private context: CanvasRenderingContext2D
   private background = document.createElement('canvas')
+  /**
+   * The background's 2D context. Its pixels are read back (the media's luminance under the
+   * title), so it is created for frequent reads: no GPU round trip, no console hint.
+   */
+  private backgroundContext() {
+    return this.background.getContext('2d', { willReadFrequently: true })
+  }
   private family: string
   private hasCover = false
   /** Luminance of the media under the title (cached; reset when the media changes). */
@@ -127,7 +134,7 @@ export class CardFace {
     const image = new Image()
     image.onload = () => {
       this.hasCover = true
-      const context = this.background.getContext('2d')
+      const context = this.backgroundContext()
       if (!context) return
       if (url.endsWith('.svg')) {
         // A diagram: shown whole on the dark screen, never cropped.
@@ -195,12 +202,12 @@ export class CardFace {
    * the first screenshot's top and bottom).
    */
   private drawPhones(images: HTMLImageElement[]) {
-    const c = this.background.getContext('2d')
+    const c = this.backgroundContext()
     const [first, second] = images
     if (!c || !first || !second) return
     this.hasCover = true
     const sample = (image: HTMLImageElement, y: number) => {
-      const probe = document.createElement('canvas').getContext('2d')
+      const probe = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
       if (!probe) return palette.bg
       probe.drawImage(image, 0, -y * image.height, image.width, image.height)
       const [r = 0, g = 0, b = 0] = probe.getImageData(image.width / 2, 0, 1, 1).data
@@ -256,7 +263,7 @@ export class CardFace {
 
   /** Mean relative luminance (0..1) of the media in a box centred on (x, y). */
   private luminance(x: number, y: number, w: number, h: number) {
-    const c = this.background.getContext('2d')
+    const c = this.backgroundContext()
     if (!c) return 0.3
     const left = Math.max(0, Math.round(x - w / 2))
     const top = Math.max(0, Math.round(y - h / 2))
@@ -314,7 +321,13 @@ export class CardFace {
     // A soft, feathered scrim under the title, as strong as the media there needs for
     // ≥ 4.5:1 contrast (measured from the media's luminance in the title block).
     const middle = (top + baseline) / 2
-    const band = this.luminance(centre, middle, blockWidth, baseline - top + size * 0.6)
+    // Measured once per media (the scramble redraws this layer every frame for ~1.5 s).
+    const band = (this.scrimBand ??= this.luminance(
+      centre,
+      middle,
+      blockWidth,
+      baseline - top + size * 0.6,
+    ))
     const scrim = Math.min(0.78, Math.max(0.2, (band - 0.08) * 1.9))
     const glow = c.createRadialGradient(
       centre,
@@ -378,7 +391,7 @@ export class CardFace {
    * be real work: no real names or numbers, only generic UI labels.
    */
   private drawPlaceholder() {
-    const c = this.background.getContext('2d')
+    const c = this.backgroundContext()
     if (!c) return
     const i = this.index
     const tones = [

@@ -46,8 +46,12 @@ function createSlab() {
  */
 type Props = { clock: SceneClock; journey: JourneyState }
 
-/** Out of sight once the camera is well down towards Work: skip it entirely. */
-const GONE = 0.85
+/**
+ * Out of sight once the camera is well down towards Work (above the frame from about toWork
+ * 0.3; the camera holds below it from 0.35): skip it entirely, its field update included, so
+ * it costs nothing while Work comes into view.
+ */
+const GONE = 0.5
 
 export function DustSheet({ clock, journey }: Props) {
   const group = useRef<Group>(null)

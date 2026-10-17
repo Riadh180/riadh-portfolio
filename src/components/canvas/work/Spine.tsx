@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { BufferAttribute, BufferGeometry, type Mesh, type MeshPhysicalMaterial } from 'three'
 import { useTier } from '@/stores/tier'
 import { sceneConfig } from '@/styles/scene'
+import { compileForTarget } from '../compile'
 import type { SceneClock } from '../useSceneClock'
 import { createOilMaterial, disposeOilMaterial } from './oilMaterial'
 import { createSpineGeometry } from './spineGeometry'
@@ -57,7 +58,7 @@ export function Spine({ clock }: Props) {
   // material is compiled here, off the frame, rather than on the first frame Work is drawn.
   const geometry = model ?? standIn
   useEffect(() => {
-    if (mesh.current) void gl.compileAsync(mesh.current, camera, scene).catch(() => undefined)
+    if (mesh.current) void compileForTarget(gl, mesh.current, camera, scene)
   }, [geometry, gl, camera, scene])
   useEffect(() => () => disposeOilMaterial(material), [material])
 

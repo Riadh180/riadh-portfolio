@@ -8,9 +8,22 @@ import {
   createFilmTexture,
   createRimTexture,
   createSurfaceTexture,
+  fillTexels,
+  writeEngravingTexture,
   writeFilmTexture,
   writeSurfaceTexture,
 } from './glassTextures'
+
+const byte = (x: number) => Math.round(Math.min(1, Math.max(0, x)) * 255)
+
+/** Runs `task` in an idle moment (soon after the next frames), off the current task. */
+function later(task: () => void) {
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(task, { timeout: 300 })
+  } else {
+    window.setTimeout(task, 50)
+  }
+}
 
 /** The two profile walls that stand square to the faces: the inner and outer sides. */
 const SIDE_EDGES = [5, 12]
@@ -49,9 +62,13 @@ function addCoreLight(material: MeshPhysicalMaterial) {
     // The film's hues round the rim, as in the reference's ring: aqua, green, gold, pink,
     // blue (each a tint of about the same brightness, so the line keeps its light).
     uFilmColors: {
-      value: [sceneColors.glow, sceneColors.emerald, sceneColors.warm, sceneColors.pink, sceneColors.blue].map(
-        (color) => tint(color, 0.85),
-      ),
+      value: [
+        sceneColors.glow,
+        sceneColors.emerald,
+        sceneColors.warm,
+        sceneColors.pink,
+        sceneColors.blue,
+      ].map((color) => tint(color, 0.85)),
     },
     uFilmRange: { value: new Vector2(film.min, film.max) },
     uFilmCycle: { value: film.cycle },
@@ -153,6 +170,14 @@ function addCoreLight(material: MeshPhysicalMaterial) {
 export function createGlassMaterial(look: GlassLook) {
   const film = createFilmTexture()
   const surface = createSurfaceTexture()
+  const engraving = createEngravingTexture()
+  // The detail of the film, the smudges and the engraving is drawn texel by texel (a noise
+  // field of ~1M samples): in an idle moment just after the first frame, not in the hero's
+  // mounting task. Until then the maps hold their plain values (clean glass, no film), so
+  // the shader is the same and nothing recompiles; The Core is still resolving out of the
+  // intro's dust by then.
+  fillTexels(film, 0, byte(0.5), 0, 255)
+  fillTexels(surface, 0, byte(look.roughness), 0, 255)
   const material = new MeshPhysicalMaterial({
     color: sceneColors.glass,
     metalness: 0,
@@ -161,7 +186,7 @@ export function createGlassMaterial(look: GlassLook) {
     roughnessMap: surface,
     specularIntensityMap: surface,
     // Fine engraved hairlines on the faces (crafted glass up close).
-    normalMap: createEngravingTexture(),
+    normalMap: engraving,
     normalScale: new Vector2(0.6, 0.6),
     ior: 1.5,
     dispersion: 0.3,
@@ -172,7 +197,16 @@ export function createGlassMaterial(look: GlassLook) {
     emissive: sceneColors.glass,
     emissiveMap: createRimTexture(),
   })
+  // The maps' detail comes later (above): the look's key marks them as written for now.
+  material.userData.surfaceKey = surfaceKey(look)
   applyGlassLook(material, look)
+  later(() => {
+    if (material.userData.disposed) return
+    writeEngravingTexture(engraving)
+    writeFilmTexture(film, look)
+    writeSurfaceTexture(surface, look)
+    material.userData.surfaceKey = surfaceKey(look)
+  })
   // Thick glass: light held in the band's body, not just bright edges on black.
   addGlassBody(material, {
     color: new Color().copy(sceneColors.glass).lerp(sceneColors.teal, 0.2),
@@ -225,6 +259,7 @@ export function applyGlassLook(
 }
 
 export function disposeGlassMaterial(material: MeshPhysicalMaterial) {
+  material.userData.disposed = true
   material.iridescenceMap?.dispose()
   material.roughnessMap?.dispose()
   material.emissiveMap?.dispose()

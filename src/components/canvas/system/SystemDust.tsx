@@ -3,7 +3,12 @@ import { useEffect, useMemo, useRef } from 'react'
 import { AdditiveBlending, type ShaderMaterial, Vector4 } from 'three'
 import { useSystem } from '@/stores/system'
 import { sceneColors } from '@/styles/scene'
-import { createCluster, createGlitterUniforms, GLITTER_SHADERS, updateGlitter } from '../work/Pebbles'
+import {
+  createCluster,
+  createGlitterUniforms,
+  GLITTER_SHADERS,
+  updateGlitter,
+} from '../work/Pebbles'
 import type { SceneClock } from '../useSceneClock'
 import { isRelated, layoutGraph } from './graph'
 

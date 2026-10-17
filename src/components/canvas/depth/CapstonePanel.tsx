@@ -200,7 +200,18 @@ export function CapstonePanel({ clock }: Props) {
       gemGeometry.dispose()
       gemMaterial.dispose()
     },
-    [block, glass, screenGeometry, screen, face, dust, dustMaterial, lattice, gemGeometry, gemMaterial],
+    [
+      block,
+      glass,
+      screenGeometry,
+      screen,
+      face,
+      dust,
+      dustMaterial,
+      lattice,
+      gemGeometry,
+      gemMaterial,
+    ],
   )
 
   useFrame(({ camera, pointer, size, viewport }, delta) => {

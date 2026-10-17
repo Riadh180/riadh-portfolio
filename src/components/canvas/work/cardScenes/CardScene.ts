@@ -13,6 +13,7 @@ import {
   WebGLRenderTarget,
 } from 'three'
 import { sceneColors } from '@/styles/scene'
+import { compileForTarget } from '../../compile'
 import dotsFragment from '../../shaders/cardScenes/dots.frag'
 import dotsVertex from '../../shaders/cardScenes/dots.vert'
 import glassRimFragment from '../../shaders/cardScenes/glassRim.frag'
@@ -84,7 +85,7 @@ export abstract class CardScene {
   /** Compiles the scene's shaders ahead of time (in parallel where supported), so the
    * first frame it shows doesn't stall. */
   precompile(gl: WebGLRenderer) {
-    return gl.compileAsync(this.scene, this.camera)
+    return compileForTarget(gl, this.scene, this.camera)
   }
 
   dispose() {
