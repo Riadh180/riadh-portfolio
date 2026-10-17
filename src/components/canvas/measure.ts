@@ -8,8 +8,12 @@ declare global {
      * screen, [left, top, right, bottom] in px.
      */
     __boxes?: Record<string, number[]>
-    /** Measurement only (scripts/phone-pass.mjs sets it): the touch stir's strength. */
-    __air?: { push?: number }
+    /**
+     * Measurement only (scripts/cursor-flow.mjs, phone-pass.mjs set it): the place's strength
+     * of the air; set `request` and the next frame writes `peak`, the furthest a grain at the
+     * focus has moved (px), and `local`, how far one at `at` ([x, y] px) has.
+     */
+    __air?: { strength?: number; request?: boolean; at?: number[]; peak?: number; local?: number }
   }
 }
 

@@ -1,6 +1,8 @@
 // Dust motes that live in the world (the gold cloud, the slab): static positions with a
 // slow drift, the same depth-of-field sprites as the ambient dust (particles.frag). With
-// CLUMP defined (the slab), brightness follows the slab's baked smoke field.
+// CLUMP defined (the slab), brightness follows the slab's baked smoke field. With GRAIN or
+// CURSOR (grainMotion.glsl prepended) the air carries them with the cursor; GRAIN also draws
+// them as the world's glass grains, CURSOR keeps the soft dust and brightens it as it's stirred.
 
 uniform float uTime;
 uniform float uSize;
@@ -52,13 +54,16 @@ void main() {
   p += vec3(sin(uTime * 0.23 + phase), sin(uTime * 0.17 + phase * 1.7), cos(uTime * 0.19 + phase)) * uDrift;
 
   vec4 mvPosition = modelViewMatrix * vec4(p, 1.0);
-#ifdef GRAIN
-  // The cursor parts the dust; a grain glints as it turns through the place's light.
+#if defined(GRAIN) || defined(CURSOR)
+  // The air carries the dust with the cursor.
   float stirred;
   mvPosition.xyz = grainCursor(mvPosition.xyz, uFocusDistance, stirred);
+#endif
+#ifdef GRAIN
+  // A grain glints as it turns through the place's light (only the bright beads,
+  // grainMotion.glsl) or as it tumbles in the stirred air.
   vec3 world = (modelMatrix * vec4(p, 1.0)).xyz;
-  // Only the bright beads glint (grainMotion.glsl); any bead the cursor stirs catches the light.
-  vGlint = max(grainGlint(world, seed, uTime) * grainGlints(seed.w), stirred);
+  vGlint = max(grainGlint(world, seed, uTime) * grainGlints(seed.w), grainStirred(stirred, seed, uTime));
 #ifdef CAUSTIC
   // Under the water: the caustic web's light passing over the grain makes it flare.
   float web = abs(sin(world.x * 1.7 + uTime * 0.5) + sin(world.z * 1.3 - uTime * 0.4)
@@ -88,6 +93,10 @@ void main() {
   color *= seed.w > 0.95 ? 2.6 : 0.55;
 #endif
   color *= 0.6 + 0.4 * sin(uTime * (0.5 + seed.z) + phase);
+#if defined(CURSOR) && !defined(GRAIN)
+  // Stirred dust catches the light as it tumbles.
+  color *= 1.0 + grainStirred(stirred, seed, uTime) * 1.5;
+#endif
 #ifdef CLUMP
   // Sparkles gather inside the slab's bright smoke and thin out in its dark gaps.
   vec2 fieldUv = vec2(position.x / uFieldExtent.x, (position.z - uFieldCenterZ) / uFieldExtent.y) + 0.5;

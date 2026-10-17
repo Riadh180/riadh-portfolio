@@ -27,11 +27,11 @@ export const MOTION = {
   /** UI and hover reactions: quick but still soft. */
   ui: { frequency: 3, damping: 0.75 },
   /**
-   * The air, the lighter member of the cursor's family (same damping as `pointer`): grains
-   * pushed by the cursor spring back home in ~1–1.5s (the cursor field), and the stirring
-   * settles at the same pace.
+   * The air, on the cursor's own spring (the same as `pointer`): grains the cursor stirs drift
+   * on for ~0.3–0.4 s after it stops, then spring home, settled in ~2 s with a ~1.5%
+   * overshoot (the cursor field; the particle engine's wake fades on its envelope).
    */
-  air: { frequency: 0.8, damping: 0.8 },
+  air: { frequency: 0.45, damping: 0.8 },
   /** Idle drift: amplitude (world units / radians) and speed of the never-still breathing. */
   idle: { position: 0.06, rotation: 0.025, speed: 0.12 },
 } as const

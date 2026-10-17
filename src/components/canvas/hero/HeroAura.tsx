@@ -20,6 +20,7 @@ import vertexShader from '../shaders/glow.vert'
 import shardFragment from '../shaders/heroShard.frag'
 import sparkFragment from '../shaders/heroSpark.frag'
 import sparkVertex from '../shaders/heroSpark.vert'
+import { grainMotion, grainUniforms } from '../particles/CursorField'
 import type { SceneClock } from '../useSceneClock'
 
 /** Where The Core floats at the hero (matches Emblem's hero pose). */
@@ -42,6 +43,8 @@ const DUST: [number, number, number, number][] = [
 
 /** Sparks rising past The Core (behind it and at its sides), in a box this tall. */
 const SPARKS = { count: 14, height: 6, width: 5.2 }
+/** The sparks move with the air (the cursor), as every grain does. */
+const SPARK_VERTEX = `${grainMotion}\n${sparkVertex}`
 
 function createSparks() {
   const positions = new Float32Array(SPARKS.count * 3)
@@ -93,6 +96,7 @@ export function HeroAura({ journey, clock }: { journey: JourneyState; clock: Sce
   useEffect(() => () => sparks.dispose(), [sparks])
   const sparkUniforms = useMemo(
     () => ({
+      ...grainUniforms,
       uTime: { value: 0 },
       uHeight: { value: SPARKS.height },
       uSize: { value: 1 },
@@ -186,7 +190,7 @@ export function HeroAura({ journey, clock }: { journey: JourneyState; clock: Sce
         raycast={() => null}
       >
         <shaderMaterial
-          vertexShader={sparkVertex}
+          vertexShader={SPARK_VERTEX}
           fragmentShader={sparkFragment}
           uniforms={sparkUniforms}
           blending={AdditiveBlending}

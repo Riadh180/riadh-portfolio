@@ -4,11 +4,10 @@ import { AdditiveBlending, Color, type Group, type ShaderMaterial } from 'three'
 import { useTier } from '@/stores/tier'
 import { sceneColors, sceneConfig } from '@/styles/scene'
 import particlesFragment from '../shaders/particles.frag'
-import motesVertex from '../shaders/motes.vert'
 import slabFragment from '../shaders/slab.frag'
 import smokeVertex from '../shaders/smoke.vert'
 import type { SceneClock } from '../useSceneClock'
-import { createMotesGeometry, createMotesUniforms, gaussian } from './motes'
+import { createMotesGeometry, createMotesUniforms, cursorMotes, gaussian } from './motes'
 import { type JourneyState, PLACES } from './path'
 import { SlabField } from './slabField'
 
@@ -22,6 +21,8 @@ const SLAB = { x: 16, zNear: 9.5, zFar: -4.8, depth: 0.5 }
 
 /** Smoke layers under the underside (local y), for depth: cloudy volumes, dark gaps. */
 const SMOKE_LAYERS = [-0.03, -0.2, -0.42]
+/** The slab's sparkles follow its smoke field and move with the air (the cursor). */
+const SLAB_DEFINES = { CLUMP: '', CURSOR: '' }
 
 const EXTENT: [number, number] = [SLAB.x * 2, SLAB.zNear - SLAB.zFar]
 const CENTER_Z = (SLAB.zNear + SLAB.zFar) / 2
@@ -66,7 +67,7 @@ export function DustSheet({ clock, journey }: Props) {
   )
   const uniforms = useMemo(
     () => ({
-      ...createMotesUniforms(colors),
+      ...createMotesUniforms(colors, undefined, true),
       uField: { value: field.texture },
       uFieldExtent: { value: EXTENT },
       uFieldCenterZ: { value: CENTER_Z },
@@ -152,8 +153,8 @@ export function DustSheet({ clock, journey }: Props) {
       <points geometry={geometry} frustumCulled={false}>
         <shaderMaterial
           ref={material}
-          defines={{ CLUMP: '' }}
-          vertexShader={motesVertex}
+          defines={SLAB_DEFINES}
+          vertexShader={cursorMotes.vertexShader}
           fragmentShader={particlesFragment}
           uniforms={uniforms}
           blending={AdditiveBlending}

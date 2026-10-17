@@ -125,7 +125,7 @@ void main() {
   }
   level *= 1.0 + filament * 2.5;
 #endif
-  vGlint = max(grainGlint(world.xyz, seed, uTime) * grainGlints(tier), stirred);
+  vGlint = max(grainGlint(world.xyz, seed, uTime) * grainGlints(tier), grainStirred(stirred, seed, uTime));
   // Out of focus: the light spreads over the disc (dimmer per pixel).
   float energy = clamp((focusSize * focusSize) / (size * size), 0.08, 1.0);
   vColor = grainLit(hue * level * energy * uBrightness, world.xyz);

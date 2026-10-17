@@ -6,7 +6,10 @@ export function Hero() {
   return (
     <section id="signal" aria-labelledby="signal-title" className="min-h-svh">
       <HeroFade>
-        <div className="pointer-events-auto col-span-12 flex flex-col gap-4 sm:col-span-7 lg:col-span-4">
+        <div
+          data-keep-clear
+          className="pointer-events-auto col-span-12 flex flex-col gap-4 sm:col-span-7 lg:col-span-4"
+        >
           <h1 id="signal-title" className="ui-lg text-text">
             {profile.name}
             <span className="block text-muted">{profile.role}</span>

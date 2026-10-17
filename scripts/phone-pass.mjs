@@ -115,10 +115,10 @@ for (const [width, height] of sizes) {
   // Back to the top for the drag (the hero's dust).
   await page.evaluate(() => window.scrollTo(0, 0))
   await sleep(3000)
-  // (2) A sideways touch drag through the hero's dust: the stir (window.__air.push, what the
-  // grain shaders push with) must still be on at the end of the drag; once the browser takes
-  // a touch over for scrolling it sends no more pointer moves, only touch moves. The change in
-  // the band round the finger against the same band untouched is printed as well.
+  // (2) A sideways touch drag through the hero's dust: the air must still be moving at the end
+  // of the drag (window.__air.peak, how far a grain at the focus has moved, px); once the
+  // browser takes a touch over for scrolling it sends no more pointer moves, only touch moves.
+  // The change in the band round the finger against the same band untouched is printed too.
   const shot = async () =>
     sharp(await page.screenshot())
       .greyscale()
@@ -132,7 +132,13 @@ for (const [width, height] of sizes) {
       if (touch) await page.touchscreen.touchMove(width * (0.15 + 0.7 * (k / 24)), y)
       await sleep(16)
     }
-    const push = await page.evaluate(() => window.__air?.push ?? null)
+    const push = await page.evaluate(async () => {
+      if (!window.__air) return null
+      window.__air.request = true
+      for (let i = 0; i < 30 && window.__air.request; i++)
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+      return window.__air.peak ?? null
+    })
     const b = await shot()
     if (touch) await page.touchscreen.touchEnd()
     const { data: A, info } = a
@@ -154,7 +160,7 @@ for (const [width, height] of sizes) {
     .toFile(path.join(outDir, `${label}-touch.png`))
   const ratio = touched.change / Math.max(idle.change, 0.01)
   console.log(
-    `${label}: touch drag: stir at the end of the drag ${touched.push === null ? 'n/a' : touched.push.toFixed(2)} ${touched.push > 0.05 ? '✓' : '✗'} (band change ${touched.change.toFixed(2)} vs ${idle.change.toFixed(2)} untouched, ×${ratio.toFixed(1)})`,
+    `${label}: touch drag: the air moved ${touched.push === null ? 'n/a' : `${touched.push.toFixed(0)} px`} at the end of the drag ${touched.push > 3 ? '✓' : '✗'} (band change ${touched.change.toFixed(2)} vs ${idle.change.toFixed(2)} untouched, ×${ratio.toFixed(1)})`,
   )
 
   // (3) Clipped text, place by place (exact progress: keyboard input, no magnet).

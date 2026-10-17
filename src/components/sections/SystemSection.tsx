@@ -18,7 +18,10 @@ export function SystemSection() {
         data-here={here}
         className="sticky top-0 page-grid h-svh content-end pb-(--margin) opacity-0 transition-opacity duration-700 ease-signal data-[here=true]:opacity-100"
       >
-        <div className="col-span-12 -mx-(--margin) flex flex-col gap-4 bg-linear-to-t from-bg from-70% to-transparent px-(--margin) pt-16 sm:col-span-8 lg:col-span-4 lg:mx-0 lg:bg-none lg:px-0 lg:pt-0">
+        <div
+          data-keep-clear
+          className="col-span-12 -mx-(--margin) flex flex-col gap-4 bg-linear-to-t from-bg from-70% to-transparent px-(--margin) pt-16 sm:col-span-8 lg:col-span-4 lg:mx-0 lg:bg-none lg:px-0 lg:pt-0"
+        >
           <h2 id="system-heading" className="ui text-muted">
             <span className="text-text">{section?.index}</span> / {section?.label}
           </h2>

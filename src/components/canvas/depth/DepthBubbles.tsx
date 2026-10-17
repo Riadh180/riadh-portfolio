@@ -8,11 +8,10 @@ import {
   type ShaderMaterial,
 } from 'three'
 import { sceneColors } from '@/styles/scene'
-import { grainUniforms, syncGrainTier } from '../particles/CursorField'
+import { grainMotion, grainUniforms, syncGrainTier } from '../particles/CursorField'
 import fragmentShader from '../shaders/bubble.frag'
 import vertexShader from '../shaders/bubble.vert'
 import glassGrain from '../shaders/glassGrain.glsl'
-import grainMotion from '../shaders/grainMotion.glsl'
 import risingFragment from '../shaders/risingGrain.frag'
 import { DEPTH, type JourneyState, PLACES } from '../journey/path'
 import type { SceneClock } from '../useSceneClock'

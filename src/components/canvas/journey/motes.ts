@@ -1,10 +1,9 @@
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from 'three'
 import type { Color } from 'three'
 import { sceneConfig } from '@/styles/scene'
-import { grainUniforms } from '../particles/CursorField'
+import { grainMotion, grainUniforms } from '../particles/CursorField'
 import grainFragment from '../shaders/grain.frag'
 import glassGrain from '../shaders/glassGrain.glsl'
-import grainMotion from '../shaders/grainMotion.glsl'
 import motesVertex from '../shaders/motes.vert'
 
 /**
@@ -19,8 +18,17 @@ export const grainMotes = {
 }
 
 /**
- * Uniforms for the motes shader (shaders/motes.vert + particles.frag); `grain`: drawn as glass
- * grains (see grainMotes), with the shared grain uniforms.
+ * Motes keeping their soft dust look (particles.frag) that still move with the air (the
+ * cursor). Use with `createMotesUniforms(…, true)`.
+ */
+export const cursorMotes = {
+  vertexShader: `${grainMotion}\n${motesVertex}`,
+  defines: { CURSOR: '' } as Record<string, string>,
+}
+
+/**
+ * Uniforms for the motes shader (shaders/motes.vert + particles.frag); `grain`: with the
+ * shared grain uniforms (the air and the place's light), for grainMotes and cursorMotes.
  */
 export function createMotesUniforms(
   colors: [Color, Color, Color],

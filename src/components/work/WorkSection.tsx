@@ -62,7 +62,7 @@ export function WorkSection({ initial = null }: { initial?: string | null }) {
         data-here={here || !!shown}
         className="sticky top-0 page-grid h-svh content-end pb-(--margin) opacity-0 transition-opacity duration-700 ease-signal data-[here=true]:opacity-100"
       >
-        <div className="col-span-12 flex flex-col gap-4 lg:col-span-4">
+        <div data-keep-clear className="col-span-12 flex flex-col gap-4 lg:col-span-4">
           <h2 id="work-heading" className="sr-only">
             <span className="text-text">{section?.index}</span> / {section?.label}
           </h2>

@@ -4,12 +4,11 @@ import { AdditiveBlending, Color, type Group, type ShaderMaterial, Vector3 } fro
 import { useTier } from '@/stores/tier'
 import { sceneColors, sceneConfig } from '@/styles/scene'
 import particlesFragment from '../shaders/particles.frag'
-import motesVertex from '../shaders/motes.vert'
 import noise from '../shaders/noise.glsl'
 import smokeFragment from '../shaders/smoke.frag'
 import smokeVertex from '../shaders/smoke.vert'
 import type { SceneClock } from '../useSceneClock'
-import { createMotesGeometry, createMotesUniforms, gaussian } from './motes'
+import { createMotesGeometry, createMotesUniforms, cursorMotes, gaussian } from './motes'
 import { type JourneyState, PLACES } from './path'
 
 /** Where The Core floats at the hero: the cloud blooms around it. */
@@ -76,7 +75,7 @@ export function GoldCloud({ journey, clock, reducedMotion }: Props) {
   const smoke = useRef<(ShaderMaterial | null)[]>([])
   const geometry = useMemo(() => createCloud(), [])
   const uniforms = useMemo(
-    () => createMotesUniforms([sceneColors.warm, sceneColors.warm, sceneColors.warm], ORIGIN),
+    () => createMotesUniforms([sceneColors.warm, sceneColors.warm, sceneColors.warm], ORIGIN, true),
     [],
   )
   const smokeUniforms = useMemo(
@@ -132,8 +131,9 @@ export function GoldCloud({ journey, clock, reducedMotion }: Props) {
       <points geometry={geometry} frustumCulled={false}>
         <shaderMaterial
           ref={motes}
-          vertexShader={motesVertex}
+          vertexShader={cursorMotes.vertexShader}
           fragmentShader={particlesFragment}
+          defines={cursorMotes.defines}
           uniforms={uniforms}
           blending={AdditiveBlending}
           transparent

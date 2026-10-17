@@ -27,7 +27,7 @@ void main() {
   vec3 world = (modelMatrix * vec4(p, 1.0)).xyz;
   // Brightness tiers (grainMotion.glsl): only the bright beads glint, unless the cursor stirs them.
   float tier = fract(seed.x * 7.31 + seed.z * 3.17);
-  vGlint = max(grainGlint(world, seed, uTime) * grainGlints(tier), stirred);
+  vGlint = max(grainGlint(world, seed, uTime) * grainGlints(tier), grainStirred(stirred, seed, uTime));
   vPhase = fract(seed.w * 5.3 + seed.y);
 #endif
   gl_Position = projectionMatrix * mv;

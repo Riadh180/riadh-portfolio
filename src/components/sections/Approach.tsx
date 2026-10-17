@@ -22,6 +22,7 @@ export function Approach() {
           {profile.tagline}
         </h2>
         <div
+          data-keep-clear
           data-shown={shown}
           className="col-span-12 flex flex-col gap-3 opacity-0 transition-[opacity,translate] duration-300 ease-signal data-[shown=true]:translate-y-0 data-[shown=true]:opacity-100 data-[shown=true]:delay-500 data-[shown=true]:duration-900 motion-safe:translate-y-3 sm:col-span-7 lg:col-span-3 lg:col-start-9"
         >

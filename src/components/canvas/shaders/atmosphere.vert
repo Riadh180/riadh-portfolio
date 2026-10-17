@@ -66,7 +66,7 @@ void main() {
   // Brightness tiers (mostly dim, a few bright: grainMotion.glsl), the layer's mean kept;
   // only the bright beads glint.
   float tier = fract(seed.y * 5.3 + seed.w * 1.7);
-  vGlint = max(grainGlint(p, seed, uTime) * grainGlints(tier), stirred);
+  vGlint = max(grainGlint(p, seed, uTime) * grainGlints(tier), grainStirred(stirred, seed, uTime));
 
   vColor = grainLit(mix(ramp(seed.w * 1.7 + seed.x * 0.3), uAccent, uAccentAmount) * 0.9, p);
   vColor *= grainTier(tier) / 0.644;

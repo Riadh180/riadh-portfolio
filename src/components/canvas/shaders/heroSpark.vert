@@ -1,5 +1,6 @@
 // The hero's sparks: a few gold and pink points rising slowly past The Core, each on its own
-// long loop, swaying a little, fading in at the bottom and out near the top.
+// long loop, swaying a little, fading in at the bottom and out near the top. The air carries
+// them with the cursor (grainMotion.glsl prepended), and a stirred spark flares.
 uniform float uTime;
 uniform float uHeight;
 uniform float uSize;
@@ -20,10 +21,13 @@ void main() {
   p.x += sin(uTime * 0.21 + phase) * 0.18;
   p.z += cos(uTime * 0.17 + phase) * 0.12;
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
+  float stirred;
+  mv.xyz = grainCursor(mv.xyz, 10.0, stirred);
   gl_Position = projectionMatrix * mv;
   gl_PointSize = uSize * (0.6 + seed.w * 0.8) / -mv.z;
   // A slow twinkle (each on its own period) on a fade in and out over the rise.
   float twinkle = 0.55 + 0.45 * sin(uTime * (0.9 + seed.w * 1.3) + phase);
   float life = smoothstep(0.0, 0.2, rise) * (1.0 - smoothstep(0.65, 1.0, rise));
   vColor = mix(uGold, uPink, step(0.6, seed.y)) * life * twinkle;
+  vColor *= 1.0 + grainStirred(stirred, seed, uTime) * 1.5;
 }

@@ -20,6 +20,7 @@ import {
   ShaderMaterial,
   Vector2,
   Vector3,
+  Vector4,
 } from 'three'
 import { type Job, jobs } from '@/content/site'
 import { SCRAMBLE_DURATION } from '@/lib/scramble'
@@ -36,8 +37,7 @@ import frostVertex from '../shaders/frost.vert'
 import cardDustFragment from '../shaders/cardDust.frag'
 import cardDustVertex from '../shaders/cardDust.vert'
 import glassGrain from '../shaders/glassGrain.glsl'
-import grainMotion from '../shaders/grainMotion.glsl'
-import { grainUniforms } from '../particles/CursorField'
+import { grainMotion, grainUniforms, keepClear } from '../particles/CursorField'
 import { MOTION, Spring } from '../motion/motion'
 import dissolve from '../shaders/dissolve.glsl'
 import noise from '../shaders/noise.glsl'
@@ -71,6 +71,24 @@ declare global {
 }
 const corner = new Vector3()
 
+/** Visits the card's eight box corners, projected to the screen (NDC). */
+function projectCorners(
+  card: Group,
+  camera: PerspectiveCamera,
+  visit: (x: number, y: number) => void,
+) {
+  const halfDepth = BLOCK.depth / 2 + BLOCK.bevel
+  for (const x of [-1, 1]) {
+    for (const y of [-1, 1]) {
+      for (const z of [-1, 1]) {
+        corner.set((x * CARD.width) / 2, (y * CARD.height) / 2, z * halfDepth)
+        card.localToWorld(corner).project(camera)
+        visit(corner.x, corner.y)
+      }
+    }
+  }
+}
+
 /** Writes the card's eight box corners, projected to the screen, for the frame metrics. */
 function exportCorners(
   slug: string,
@@ -80,17 +98,17 @@ function exportCorners(
   height: number,
 ) {
   const out: number[] = []
-  const halfDepth = BLOCK.depth / 2 + BLOCK.bevel
-  for (const x of [-1, 1]) {
-    for (const y of [-1, 1]) {
-      for (const z of [-1, 1]) {
-        corner.set((x * CARD.width) / 2, (y * CARD.height) / 2, z * halfDepth)
-        card.localToWorld(corner).project(camera)
-        out.push(((corner.x + 1) / 2) * width, ((1 - corner.y) / 2) * height)
-      }
-    }
-  }
+  projectCorners(card, camera, (x, y) => out.push(((x + 1) / 2) * width, ((1 - y) / 2) * height))
   window.__cardCorners![slug] = out
+}
+
+/** The card's area on the screen (NDC x0, y0, x1, y1), which the air keeps clear. */
+function cardArea(card: Group, camera: PerspectiveCamera, out: Vector4) {
+  out.set(Infinity, Infinity, -Infinity, -Infinity)
+  projectCorners(card, camera, (x, y) =>
+    out.set(Math.min(out.x, x), Math.min(out.y, y), Math.max(out.z, x), Math.max(out.w, y)),
+  )
+  return out
 }
 
 type Home = { position: Vector3; turn: number; pitch: number; roll: number; face: number }
@@ -454,6 +472,8 @@ function Card({
     },
     [blockGlass, dustMaterial],
   )
+  // Leaving: the air no longer keeps this card's area clear.
+  useEffect(() => () => keepClear(job.slug, null), [job.slug])
   // Per-frame state and scratch objects (refs may be mutated in the frame loop).
   const state = useRef({
     focus: 0,
@@ -464,6 +484,8 @@ function Card({
     /** 0 whole → 1 dissolved → 2 dust drifted away. */
     dissolve: 0,
     scrambling: false,
+    /** The card's screen area while it's in focus (kept clear by the air). */
+    area: new Vector4(),
     pointer: { x: 0, y: 0 },
     /** The cursor's pull: the shared pointer spring (the camera's own parallax lag). */
     pull: { x: new Spring(0, MOTION.pointer), y: new Spring(0, MOTION.pointer) },
@@ -643,6 +665,11 @@ function Card({
         live.render(gl, clock.time)
       }
     }
+
+    // The card in focus (hovered, open or at the camera's stop): the air never pushes grains
+    // onto its face.
+    const inFocus = (isFocused || isOpen || nearStop > 0.5) && shown(g)
+    keepClear(job.slug, inFocus ? cardArea(g, camera as PerspectiveCamera, s.area) : null)
 
     if (window.__cardCorners) {
       // The open card too: its glass block has broken away, its screen is what shows.

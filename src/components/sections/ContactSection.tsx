@@ -80,12 +80,13 @@ export function ContactSection() {
             <span className="text-text">{section?.index}</span> / {section?.label}
           </p>
           <h2
+            data-keep-clear
             id="contact-title"
             className="font-ui text-[clamp(3.5rem,13vw,11rem)] leading-[0.85] tracking-tight text-text uppercase"
           >
             <GlitchText text="Let’s talk" active={here} />
           </h2>
-          <div className="flex flex-wrap items-center gap-x-8 gap-y-5">
+          <div data-keep-clear className="flex flex-wrap items-center gap-x-8 gap-y-5">
             <EmailButton email={profile.email} />
             <ul className="flex flex-wrap gap-x-6 gap-y-2">
               <li>

@@ -19,7 +19,11 @@ import { sceneColors } from '@/styles/scene'
 import { type Variant, variants } from './variants'
 
 /** The lab emblems ignore the cursor, so the variants turn in step. */
-const still: Pointer = { uv: new Vector2(0.5, 0.5), active: false }
+const still: Pointer = {
+  uv: new Vector2(0.5, 0.5),
+  active: false,
+  tap: { ndc: new Vector2(), at: 0 },
+}
 
 function LabScene({ look }: { look: GlassLook }) {
   const clock = useSceneClock(1)

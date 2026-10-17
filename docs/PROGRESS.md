@@ -2472,6 +2472,17 @@ Sheet: `docs/screens/loop2-pockets.jpg` (4 pockets: reference | loop 1 | new, at
 
 Open point: a whole-frame hue distance ≤ 0.2 is out of the beads' reach (see Decisions).
 
+## Stage 2 — cursor flow (in progress, checkpoint)
+State: the flow field (full: 256² ping-pong, advection, curl, `MOTION.air` = the pointer spring
+0.45 Hz ζ 0.8), the lite trail (path stretches split by the falloff's integral, a linger
+factor), shared `airPush.glsl`, keep-clear areas (`data-keep-clear` text blocks, the card in
+focus), the stirred glint flicker, parallax ×2, touch drag 60% + tap ripple, the gold cloud,
+slab and hero sparks moving with the air. Measured (hero, 1440×900, scripts/cursor-flow.mjs):
+full 17 / 44 / 89 px, lite 11 / 45 / 85 px for 300 / 1000 / 2500 px/s; drift 0.2–0.4 s;
+settled 1–2.7 s. Next: the cursor sheet (scripts/capture-swipe.mjs + swipe-sheet.mjs: Work
+2.5 / hero, full / lite / phone), FPS with the cursor moving (full and HD 630 lite), the MP4,
+the Stage 2 section, commit + tag `loop2-stage-2`.
+
 ## Decisions I made
 - **The recording shows no cursor over the particles.** Across Work (26–51 s) the pointer
   hovers the cards (a hand over the card's edge), and in the hero's strip it crosses empty

@@ -14,11 +14,10 @@ import { jobs } from '@/content/site'
 import { WORK } from '../journey/path'
 import { hash } from '../noise'
 import { ORBIT_FIRST, ORBIT_SPACING, orbitPose, SPIRAL } from './layout'
-import { grainUniforms, syncGrainTier } from '../particles/CursorField'
+import { grainMotion, grainUniforms, syncGrainTier } from '../particles/CursorField'
 import glitterFragment from '../shaders/glitter.frag'
 import glitterVertex from '../shaders/glitter.vert'
 import glassGrain from '../shaders/glassGrain.glsl'
-import grainMotion from '../shaders/grainMotion.glsl'
 import type { SceneClock } from '../useSceneClock'
 
 /** The glass grains' shaders: the shared grain look and motion round the glitter's own. */

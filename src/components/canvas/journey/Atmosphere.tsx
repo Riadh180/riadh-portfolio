@@ -9,11 +9,10 @@ import {
   ShaderMaterial,
 } from 'three'
 import { sceneColors } from '@/styles/scene'
-import { grainUniforms, syncGrainTier } from '../particles/CursorField'
+import { grainMotion, grainUniforms, syncGrainTier } from '../particles/CursorField'
 import atmosphereFragment from '../shaders/atmosphere.frag'
 import atmosphereVertex from '../shaders/atmosphere.vert'
 import glassGrain from '../shaders/glassGrain.glsl'
-import grainMotion from '../shaders/grainMotion.glsl'
 import type { SceneClock } from '../useSceneClock'
 import type { JourneyState } from './path'
 
