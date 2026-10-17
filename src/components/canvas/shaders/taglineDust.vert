@@ -1,8 +1,9 @@
 // The tagline breaking into dust as the camera leaves the statement: each point sits on a
 // letter (sampled from the tagline's own texture), is released when its line dissolves
 // (top line first, as in tagline.frag) and falls with the camera, drifting apart, then
-// fades as it reaches the descent's dust.
+// fades on a slower clock (uLinger), as the wireframe forms from the descent's dust.
 uniform float uExit;
+uniform float uLinger;
 uniform float uFall;
 uniform float uSize;
 
@@ -22,5 +23,6 @@ void main() {
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * mv;
   gl_PointSize = uSize * (0.6 + seed.z) / -mv.z;
-  vAlpha = step(0.001, release) * (1.0 - smoothstep(0.6, 1.0, release));
+  float age = clamp((uLinger * 1.6 - row * 0.3 - seed.x * 0.2) / 0.6, 0.0, 1.0);
+  vAlpha = step(0.001, release) * (1.0 - smoothstep(0.6, 1.0, age));
 }

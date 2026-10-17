@@ -62,6 +62,8 @@ if (where === 'stay') {
     a.remove()
   }, where)
 } else {
+  // Exactly there: keyboard input turns off the scroll's soft magnet (see capture-progress).
+  await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' })))
   await page.evaluate((p) => {
     const top = (id) => document.getElementById(id)?.offsetTop ?? 0
     const end = (id) =>

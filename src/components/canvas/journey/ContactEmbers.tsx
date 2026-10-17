@@ -16,7 +16,7 @@ import glassGrain from '../shaders/glassGrain.glsl'
 import grainMotion from '../shaders/grainMotion.glsl'
 import risingFragment from '../shaders/risingGrain.frag'
 import type { SceneClock } from '../useSceneClock'
-import { type JourneyState, PLACES } from './path'
+import { contactRest, type JourneyState } from './path'
 
 const COUNT = 110
 const vertexShader = `${grainMotion}\n${bubbleVertex}`
@@ -74,6 +74,8 @@ export function ContactEmbers({ journey, clock }: { journey: JourneyState; clock
     p.visible = value > 0.02
     if (!p.visible) return
     syncGrainTier(p.material as ShaderMaterial)
+    // Rising round The Core's resting place, riding down with it into Contact.
+    p.position.y = contactRest(journey) - 1.6
     const u = (p.material as ShaderMaterial).uniforms
     u.uTime!.value = clock.time
     u.uTextZone!.value = size.width < 700 ? [-0.05, 1.1] : [-0.3, 0.3]
@@ -84,7 +86,7 @@ export function ContactEmbers({ journey, clock }: { journey: JourneyState; clock
     <points
       ref={points}
       geometry={geometry}
-      position={[0, PLACES.contact - 1.6, 0.4]}
+      position={[0, 0, 0.4]}
       frustumCulled={false}
       visible={false}
     >

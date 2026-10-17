@@ -19,6 +19,8 @@ type Trail = {
   /** How strongly the trail shows now (0 hides it): set from the journey. */
   amount: () => number
   brightness?: number
+  /** Mote size (world units). */
+  moteSize?: number
   /** Narrows to a point at the bottom (the trail streams into the next place's centre). */
   gather?: boolean
 }
@@ -57,6 +59,7 @@ export function DustTrail({
   colors,
   amount,
   brightness = 1.6,
+  moteSize = 0.03,
   gather = false,
 }: Trail) {
   const points = useRef<Points>(null)
@@ -79,7 +82,7 @@ export function DustTrail({
     u.uOpacity!.value = value * brightness
     u.uSpread!.value = 0.5
     u.uDrift!.value = 0.12
-    u.uSize!.value = 0.03
+    u.uSize!.value = moteSize
     u.uViewportHeight!.value = size.height * viewport.dpr
   })
 

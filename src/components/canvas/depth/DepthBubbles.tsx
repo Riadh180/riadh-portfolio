@@ -4,6 +4,7 @@ import {
   AdditiveBlending,
   BufferGeometry,
   Float32BufferAttribute,
+  type Group,
   type ShaderMaterial,
 } from 'three'
 import { sceneColors } from '@/styles/scene'
@@ -13,12 +14,19 @@ import vertexShader from '../shaders/bubble.vert'
 import glassGrain from '../shaders/glassGrain.glsl'
 import grainMotion from '../shaders/grainMotion.glsl'
 import risingFragment from '../shaders/risingGrain.frag'
+import { DEPTH, type JourneyState, PLACES } from '../journey/path'
 import type { SceneClock } from '../useSceneClock'
 
 const COUNT = 70
 /** A few larger glass beads rising with the bubbles. */
 const BEADS = 16
 const BOX = { width: 9, height: 13, depth: 5 }
+/**
+ * Leaving for Contact they ride part of the way down with the camera (still rising past it,
+ * only slower), so Depth's water overlaps Contact's embers and warm light instead of ending
+ * before they start; they shrink away as The Core settles (toContact fadeFrom → fadeTo).
+ */
+const RIDE = { follow: 0.65, fadeFrom: 0.45, fadeTo: 0.75 }
 const BEAD_SHADERS = {
   vertexShader: `${grainMotion}\n${vertexShader}`,
   fragmentShader: `${glassGrain}\n${risingFragment}`,
@@ -49,7 +57,8 @@ function createBubbles(count: number) {
  * A few larger bubbles drifting up through Depth (under water, going deeper), and with them a
  * few larger glass beads, the world's glass grains, catching the light from the surface.
  */
-export function DepthBubbles({ clock }: { clock: SceneClock }) {
+export function DepthBubbles({ clock, journey }: { clock: SceneClock; journey: JourneyState }) {
+  const group = useRef<Group>(null)
   const material = useRef<ShaderMaterial>(null)
   const beadMaterial = useRef<ShaderMaterial>(null)
   const geometry = useMemo(() => createBubbles(COUNT), [])
@@ -81,15 +90,22 @@ export function DepthBubbles({ clock }: { clock: SceneClock }) {
   useFrame(() => {
     const m = material.current
     const b = beadMaterial.current
-    if (!m || !b) return
+    if (!m || !b || !group.current) return
+    const below = Math.min(0, journey.view.y - (PLACES.depth - DEPTH.below))
+    group.current.position.y = 0.5 + below * RIDE.follow
+    const t = Math.min(
+      1,
+      Math.max(0, (journey.toContact - RIDE.fadeFrom) / (RIDE.fadeTo - RIDE.fadeFrom)),
+    )
+    const shown = 1 - t * t * (3 - 2 * t)
     m.uniforms.uTime!.value = clock.time
-    m.uniforms.uSize!.value = 0.07 * size.height * dpr
+    m.uniforms.uSize!.value = 0.07 * size.height * dpr * shown
     syncGrainTier(b)
     b.uniforms.uTime!.value = clock.time * 0.8
-    b.uniforms.uSize!.value = 0.08 * size.height * dpr
+    b.uniforms.uSize!.value = 0.08 * size.height * dpr * shown
   })
   return (
-    <group position={[0, 0.5, 0]}>
+    <group ref={group} position={[0, 0.5, 0]}>
       <points geometry={geometry} frustumCulled={false}>
         <shaderMaterial
           ref={material}

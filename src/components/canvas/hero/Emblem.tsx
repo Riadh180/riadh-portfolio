@@ -2,7 +2,14 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { type Group, type Mesh, Vector3 } from 'three'
 import { sceneConfig } from '@/styles/scene'
-import { type JourneyState, PLACES, statementLift } from '../journey/path'
+import {
+  contactDrop,
+  contactEntry,
+  contactRest,
+  type JourneyState,
+  PLACES,
+  statementLift,
+} from '../journey/path'
 import type { Pointer } from '../usePointer'
 import type { SceneClock } from '../useSceneClock'
 import { createBandGeometry, roundedSquareCurve } from './bandGeometry'
@@ -13,6 +20,7 @@ import { useCursor } from '@/stores/cursor'
 import { revealed } from '@/stores/loading'
 import { useTier } from '@/stores/tier'
 import { BURST } from './IntroBurst'
+import { exportScreenBox } from '../measure'
 
 type Props = {
   look: GlassLook
@@ -122,6 +130,11 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
   const hold = useRef<number | null>(null)
   const frame = useMemo(() => createFrame(), [])
   const innerShape = useMemo(() => createInner(), [])
+  /** The frame's bounds, for the measurement export only. */
+  const bounds = useMemo(() => {
+    frame.computeBoundingBox()
+    return frame.boundingBox!
+  }, [frame])
   // Created once; the look is applied every frame below so it can be tuned live.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const glass = useMemo(() => createGlassMaterial(look), [])
@@ -134,7 +147,7 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     [frame, innerShape, glass],
   )
 
-  useFrame(({ size, scene }, delta) => {
+  useFrame(({ size, scene, camera }, delta) => {
     if (!group.current || !inner.current) return
     const { emblem } = sceneConfig
     const t = clock.time
@@ -145,9 +158,9 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
 
     tilt.current.x += (tiltX - tilt.current.x) * ease
     tilt.current.y += (tiltY - tilt.current.y) * ease
-    // At Contact The Core rises out of the dark (from ~30% into the leg) and spins again,
-    // posed exactly as on the hero, so the loop back to the hero is seamless.
-    const contact = journey && !anchored ? smooth01((journey.toContact - 0.12) / 0.6) : 0
+    // At Contact The Core comes into the frame early in the leg and spins again, posed
+    // exactly as on the hero, so the loop back to the hero is seamless.
+    const contact = journey && !anchored ? contactEntry(journey.toContact) : 0
     // Travels with the objects' slower settle, so it trails the camera down the path.
     const objects = journey ? journey.objects : 0
     const travel = objects * objects * (3 - 2 * objects) * (1 - contact)
@@ -181,13 +194,21 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     // Narrow screens: stay over the (narrower) tagline.
     g.position.x *= Math.min(1, size.width / size.height / 1.6)
     g.position.y += Math.sin(t * 0.5) * emblem.float
-    // Descends into place from above, never through "LET'S TALK" below it.
-    if (contact > 0) g.position.y += PLACES.contact + (1 - contact) * 3.5
+    // Comes down into the frame from above, then rides with the camera at its resting place
+    // in the frame: never lower on screen than at rest, so never through "LET'S TALK".
+    if (journey && contact > 0) {
+      g.position.y += contactRest(journey) + contactDrop(journey.toContact)
+      // The shared drag (Drift) pulls it down while the camera descends: not here, where
+      // down is towards the rising text.
+      const lag = g.parent?.userData.lag
+      if (typeof lag === 'number') g.position.y -= Math.min(0, lag)
+    }
     // Portrait screens see a narrower slice of the world: keep the emblem's share of width.
     const portrait = Math.min(1, Math.max(0.55, (size.width / size.height) * 0.9))
     // Leaving the statement: held edge-on, The Core follows the camera down a little and
     // shrinks into a sliver of light instead of being cut off by the frame's top edge.
-    const leave = journey && !anchored ? smooth01(journey.toWork / 0.32) * (1 - contact) : 0
+    const leave =
+      journey && !anchored && journey.toContact <= 0 ? smooth01(journey.toWork / 0.32) : 0
     if (leave > 0) g.position.y += (journey!.y - PLACES.statement) * 0.8 * leave
     // Grows back to hero size only once Contact's text has gone (it would cover it).
     const loop = journey ? smooth01((journey.loop - 0.35) / 0.65) : 0
@@ -258,6 +279,7 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
       warm: lite ? 0 : lightDrift(t, warmPeriod) * warmth * hero,
       rimWarm: lite ? rimWarm * hero : 0,
     })
+    if (!anchored) exportScreenBox('core', g, bounds, camera, size.width, size.height)
   })
 
   return (

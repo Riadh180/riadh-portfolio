@@ -20,6 +20,17 @@ const CLOUDS: [number, number, number, number][] = [
   [0, -3.6, 0.4, 1.4],
 ]
 
+/**
+ * Phones: the graph sits in the upper part of the frame (the text comes in below), so more
+ * clouds hang below it, where the phone's frame would otherwise stay dark. Listed four
+ * times: each gets four clouds' share of the grains (50 a share, as the graph's own).
+ */
+const PHONE_CLOUDS: [number, number, number, number][] = [
+  [-1.2, -6.4, 0.6, 2.2],
+  [1.4, -9.2, -0.8, 2.4],
+  [-0.4, -12, 0.2, 2.6],
+]
+
 /** Fine, cool glass: silver-blue, blue, a little violet and aqua. */
 const PALETTE = [
   sceneColors.glass.clone().lerp(sceneColors.blue, 0.35),
@@ -40,7 +51,13 @@ export function SystemDust({ clock }: Props) {
   const phone = useThree((state) => state.size.width < 700)
   const nodes = useMemo(() => layoutGraph(), [])
   const edges = useMemo(() => nodes.flatMap((node, i) => (node.parent >= 0 ? [i] : [])), [nodes])
-  const geometry = useMemo(() => createCluster(CLOUDS, phone ? 450 : 1100), [phone])
+  const geometry = useMemo(
+    () =>
+      phone
+        ? createCluster([...CLOUDS, ...Array.from({ length: 4 }, () => PHONE_CLOUDS).flat()], 1050)
+        : createCluster(CLOUDS, 1100),
+    [phone],
+  )
   useEffect(() => () => geometry.dispose(), [geometry])
   const uniforms = useMemo(
     () => ({

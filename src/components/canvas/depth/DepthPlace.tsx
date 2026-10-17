@@ -61,7 +61,7 @@ export function DepthPlace({ journey, clock }: Props) {
       />
       <Drift journey={journey} seed={37} weight={1.2}>
         <DepthWorld clock={clock} fog={DEPTH_FOG} />
-        <DepthBubbles clock={clock} />
+        <DepthBubbles clock={clock} journey={journey} />
       </Drift>
     </group>
   )

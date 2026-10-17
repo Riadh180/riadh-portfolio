@@ -44,6 +44,13 @@ const expoOut = (x: number) => (x >= 1 ? 1 : 1 - 2 ** (-10 * x))
 
 type Props = { clock: SceneClock; reducedMotion: boolean; journey: JourneyState }
 
+/**
+ * Leaving the statement the letters break into dust over toWork 0 → 0.3; each mote fades
+ * on a slower clock (toWork 0 → DUST_LINGER), so the dust is still dense as the wireframe
+ * forms below it, and thins out once it stands.
+ */
+const DUST_LINGER = 0.6
+
 /** Dust motes sampled on the letters (from the tagline texture's own pixels). */
 function createDust({ texture, aspect }: { texture: Texture; aspect: number }) {
   const canvas = texture.image as HTMLCanvasElement
@@ -86,6 +93,7 @@ export function Tagline({ clock, reducedMotion, journey }: Props) {
   const dustUniforms = useMemo(
     () => ({
       uExit: { value: 0 },
+      uLinger: { value: 0 },
       uFall: { value: 0 },
       uSize: { value: 1 },
       uColor: { value: INK },
@@ -187,6 +195,8 @@ export function Tagline({ clock, reducedMotion, journey }: Props) {
     const dust = dustMaterial.current
     if (dust) {
       dust.uniforms.uExit!.value = exit
+      // The dust lingers, dense, until the wireframe has formed below (FormMoment).
+      dust.uniforms.uLinger!.value = Math.min(1, Math.max(0, journey.toWork / DUST_LINGER))
       dust.uniforms.uFall!.value = (CENTER_Y - journey.y) / mesh.current.scale.y
       dust.uniforms.uSize!.value = 0.03 * size.height * viewport.dpr
     }

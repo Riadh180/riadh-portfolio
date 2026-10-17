@@ -50,6 +50,7 @@ export function CameraRig({ pointer, journey, enabled }: Props) {
       s.aim.step(journey.aim, dt)
     }
     journey.setVelocity(enabled ? s.y.velocity : 0)
+    journey.setView(s.y.value, s.y.value + s.lookUp.value)
 
     s.px.step(enabled ? (pointer.uv.x - 0.5) * 0.9 : 0, dt)
     s.py.step(enabled ? (pointer.uv.y - 0.5) * 0.5 : 0, dt)

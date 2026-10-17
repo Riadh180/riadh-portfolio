@@ -1,3 +1,4 @@
+import { useThree } from '@react-three/fiber'
 import { useMemo } from 'react'
 import type { Color } from 'three'
 import { sceneColors } from '@/styles/scene'
@@ -37,6 +38,9 @@ export function Trails({ journey, clock }: { journey: JourneyState; clock: Scene
     [],
   )
   const workBottom = PLACES.work - 12
+  // Phones: System's graph and Depth's panel are centred, so the trails run down the axis.
+  const phone = useThree((state) => state.size.width < 700)
+  const x = { system: phone ? 0 : SYSTEM.x, depth: phone ? 0 : DEPTH.x }
   return (
     <>
       {/* The walls: one per transition, each in its own colour (the statement has its slab). */}
@@ -72,13 +76,14 @@ export function Trails({ journey, clock }: { journey: JourneyState; clock: Scene
         depth={1.4}
         count={3600}
         colors={[...colors.descent]}
-        amount={() => band(journey.toWork, DESCENT.holdTo - 0.05, 1.02, 0.1)}
+        // From the hold on: the dust streams down from the wireframe to the spine.
+        amount={() => band(journey.toWork, DESCENT.holdFrom, 1.02, 0.12)}
       />
       <DustTrail
         top={workBottom + 1}
         bottom={PLACES.system}
         fromX={WORK.x}
-        toX={SYSTEM.x}
+        toX={x.system}
         width={1.1}
         depth={1.6}
         count={3200}
@@ -92,19 +97,21 @@ export function Trails({ journey, clock }: { journey: JourneyState; clock: Scene
       <DustTrail
         top={PLACES.system - 3}
         bottom={PLACES.depth + SURFACE - 0.5}
-        fromX={SYSTEM.x}
-        toX={DEPTH.x}
-        width={0.7}
+        fromX={x.system}
+        toX={x.depth}
+        // Phones see this leg from 20–30 units away: a wider, denser trail of larger motes.
+        width={phone ? 1.3 : 0.7}
         depth={1.2}
-        count={3600}
+        count={phone ? 6000 : 3600}
         colors={[...colors.data]}
         amount={() => band(journey.toDepth, 0.02, 0.85, 0.12)}
-        brightness={3.4}
+        brightness={phone ? 4.5 : 3.4}
+        moteSize={phone ? 0.045 : 0.03}
       />
       <DustTrail
         top={PLACES.depth - 4}
         bottom={PLACES.contact + 1}
-        fromX={DEPTH.x - 0.5}
+        fromX={x.depth - (phone ? 0 : 0.5)}
         toX={0}
         width={1}
         depth={1.5}

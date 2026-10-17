@@ -889,85 +889,6 @@ Contact, scramble/glitch rules, transitions, UI, content, SEO, legal pages, CV. 
 only on /impressum.
 
 ## Decisions I made
-- **The light drift lives in The Core's material, not in the light-formers.** A former's colour
-  only reaches the glass when the cube map re-renders (the HD 630 dip found earlier). The drift
-  is a per-frame tint on The Core's reflections (cool → warm copper → cool, `lightDrift`, 9 s);
-  the coloured formers are baked once and re-bake only while they fade in or out along the path.
-  The hero's old warm pulse (a cube-map re-render every frame of it) is gone; Contact's held
-  warmth still re-bakes as before. Lite: no drift, a constant warm tint on grazing rims.
-- **The rim's rainbow is a hue ramp gated by a travelling spot.** The physical thin film alone
-  read pastel (the grade's per-channel shoulder whitens bright lines); the full ramp all round
-  read as a neon RGB ring. Final: a faint film tint all round, vivid where a cut mirrors one
-  fixed direction, so the spot slides along the rim as The Core turns (MOTION.md §1).
-- **"The teal bleed bottom-left"**: the backdrop isn't unlocked in Stage 1, so the corner bleeds
-  are unchanged (our lower left is violet, as before).
-- **Hero dust** stays the existing glitter grains, spread wider and sparser round and behind The
-  Core; the glass look comes with Stage 3 (one shader for every place).
-- **Lite captures.** The tier drops to lite only when a run measures < 55 fps, which the HD 630
-  rarely does, so lite was never guaranteed in captures. A measurement-only hook
-  (`window.__tier`, set by the scripts' `TIER=lite`) starts a visit on lite; the tier system
-  itself is unchanged.
-- **The blades' glass is faked in the opaque material** (a dark see-through body, the film
-  glowing along the rim), not real transparency: a transparent spine is sorted against the
-  additive grains by object distance and would overwrite grains in front of it; fixing its draw
-  order needs `Spine.tsx`, which this stage doesn't unlock.
-- **"Plate edges"**: after the carving a plate's edge can't be told from its face, so every
-  edge seen at a grazing angle takes a little of the glass (35%); the blades take all of it.
-- **"Before" captures** come from a scratch worktree of the previous stage's tag, built and
-  served on port 3101 (phones need a wasted first frame: the first jump can land at the hero).
-- **Grains are glass chips, not hollow beads.** Stage 3 B asks for a "dark body, thin bright
-  rim" bead; built literally, at 3–10 px it read as soap bubbles. The reference's pockets
-  (zoomed 3×) are filled, faceted chips of glass, so the body is filled and tinted (each facet
-  lit its own way, a slightly darker see-through middle), with the thin film-tinted rim, the
-  ~0.5 px fringe and the glint on top. Similarity to the reference decided.
-- **Refraction is a caustic, not a sample.** There is no scene buffer at most places (three's
-  transmission target exists only while The Core's glass is drawn), so on the full tier each chip
-  shows the light it lets through focused on its far side; lite drops it.
-- **One field for every grain**: the glitter (Work pockets, hero and statement dust, System
-  dust), the atmosphere layers, the trail / wall / plankton motes and the rising embers and beads
-  share one fragment include (`glassGrain.glsl`), one vertex include (`grainMotion.glsl`) and one
-  set of uniforms (`particles/CursorField.tsx`). The gold cloud and the statement's slab share
-  the motes shader but keep their own look (a GRAIN define): the statement look is locked.
-- **No stirring over a hovered card on desktop, but on phones only over an open card**: phones
-  keep the card in view focused (it scrambles), so the hover gate would have switched the touch
-  push off at Work.
-- **Phone captures tap to start the 3D.** A scripted wheel tick on an emulated phone leaves
-  Lenis in a smooth scroll that pulls every later jump back to the top (the "first jump lands at
-  the hero" quirk of earlier rounds). Real phones scroll by touch and never see it; the scripts
-  now tap instead (`scripts/*.mjs`).
-- **Stage 4: one side of the camera line for every card.** With the spacing closed up, the
-  old alternating left / right poses stacked each left card into the right card above it at
-  nearly the same place round the column (they cut through each other in 114 of 121 simulated
-  frames). A regular helix keeps 54° between neighbours round the column instead.
-- **Stage 4: the card comes forward, the camera holds** (`WORK.dolly` 0, `APPROACH` 12% in
-  `layout.ts`). A camera dolly brings every card nearer at once; a card coming forward at its
-  stop is always in front of its neighbours, so its face is never covered.
-- **Stage 4: the pockets keep their placement rule** (same count, hues, split, the same
-  formula); its inputs follow the new path (the camera's angle at each height, the cards' new
-  poses), so the pockets keep wrapping the column where the camera looks.
-- **Stage 5: the open card's height on 16:10 is 66.5%, not 70–75%.** The card is 16:10 like
-  the screen, and the space right of the details column is ~67% of the width, so a 72%-tall card
-  would be cut by the frame or laid over the details. It is 72% where it fits (16:9 and wider)
-  and as tall as fits otherwise (`openFrame` in `WorkCards.tsx`).
-- **Stage 5: on phones the details panel scrolls within half the screen.** Bliggit's details
-  (with its login screenshot) were taller than the space under the opened card and covered it
-  (before and after this loop); the panel now holds at most 50svh and scrolls, so the card
-  above stays clear (Close stays reachable by scrolling, Esc and Back).
-- **Stage 6: the capstone shares the work store's open state** (`opened` = "capstone"): one
-  open / close / URL system for the cards and the panel (Back and Esc work the same), and the
-  cursor field and the job cards already treat any open card alike. Work's HTML only shows a
-  job's details; Depth's shows the capstone's.
-- **Stage 6: both images in `public/work/capstone/` are in the gallery.** The dashboard (its chart
-  crop, as the cover) and the medallion flow (whole, centred): both sit on dark grounds, so
-  neither glares in the scene. The list comes from the folder at build time (`/assets.json`),
-  so a new screenshot dropped in appears after the next build; alt texts by file name live
-  with the content (`capstone.galleryAlt`).
-- **Stage 6: the capstone's close reads "← Close (Esc)"** as the brief gives it (the job cards'
-  details keep "× Close (Esc)").
-- **Integrated-GPU numbers need pauses.** Back-to-back runs on the HD 630 drift down by 5–15 fps
-  (heat, GPU switching): the same build measured 44–52 at the hero in a long sequence and 60 with
-  20 s pauses. Before / after comparisons are now alternated with pauses (`ab.sh` in the session
-  scratchpad: `fps-place.mjs` on :3101 and :3100 in turn).
 - **Work segment = 26–51 s, not 44–60 s.** A 2 s contact sheet of 24–64 s shows Work begins
   at ~26 s (first card, "Frontier"), seg_44 matches 44–51 s (hover on one card), and from
   ~52 s a card is opened (no column, only the detail view). 26–51 s is the whole descent.
@@ -1679,6 +1600,94 @@ pages, CV, the tier system, performance work. The phone number only on /impressu
   rarely does, so lite was never guaranteed in captures. A measurement-only hook
   (`window.__tier`, set by the scripts' `TIER=lite`) starts a visit on lite; the tier system
   itself is unchanged.
+- **The blades' glass is faked in the opaque material** (a dark see-through body, the film
+  glowing along the rim), not real transparency: a transparent spine is sorted against the
+  additive grains by object distance and would overwrite grains in front of it; fixing its draw
+  order needs `Spine.tsx`, which this stage doesn't unlock.
+- **"Plate edges"**: after the carving a plate's edge can't be told from its face, so every
+  edge seen at a grazing angle takes a little of the glass (35%); the blades take all of it.
+- **"Before" captures** come from a scratch worktree of the previous stage's tag, built and
+  served on port 3101 (phones need a wasted first frame: the first jump can land at the hero).
+- **Grains are glass chips, not hollow beads.** Stage 3 B asks for a "dark body, thin bright
+  rim" bead; built literally, at 3–10 px it read as soap bubbles. The reference's pockets
+  (zoomed 3×) are filled, faceted chips of glass, so the body is filled and tinted (each facet
+  lit its own way, a slightly darker see-through middle), with the thin film-tinted rim, the
+  ~0.5 px fringe and the glint on top. Similarity to the reference decided.
+- **Refraction is a caustic, not a sample.** There is no scene buffer at most places (three's
+  transmission target exists only while The Core's glass is drawn), so on the full tier each chip
+  shows the light it lets through focused on its far side; lite drops it.
+- **One field for every grain**: the glitter (Work pockets, hero and statement dust, System
+  dust), the atmosphere layers, the trail / wall / plankton motes and the rising embers and beads
+  share one fragment include (`glassGrain.glsl`), one vertex include (`grainMotion.glsl`) and one
+  set of uniforms (`particles/CursorField.tsx`). The gold cloud and the statement's slab share
+  the motes shader but keep their own look (a GRAIN define): the statement look is locked.
+- **No stirring over a hovered card on desktop, but on phones only over an open card**: phones
+  keep the card in view focused (it scrambles), so the hover gate would have switched the touch
+  push off at Work.
+- **Phone captures tap to start the 3D.** A scripted wheel tick on an emulated phone leaves
+  Lenis in a smooth scroll that pulls every later jump back to the top (the "first jump lands at
+  the hero" quirk of earlier rounds). Real phones scroll by touch and never see it; the scripts
+  now tap instead (`scripts/*.mjs`).
+- **Stage 4: one side of the camera line for every card.** With the spacing closed up, the
+  old alternating left / right poses stacked each left card into the right card above it at
+  nearly the same place round the column (they cut through each other in 114 of 121 simulated
+  frames). A regular helix keeps 54° between neighbours round the column instead.
+- **Stage 4: the card comes forward, the camera holds** (`WORK.dolly` 0, `APPROACH` 12% in
+  `layout.ts`). A camera dolly brings every card nearer at once; a card coming forward at its
+  stop is always in front of its neighbours, so its face is never covered.
+- **Stage 4: the pockets keep their placement rule** (same count, hues, split, the same
+  formula); its inputs follow the new path (the camera's angle at each height, the cards' new
+  poses), so the pockets keep wrapping the column where the camera looks.
+- **Stage 5: the open card's height on 16:10 is 66.5%, not 70–75%.** The card is 16:10 like
+  the screen, and the space right of the details column is ~67% of the width, so a 72%-tall card
+  would be cut by the frame or laid over the details. It is 72% where it fits (16:9 and wider)
+  and as tall as fits otherwise (`openFrame` in `WorkCards.tsx`).
+- **Stage 5: on phones the details panel scrolls within half the screen.** Bliggit's details
+  (with its login screenshot) were taller than the space under the opened card and covered it
+  (before and after this loop); the panel now holds at most 50svh and scrolls, so the card
+  above stays clear (Close stays reachable by scrolling, Esc and Back).
+- **Stage 6: the capstone shares the work store's open state** (`opened` = "capstone"): one
+  open / close / URL system for the cards and the panel (Back and Esc work the same), and the
+  cursor field and the job cards already treat any open card alike. Work's HTML only shows a
+  job's details; Depth's shows the capstone's.
+- **Stage 6: both images in `public/work/capstone/` are in the gallery.** The dashboard (its chart
+  crop, as the cover) and the medallion flow (whole, centred): both sit on dark grounds, so
+  neither glares in the scene. The list comes from the folder at build time (`/assets.json`),
+  so a new screenshot dropped in appears after the next build; alt texts by file name live
+  with the content (`capstone.galleryAlt`).
+- **Stage 6: the capstone's close reads "← Close (Esc)"** as the brief gives it (the job cards'
+  details keep "× Close (Esc)").
+- **Integrated-GPU numbers need pauses.** Back-to-back runs on the HD 630 drift down by 5–15 fps
+  (heat, GPU switching): the same build measured 44–52 at the hero in a long sequence and 60 with
+  20 s pauses. Before / after comparisons are now alternated with pauses (`ab.sh` in the session
+  scratchpad: `fps-place.mjs` on :3101 and :3100 in turn).
+- **Stage 7: strips at exact progress, without the soft magnet.** After a scroll the page eases
+  to a nearby key moment; in the earlier captures that carried frames half-way through a
+  transition on to the next place (4.4 showed Depth, 5.6 Contact). The capture and frame-rate
+  scripts now switch the page to keyboard input first (a synthetic key event; nothing
+  scrolls), which turns the magnet off.
+- **Stage 7: "overlap each element with the next by ≥ 0.4 of the transition range"** is read
+  per hand-over: the transition range is the outgoing element's fade (in progress), and the
+  incoming one is present (≥ 25% of its own peak, in frame) over at least 40% of it.
+- **Stage 7: the gold cloud's balance.** Held by the scroll, the cloud's peak showed for the
+  first time as a still frame: a bank of beige smoke, where seg_12's cloud is mostly fine gold
+  dust with faint smoky wisps. Its dust / smoke strengths changed (3 → 6, 0.6 → 0.2), not its
+  shaders or colours.
+- **Stage 7: The Core comes into Contact from above and holds its place in the frame** (the
+  brief's first option, "above the headline's bounding box with a margin"): it never sits lower
+  on the screen than at rest, and the words rise into theirs from below, so the two never meet.
+  CLAUDE.md's "rising out of the dark" is kept as appearing out of the dark.
+- **Stage 7: "LET'S TALK" leaves with the scroll.** A timed fade can't keep fast scrolls clean
+  (the words start moving up as the loop starts), so they fade with the scroll over the last
+  fifth of a screen of their pinned stretch, unless something in them has keyboard focus. The
+  Contact layout is unchanged.
+- **Stage 7: phone-only density.** Phones see System → Depth from 20–30 units and frame the
+  statement and System tall and narrow: the trails follow the phone layout (System and Depth
+  centred), the data trail is wider and denser there, the statement's dust draws in sideways
+  like The Core, and more clouds of the same grains fill the dark bands. Desktop is unchanged.
+- **Stage 7: phones measure EMPTY AREA turned a quarter.** compare-frames reads every frame at
+  1440×900; a portrait frame squeezed into it gets 4:1 tiles, so `empty-area.mjs` turns it
+  first (the share of empty tiles barely moves: within 2%).
 
 ## Stage 1 — the hero (tag `loop1-stage-1`)
 Files: `hero/bandGeometry.ts`, `hero/glassTextures.ts`, `hero/glassMaterial.ts`,
@@ -2002,3 +2011,107 @@ place, like its project cards):
 
 FPS (production, Retina, the capstone open): 59.9–60.4 on the discrete GPU, the HD 630 and the
 HD 630 lite.
+
+## Stage 7 — no thin frames, no overlaps (tag `loop1-stage-7`)
+Files: `journey/GoldCloud.tsx`, `journey/FormMoment.tsx`, `journey/Tagline.tsx` and
+`shaders/taglineDust.vert` (the dust lingers), `journey/Trails.tsx`, `journey/DustTrail.tsx`
+(mote size), `journey/StatementDust.tsx`, `system/SystemDust.tsx`, `depth/DepthBubbles.tsx`,
+`depth/DepthPlace.tsx`, `journey/ContactGlow.tsx`, `journey/ContactEmbers.tsx`, `hero/Emblem.tsx`
+(the way into Contact), `journey/path.ts` (`view`; `contactEntry`, `contactRest`, `contactDrop`),
+`CameraRig.tsx` (publishes its height and gaze), `motion/Drift.tsx` (its drag, readable),
+`sections/ContactSection.tsx` (the words leave with the scroll), `canvas/measure.ts` (new,
+measurement only); tools `scripts/empty-area.mjs` and `scripts/contact-overlap.mjs` (new),
+`scripts/capture-progress.mjs` and `scripts/fps-place.mjs` (exact progress, no magnet).
+1. **Hero → statement.** The gold cloud still blooms on the first scroll (0.35 s), but is then
+   held by the scroll instead of a fixed 1.5 s: it comes three quarters of the way down with the
+   camera and fades as the camera passes through the dust sheet (camera 0.5 → 0.82). At its
+   peak it is mostly fine gold dust with faint wisps (seg_12), not a bank of smoke; lite draws
+   one wisp layer of three.
+2. **Statement → Work.** The tagline's dust fades on a slower clock (toWork ÷ 0.6 instead of
+   ÷ 0.3; the letters break up exactly as before), so it is still dense as the wireframe forms.
+   The wireframe forms a little earlier (toWork 0.15) and stands while the camera holds (to
+   0.68, at least 2.3 s); before, it scattered after 2.8 s even with the camera at rest, leaving
+   an empty frame. The descent's trail starts at the hold (toWork 0.35, was 0.55): the dust
+   streams down from the wireframe to the spine.
+3. **Work → System.** Unchanged and checked: the chips trail is at full strength from toSystem
+   0.14 to 0.88; the first nodes show from ~0.55.
+4. **Depth → Contact.** The Core comes into the frame from above early in the leg (toContact
+   0.12 → 0.45, was 0.12 → 0.72) and rides with the camera at its resting place in the frame
+   until the camera arrives, so it is in frame from ~5.2 to the loop. Its warm glow and the
+   embers ride with it; Depth's bubbles and glass beads ride 65% of the way down with the camera
+   and shrink away by toContact 0.75, so water and warmth share the frame from ~5.3 to ~5.65.
+5. **Contact: The Core never covers "LET'S TALK".** Two hidden causes, both now off at Contact:
+   the statement's exit term (it pulls The Core down after the camera) stayed active until The
+   Core had fully arrived, so on screen it rose from below through the words; and the shared
+   drag (Drift) pulled it ~1.6 units down while the camera descended. The words now leave with
+   the scroll over the last fifth of a screen of their pinned stretch, so they are gone before
+   the loop scrolls them up past The Core; before, a 0.7 s fade started only once they had begun
+   to move. (They stay while something in them has keyboard focus.)
+6. **Phones.** The trails follow the phone layout (System and Depth are centred there; the data
+   trail used to run off the right edge), and the System → Depth trail is wider, denser and has
+   larger motes (that leg is seen from 20–30 units). The statement's dust draws in sideways like
+   The Core, and three more clouds of the same grains fill the band between the slab's edge and
+   the tagline; three more System clouds hang below the graph. Desktop is unchanged.
+
+EMPTY AREA (`scripts/empty-area.mjs`: compare-frames' rule, every frame of the four strips at 0.1
+steps, settled 3 s, at the exact progress), frames over 60%:
+
+| | 0.3–1.8 | 3.3–3.8 | 4.3–4.7 | 5.5–6.2 | all | worst |
+|---|---|---|---|---|---|---|
+| desktop full, before | 7 / 16 | 0 / 6 | 0 / 5 | 0 / 8 | 7 / 35 | 73% (1.5) |
+| desktop full, after | 0 / 16 | 0 / 6 | 0 / 5 | 0 / 8 | **0 / 35** | 57% (1.5) |
+| desktop lite, before | 6 / 16 | 0 / 6 | 0 / 5 | 0 / 8 | 6 / 35 | 69% (0.4) |
+| desktop lite, after | 0 / 16 | 0 / 6 | 0 / 5 | 0 / 8 | **0 / 35** | 55% (1.6) |
+| phone 390×844, before | 12 / 16 | 2 / 6 | 3 / 5 | 1 / 8 | 18 / 35 | 97% (0.4) |
+| phone 390×844, after | 0 / 16 | 2 / 6 | 0 / 5 | 0 / 8 | **2 / 35** | 62% (3.8) |
+
+Also checked, 5.0–5.5 (The Core's entry): 23–33% desktop, 17–58% phone.
+
+The hand-overs (progress; "present" = ≥ 25% of its peak and in frame):
+
+| Hand-over | Outgoing fades | Incoming present from | Overlap of the fade |
+|---|---|---|---|
+| gold cloud → dust sheet | 0.50 → 0.82 | 0.40 (its far edge) | 100% |
+| tagline dust → wireframe | 1.14 → 1.53 | 1.15 (assembles ~1 s) | 97% |
+| wireframe → trail + spine | 1.68 → ~1.75 | 1.38 (trail), ~1.3 (spine) | 100% |
+| chips trail → System nodes | 3.88 → 4.00 | ~3.55 | 100% |
+| data trail → Depth's water | 4.73 → 4.85 | ~4.6 | 100% |
+| Depth bubbles → embers + glow | 5.45 → 5.75 | 5.30 | 100% |
+
+"LET'S TALK" against The Core (`scripts/contact-overlap.mjs`: The Core's projected box against
+the headline's glyph box grown by 16 px, whenever the words are more than 2% visible; at rest
+from 5.0 to 7.0 in 0.02 steps, and in continuous scrolls down 5 → 7 and up 6.9 → 5 at 400, 1200
+and 3000 px/s, every frame):
+
+| Screen | Before (stage 6) | After: overlaps | After: smallest clearance |
+|---|---|---|---|
+| desktop 1440×900 | rising through the words at 5.8; the words crossing it in the loop | none | 45 px |
+| 390×844 | its box on the "04 / CONTACT" label at 5.8 | none | 157 px |
+| 375×667 | not measured | none | 72 px |
+| 430×932 | not measured | none | 203 px |
+
+Sheet: `docs/screens/loop1-transitions.jpg` (the reference's first scroll, seg_12 8–11.5 s; then
+every strip after, desktop full, desktop lite and phone, each frame with its EMPTY AREA; then
+desktop full and phone before).
+
+Self-review against seg_12 and the rule:
+- Closer: the first scroll reads like seg_12: a cloud of fine gold dust with faint wisps blooms
+  round The Core, comes down with the camera and gives way to the slanted sheet as the camera
+  passes through it; the frames between the hero and the statement are 18–29% empty (were
+  45–68%).
+- Closer: every scene change is a move through particles: the tagline's dust hangs round the
+  wireframe as it forms, the wireframe stands while the camera holds, the dust streams down
+  from it to the spine; Depth's bubbles and Contact's embers share the frame while The Core
+  comes in from above and holds its place.
+- Closer: The Core never covers "LET'S TALK", at rest or scrolling, on any of the four screens.
+- Still different: seg_12's dust is brighter, yellower and denser round the object; ours is the
+  warm token's orange-gold (the palette is locked), finer and wider.
+- Still different: in seg_12 the object comes down with the camera and slides in front of the
+  rising text; our Core waits at the hero until the camera is half-way (its travel to the
+  statement is unchanged), so the cloud carries 0.3–0.6 alone. On phones, System's arrival
+  (3.7–3.8) stays 61–62% empty after three passes: the graph fills the upper part, the text
+  comes in below, and the dust there is fine and dim at the phone's 25-unit distance.
+
+FPS (production, Retina, HD 630 lite, cursor moving, alternated with stage 6 and paused): at 0.4
+(the held gold cloud), 1.4 (the standing wireframe, the tagline's dust) and 5.4 (The Core, its
+glow, embers and the riding bubbles together): 59.8–60.4 after, 59.9–60.4 before.

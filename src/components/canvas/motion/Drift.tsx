@@ -45,6 +45,8 @@ export function Drift({ journey, seed, weight = 1, rotate = true, children }: Pr
     const p = MOTION.idle.position / weight
     const r = rotate ? MOTION.idle.rotation / weight : 0
     g.position.set(drift(t, seed) * p, l.y.value + drift(t, seed + 9) * p, drift(t, seed + 17) * p)
+    // The drag alone, for a subject that has to hold its place in the frame (The Core at Contact).
+    g.userData.lag = l.y.value
     g.rotation.set(
       drift(t, seed + 3) * r,
       drift(t, seed + 5) * r * 1.4,

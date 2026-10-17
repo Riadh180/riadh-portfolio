@@ -57,6 +57,10 @@ else {
   await page.mouse.wheel({ deltaY: 1 })
 }
 await sleep(2500)
+// Exact progress values: keyboard input turns off the scroll's soft magnet (SmoothScroll's
+// settle), which would otherwise carry a frame half-way through a transition on to the next
+// place. A synthetic key event changes the input mode without scrolling the page.
+await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' })))
 
 const scrollFor = (progress) =>
   page.evaluate((p) => {

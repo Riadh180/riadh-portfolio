@@ -25,6 +25,34 @@ export const DEPTH = { x: 1.2, distance: 7.5, below: 2.6, lookUp: 1.3, phoneDist
 /** Contact: The Core closer than on the hero; the loop pulls back to the hero's distance. */
 export const CONTACT = { distance: 7, hero: 10 }
 
+/**
+ * The Core's way into Contact: it comes down into the frame from `drop` above its resting
+ * place over this stretch of the leg (toContact), then rides at that place in the frame
+ * while the camera finishes the descent (see contactRest).
+ */
+const CONTACT_ENTRY = { from: 0.12, span: 0.33, drop: 3.5 }
+
+/** 0 → 1 as The Core comes into the frame at Contact. */
+export function contactEntry(toContact: number) {
+  const t = Math.min(1, Math.max(0, (toContact - CONTACT_ENTRY.from) / CONTACT_ENTRY.span))
+  return t * t * (3 - 2 * t)
+}
+
+/**
+ * Height (world y) The Core's Contact pose is measured from: Contact's place once the camera
+ * is there, until then the height the camera looks at, so The Core (and its glow and embers)
+ * ride down with the camera at their resting place in the frame. It is never lower on the
+ * screen than at rest, so it never meets "LET'S TALK", which rises from below.
+ */
+export function contactRest(journey: JourneyState) {
+  return Math.max(PLACES.contact, journey.view.gaze)
+}
+
+/** How far above its resting place The Core still is as it comes in (world units). */
+export function contactDrop(toContact: number) {
+  return (1 - contactEntry(toContact)) * CONTACT_ENTRY.drop
+}
+
 /** The System place: the graph right of centre, seen from further back (it's wide). */
 export const SYSTEM = { x: 2.2, distance: 16.5, phoneDistance: 30, phoneShift: 0.24, swing: 0.6 }
 
@@ -93,6 +121,11 @@ export class JourneyState {
   loop = 0
   /** The camera's vertical speed (world units / s), from the camera rig's spring. */
   velocity = 0
+  /**
+   * Where the camera is now (the rig's springs, so it trails `y`): its height and the height
+   * it looks at. Things that ride with the camera into a place read these.
+   */
+  view = { y: PLACES.hero, gaze: PLACES.hero }
   /** How far above its focus the camera looks (Depth looks up at the surface). */
   lookUp = 0
   /** Sideways aim (world units along the camera's right): turns a little towards a card. */
@@ -117,6 +150,12 @@ export class JourneyState {
   /** Set by the camera rig each frame (its spring's vertical speed). */
   setVelocity(velocity: number) {
     this.velocity = velocity
+  }
+
+  /** Set by the camera rig each frame (its springs' height and gaze). */
+  setView(y: number, gaze: number) {
+    this.view.y = y
+    this.view.gaze = gaze
   }
 
   update(delta: number, reducedMotion: boolean, column: boolean) {

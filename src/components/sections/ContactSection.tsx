@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { GlitchText } from '@/components/ui/GlitchText'
 import { EmailButton } from '@/components/ui/EmailButton'
 import { Scramble } from '@/components/ui/Scramble'
@@ -13,6 +14,48 @@ const link =
   'ui text-sm text-text transition-colors duration-(--motion-duration-ui) hover:text-warm focus-visible:text-warm'
 
 /**
+ * The words stay pinned while the page scrolls through the section; over the last part of
+ * that stretch (this share of the screen height) they fade out with the scroll, so when the
+ * loop starts and they scroll away they are already gone, never crossing The Core above them,
+ * however fast the scroll. They stay while something in them has keyboard focus.
+ */
+const EXIT = 0.2
+
+/** Scroll-driven fade of the pinned words as the page leaves the section into the loop. */
+function useExitFade() {
+  const section = useRef<HTMLElement>(null)
+  const words = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const update = () => {
+      const s = section.current
+      const w = words.current
+      if (!s || !w) return
+      const rect = s.getBoundingClientRect()
+      const screen = window.innerHeight
+      const pinned = rect.height - screen
+      const fade = EXIT * screen
+      const t = Math.min(1, Math.max(0, (-rect.top - (pinned - fade)) / fade))
+      const focused = s.contains(document.activeElement)
+      w.style.opacity = focused ? '' : String(1 - t * t * (3 - 2 * t))
+    }
+    // Focus leaving for nowhere fires no focusin: check again once it has settled.
+    const later = () => requestAnimationFrame(update)
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    document.addEventListener('focusin', update)
+    document.addEventListener('focusout', later)
+    return () => {
+      window.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
+      document.removeEventListener('focusin', update)
+      document.removeEventListener('focusout', later)
+    }
+  }, [])
+  return { section, words }
+}
+
+/**
  * Contact, the end of the page and the site's big typographic moment: a large "Let's
  * talk", a magnetic email button, and LinkedIn / GitHub / CV, while The Core rises out of
  * the dark in warm light. For keyboard and screen readers the page ends here; only the
@@ -20,13 +63,19 @@ const link =
  */
 export function ContactSection() {
   const here = useJourney((state) => isShown(state.progress, 'contact'))
+  const { section: sectionRef, words } = useExitFade()
   return (
-    <section id="contact" aria-labelledby="contact-title" className="relative h-[150svh]">
+    <section
+      ref={sectionRef}
+      id="contact"
+      aria-labelledby="contact-title"
+      className="relative h-[150svh]"
+    >
       <div
         data-here={here}
         className="sticky top-0 page-grid h-svh content-end pb-(--margin) opacity-0 transition-opacity duration-700 ease-signal data-[here=true]:opacity-100"
       >
-        <div className="col-span-12 flex flex-col gap-6">
+        <div ref={words} className="col-span-12 flex flex-col gap-6">
           <p className="ui text-muted">
             <span className="text-text">{section?.index}</span> / {section?.label}
           </p>

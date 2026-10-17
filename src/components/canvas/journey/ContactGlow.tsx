@@ -5,7 +5,7 @@ import { sceneColors } from '@/styles/scene'
 import { warmth } from '../Backdrop'
 import fragmentShader from '../shaders/glow.frag'
 import vertexShader from '../shaders/glow.vert'
-import { type JourneyState, PLACES } from './path'
+import { contactDrop, contactRest, type JourneyState } from './path'
 
 /**
  * Contact's warm moment, concentrated on The Core: a soft warm glow just behind it, rising
@@ -21,11 +21,14 @@ export function ContactGlow({ journey }: { journey: JourneyState }) {
     if (!m) return
     const value = warmth(journey)
     m.visible = value > 0.01
+    if (!m.visible) return
     ;(m.material as ShaderMaterial).uniforms.uOpacity!.value = value * 0.2
+    // Just behind The Core, coming in and riding down with it.
+    m.position.y = contactRest(journey) + contactDrop(journey.toContact) + 0.15
   })
 
   return (
-    <mesh ref={mesh} position={[0, PLACES.contact + 0.15, -1.6]} visible={false}>
+    <mesh ref={mesh} position={[0, 0, -1.6]} visible={false}>
       <planeGeometry args={[9, 9]} />
       <shaderMaterial
         vertexShader={vertexShader}
