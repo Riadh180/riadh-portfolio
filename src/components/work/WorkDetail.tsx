@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { jobs } from '@/content/site'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { useWork } from '@/stores/work'
 import { JobDetail } from './JobDetail'
 
@@ -9,9 +10,9 @@ import { JobDetail } from './JobDetail'
 const APPEAR_DELAY = 1100
 
 /**
- * The opened card's details, in small mono at the left over the scene. Focus moves in when
- * it opens and back to the card's button when it closes; Esc closes; previous / next walk
- * through the jobs without closing.
+ * The opened card's details, in small mono at the left over the scene: a modal view. Focus
+ * moves in when it opens, stays inside while it is open, and goes back to the card's button
+ * when it closes; Esc closes; previous / next walk through the jobs without closing.
  */
 export function WorkDetail({ slug }: { slug?: string | null }) {
   const opened = useWork((state) => state.opened)
@@ -21,6 +22,7 @@ export function WorkDetail({ slug }: { slug?: string | null }) {
   // `slug` overrides the store (a /work/<slug> page shows its card before the URL is read).
   const job = jobs.find((item) => item.slug === (slug === undefined ? opened : slug))
   const index = job ? jobs.indexOf(job) : -1
+  useFocusTrap(panel, !!job)
 
   useEffect(() => {
     if (!opened) return
@@ -46,7 +48,7 @@ export function WorkDetail({ slug }: { slug?: string | null }) {
     <div
       ref={panel}
       role="dialog"
-      aria-modal="false"
+      aria-modal="true"
       aria-labelledby="work-detail-title"
       tabIndex={-1}
       key={job.slug}

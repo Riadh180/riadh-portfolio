@@ -76,7 +76,8 @@ const og = `
   </div>`
 await render('src/app/opengraph-image.png', 1200, 630, og)
 await render('src/app/twitter-image.png', 1200, 630, og)
-await render('src/app/apple-icon.png', 180, 180, `<img src="${core}" style="position:absolute;left:-70px;top:-70px;width:320px;height:320px">`)
+// The whole frame with a margin (The Core spans ~58% of the clip at the hero's size).
+await render('src/app/apple-icon.png', 180, 180, `<img src="${core}" style="position:absolute;left:-40px;top:-40px;width:260px;height:260px">`)
 
 // favicon.ico: PNG-compressed entries (supported by every current browser).
 const svg = readFileSync('src/app/icon.svg', 'utf8')

@@ -17,15 +17,21 @@ export const MOTION = {
   lag: { frequency: 0.55, damping: 0.62 },
   /** How far objects trail the camera, per unit of camera speed (world units per u/s). */
   lagAmount: 0.18,
-  /** Cursor-driven tilt and parallax: heavy, ~0.8–1s. */
-  pointer: { frequency: 0.45, damping: 0.85 },
+  /**
+   * The cursor's one voice: everything the mouse moves in the scene answers through springs
+   * of one damping (ζ 0.8: a ~1.5% overshoot, no bounce). Heavy things, the camera's parallax
+   * and the tilt of The Core, the cards and the capstone panel: 0.45 Hz, ~0.8–1s before they
+   * lean.
+   */
+  pointer: { frequency: 0.45, damping: 0.8 },
   /** UI and hover reactions: quick but still soft. */
   ui: { frequency: 3, damping: 0.75 },
   /**
-   * The air: grains pushed by the cursor spring back home in ~1–1.5s with a tiny overshoot
-   * (the cursor field), and the stirring settles at the same pace.
+   * The air, the lighter member of the cursor's family (same damping as `pointer`): grains
+   * pushed by the cursor spring back home in ~1–1.5s (the cursor field), and the stirring
+   * settles at the same pace.
    */
-  air: { frequency: 0.8, damping: 0.7 },
+  air: { frequency: 0.8, damping: 0.8 },
   /** Idle drift: amplitude (world units / radians) and speed of the never-still breathing. */
   idle: { position: 0.06, rotation: 0.025, speed: 0.12 },
 } as const

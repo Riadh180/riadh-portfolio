@@ -37,6 +37,7 @@ import cardDustFragment from '../shaders/cardDust.frag'
 import cardDustVertex from '../shaders/cardDust.vert'
 import glassGrain from '../shaders/glassGrain.glsl'
 import { grainUniforms } from '../particles/CursorField'
+import { MOTION, Spring } from '../motion/motion'
 import dissolve from '../shaders/dissolve.glsl'
 import noise from '../shaders/noise.glsl'
 import type { SceneClock } from '../useSceneClock'
@@ -434,6 +435,8 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     dissolve: 0,
     scrambling: false,
     pointer: { x: 0, y: 0 },
+    /** The cursor's pull: the shared pointer spring (the camera's own parallax lag). */
+    pull: { x: new Spring(0, MOTION.pointer), y: new Spring(0, MOTION.pointer) },
     target: { position: new Vector3(), turn: 0, pitch: 0, roll: 0, face: 1 } as Home,
     open: new Vector3(),
     /** The camera, in the cards' own space (they live inside the Work place's group). */
@@ -475,9 +478,9 @@ function Card({ job, index, layout, clock, block, plane, dust, screen, face, liv
     // Outside the active filter: the card recedes (dimmer, softer) until the filter clears.
     const outside = filter !== null && !job.filters.includes(filter) && !isFocused && !isOpen
     s.outside += ((outside ? 1 : 0) - s.outside) * ease
-    // The cursor's pull is heavily damped (~0.8s), as everywhere else.
-    s.pointer.x += (pointer.x - s.pointer.x) * (1 - Math.exp(-dt * 1.3))
-    s.pointer.y += (pointer.y - s.pointer.y) * (1 - Math.exp(-dt * 1.3))
+    // The cursor's pull: ~0.8–1s before the card leans, the camera's own spring (one voice).
+    s.pointer.x = s.pull.x.step(pointer.x, dt)
+    s.pointer.y = s.pull.y.step(pointer.y, dt)
 
     // Open: fly in, then dissolve. Close: re-form first, then fly home.
     if (isOpen) {

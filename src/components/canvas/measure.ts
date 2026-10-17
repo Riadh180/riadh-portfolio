@@ -8,6 +8,8 @@ declare global {
      * screen, [left, top, right, bottom] in px.
      */
     __boxes?: Record<string, number[]>
+    /** Measurement only (scripts/phone-pass.mjs sets it): the touch stir's strength. */
+    __air?: { push?: number }
   }
 }
 

@@ -21,6 +21,7 @@ import { revealed } from '@/stores/loading'
 import { useTier } from '@/stores/tier'
 import { BURST } from './IntroBurst'
 import { exportScreenBox } from '../measure'
+import { MOTION, Spring } from '../motion/motion'
 
 type Props = {
   look: GlassLook
@@ -124,6 +125,8 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
   const group = useRef<Group>(null)
   const inner = useRef<Mesh>(null)
   const tilt = useRef({ x: 0, y: 0 })
+  /** The cursor's pull: the shared pointer spring (the camera's own parallax lag). */
+  const pull = useRef({ x: new Spring(0, MOTION.pointer), y: new Spring(0, MOTION.pointer) })
   /** Spin clock: runs with scene time at the hero, slows to a stop at the statement. */
   const spinClock = useRef({ time: 0, last: 0 })
   /** The edge-on angle held at the statement, picked once as The Core starts to travel. */
@@ -151,13 +154,13 @@ export function Emblem({ look, pointer, clock, reducedMotion, journey, anchored 
     if (!group.current || !inner.current) return
     const { emblem } = sceneConfig
     const t = clock.time
-    // Heavily damped (~0.8s) so the object feels heavy, as in the reference.
-    const ease = 1 - Math.exp(-Math.min(delta, 1 / 30) * 1.3)
+    // Heavy (~0.8–1s before it leans), as in the reference: the shared pointer spring, so
+    // The Core, the cards and the camera answer the cursor in one voice.
     const tiltX = reducedMotion ? 0 : -(pointer.uv.y - 0.5) * emblem.tilt
     const tiltY = reducedMotion ? 0 : (pointer.uv.x - 0.5) * emblem.tilt * 1.4
-
-    tilt.current.x += (tiltX - tilt.current.x) * ease
-    tilt.current.y += (tiltY - tilt.current.y) * ease
+    const dt = Math.min(delta, 1 / 30)
+    tilt.current.x = pull.current.x.step(tiltX, dt)
+    tilt.current.y = pull.current.y.step(tiltY, dt)
     // At Contact The Core comes into the frame early in the leg and spins again, posed
     // exactly as on the hero, so the loop back to the hero is seamless.
     const contact = journey && !anchored ? contactEntry(journey.toContact) : 0

@@ -24,6 +24,7 @@ import { useCursor } from '@/stores/cursor'
 import { useWork } from '@/stores/work'
 import { depthPalette } from './depthPalette'
 import { loadAssets } from '../assets'
+import { MOTION, Spring } from '../motion/motion'
 import edgeFragment from '../shaders/skillEdge.frag'
 import edgeVertex from '../shaders/skillEdge.vert'
 import type { SceneClock } from '../useSceneClock'
@@ -154,6 +155,8 @@ export function CapstonePanel({ clock }: Props) {
     fly: 0,
     dissolve: 0,
     pointer: { x: 0, y: 0 },
+    /** The cursor's pull: the shared pointer spring, as on the job cards. */
+    pull: { x: new Spring(0, MOTION.pointer), y: new Spring(0, MOTION.pointer) },
     cursorUv: new Vector2(0.5, 0.5),
     /** The gallery: images (cover first), the one shown, the wipe's progress. */
     images: [] as string[],
@@ -212,9 +215,9 @@ export function CapstonePanel({ clock }: Props) {
       const isOpen = opened === capstone.slug
       const ease = 1 - Math.exp(-dt * 5)
       s.hover += ((focused === capstone.slug && !isOpen ? 1 : 0) - s.hover) * ease
-      // The cursor's pull, heavily damped, as on the job cards.
-      s.pointer.x += (pointer.x - s.pointer.x) * (1 - Math.exp(-dt * 1.3))
-      s.pointer.y += (pointer.y - s.pointer.y) * (1 - Math.exp(-dt * 1.3))
+      // The cursor's pull, on the shared pointer spring, as on the job cards.
+      s.pointer.x = s.pull.x.step(pointer.x, dt)
+      s.pointer.y = s.pull.y.step(pointer.y, dt)
       // Open: fly in, then dissolve. Close: re-form first, then fly home.
       if (isOpen) {
         s.fly = Math.min(1, s.fly + dt / TIMING.fly)

@@ -229,6 +229,7 @@ class Air {
       this.stir.step(mode === 1 ? Math.min(1, this.velocity.length() / 1.5) : 0, dt)
       const push = Math.max(0, this.stir.value) * (this.touch ? STRENGTH.touch : 1)
       u.uCursor.value.set(this.cursor.x, this.cursor.y, push, 0)
+      if (window.__air) window.__air.push = push
     }
 
     // The whole field shifts a little against the cursor (~1.5% of the frame), lagging like

@@ -1688,6 +1688,19 @@ pages, CV, the tier system, performance work. The phone number only on /impressu
 - **Stage 7: phones measure EMPTY AREA turned a quarter.** compare-frames reads every frame at
   1440×900; a portrait frame squeezed into it gets 4:1 tiles, so `empty-area.mjs` turns it
   first (the share of empty tiles barely moves: within 2%).
+- **Stage 8: the Vercel toolbar is switched off in the dashboard, not in code.** Vercel documents
+  the production switch only as a dashboard setting (team or project, Settings → General →
+  Vercel Toolbar); visitors never get the toolbar, so turning it off for the owner is left as one
+  click for you (Stage 8, item 1).
+- **Stage 8: the open views are modal.** The brief asks them to trap focus; a trap without
+  `aria-modal` would contradict what screen readers are told, so both now say
+  `aria-modal="true"`. On /work/<slug> the card is open on arrival, so Tab starts inside it; Esc
+  or Close returns to the page.
+- **Stage 8: one damping for the cursor's family.** ζ 0.8 for everything the mouse moves (the
+  pointer spring at 0.45 Hz for the camera and every tilt, the air at 0.8 Hz for the grains):
+  between the old 0.85 and 0.7, a 1.5% overshoot, no bounce.
+- **Stage 8: the phone sheet leaves /impressum out**: it carries the phone number, which stays on
+  that page only (its text is still checked for clipping).
 
 ## Stage 1 — the hero (tag `loop1-stage-1`)
 Files: `hero/bandGeometry.ts`, `hero/glassTextures.ts`, `hero/glassMaterial.ts`,
@@ -2115,3 +2128,62 @@ Self-review against seg_12 and the rule:
 FPS (production, Retina, HD 630 lite, cursor moving, alternated with stage 6 and paused): at 0.4
 (the held gold cloud), 1.4 (the standing wireframe, the tagline's dust) and 5.4 (The Core, its
 glow, embers and the riding bubbles together): 59.8–60.4 after, 59.9–60.4 before.
+
+## Stage 8 — production and polish checks (tag `loop1-stage-8`)
+Files: `hooks/useFocusTrap.ts` (new), `components/work/WorkDetail.tsx` and
+`components/depth/CapstoneDetail.tsx` (modal views), `canvas/usePointer.ts` (touch moves),
+`motion/motion.ts` (the cursor family), `hero/Emblem.tsx`, `work/WorkCards.tsx`,
+`depth/CapstonePanel.tsx` (tilts on the shared spring), `particles/simulation.ts` (the dust's
+wake), `particles/CursorField.tsx` and `canvas/measure.ts` (a measurement hook), the brand images
+(`app/opengraph-image.png`, `twitter-image.png`, `apple-icon.png`) and `scripts/brand-images.mjs`
+(the icon's crop); tools `scripts/keyboard-pass.mjs`, `scripts/phone-pass.mjs`,
+`scripts/og-check.mjs` (new).
+1. **The toolbar pill is Vercel's toolbar, shown to you, not to visitors.** Nothing in the project
+   injects a toolbar or overlay (no `@vercel/toolbar`, and Next's dev indicator only exists in
+   `next dev`). On production Vercel shows its toolbar only to signed-in team members: through
+   the browser extension, "Visit with Toolbar", or "Enable Vercel Toolbar in Production" in a
+   preview's toolbar menu. Checked as a visitor: the production HTML carries no toolbar script
+   (nothing from vercel.live), and the live page in a fresh browser makes no third-party request,
+   has no toolbar element, and shows only our nav in its top-right corner. **To hide it for you
+   as well** (Vercel's documented setting, a dashboard switch, so not something the code can
+   set): Vercel dashboard → the project → Settings → General → Vercel Toolbar → Production: Off.
+2. **Brand and OG images** regenerated from the new hero (`npm run brand:images`, against the
+   production build): the OG and Twitter image show the Stage 1 Core with its iridescent rim; the
+   Apple icon's crop follows the hero's larger Core (the whole frame with a margin; it was cut at
+   the edges); the favicon (drawn from `icon.svg`) is unchanged. Previews (`scripts/og-check.mjs`):
+   /, /cv, /work/bliggit and /work/capstone each carry their own title, description and URL, the
+   image (PNG 1200×630, 200) with its alt text, and a large Twitter card. Sheet
+   `docs/screens/loop1-og.jpg`.
+3. **Keyboard and screen reader** (`scripts/keyboard-pass.mjs`, names from the accessibility
+   tree): 65 Tab stops in reading order: skip link, name, nav (Work, Sound, Contact, CV), email,
+   the filter (a labelled group of toggle buttons), the six cards (company, metric, role and
+   years), the skills, the capstone, the contact links, Impressum, Datenschutz; every one with a
+   visible focus ring on screen. The open views (a card's details, the capstone) are now modal
+   dialogs: focus moves in, Tab and Shift+Tab stay inside (before: 10–13 of 16 Tabs left them),
+   Esc closes and focus returns to the opener; `aria-modal` true, labelled by their title.
+4. **One voice for the mouse.** Every cursor response in the scene now runs on the motion
+   system's springs with one damping (ζ 0.8). The tilts of The Core, the cards and the capstone
+   used their own exponential follower and took twice as long as the camera to settle, so they
+   kept creeping after it stopped; they now share the camera's pointer spring. The grains spring
+   home on the lighter member of the family, and the dust simulation's cursor wake fades on the
+   same envelope.
+
+   | Response to a step of the cursor | 63% at | overshoot | within 2% after |
+   |---|---|---|---|
+   | before: camera and grain parallax (0.45 Hz, ζ 0.85) | 0.68 s | 0.6% | 1.48 s |
+   | before: card, capstone and Core tilt (exponential) | 0.77 s | 0% | 3.01 s |
+   | before: grains spring home (0.8 Hz, ζ 0.7) | 0.35 s | 4.6% | 1.19 s |
+   | after: camera, grain parallax and every tilt (0.45 Hz, ζ 0.8) | 0.66 s | 1.5% | 1.33 s |
+   | after: grains spring home (0.8 Hz, ζ 0.8) | 0.37 s | 1.5% | 0.75 s |
+
+   The dust's wake: e-folding time 0.33 s → 0.25 s (the grains' envelope).
+5. **Phones** (`scripts/phone-pass.mjs`, 390×844, 375×667 and 430×932): the first swipe starts the
+   3D and scrolls (from the top to y 300–420); no clipped text at any place, in the open views,
+   on /cv or /impressum. Touch-drag was broken: after a few pixels the browser takes a touch over
+   for scrolling (pointercancel) and sends no more pointer moves, so the stir died within ~0.1 s
+   (0.05 → 0.00 by the end of a drag). The pointer now follows touch moves as well, and the stir
+   holds through the drag (0.16–0.18 at its end, every size). Sheet `docs/screens/loop1-phones.jpg`
+   (every place, the open card and capstone, and /cv, at each size).
+
+FPS (production, Retina, the cursor moving at Work, where the new tilt springs act): 59.9–60.3 on
+the HD 630 lite and on the discrete GPU.

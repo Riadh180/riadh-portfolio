@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { loadAssets } from '@/components/canvas/assets'
 import { capstone } from '@/content/site'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { useWork } from '@/stores/work'
 
 /** The details appear once the panel has flown in and begun to dissolve (ms). */
@@ -18,14 +19,15 @@ function describe(src: string, index: number) {
  * The capstone's opened panel, in small mono at the left over Depth (the same layout as a
  * job's details): the title, the one-liner, the data stack, the repository, its images (the
  * panel shows one at a time: arrows, the arrow keys, or a sideways swipe on phones change it
- * behind a glass wipe) and Close. Focus moves in when it opens and back to the "Capstone"
- * button when it closes; Esc closes.
+ * behind a glass wipe) and Close: a modal view. Focus moves in when it opens, stays inside
+ * while it is open, and goes back to the "Capstone" button when it closes; Esc closes.
  */
 export function CapstoneDetail() {
   const close = useWork((state) => state.close)
   const gallery = useWork((state) => state.gallery)
   const setGallery = useWork((state) => state.setGallery)
   const panel = useRef<HTMLDivElement>(null)
+  useFocusTrap(panel, true)
   const [images, setImages] = useState<string[]>([])
   useEffect(() => {
     void loadAssets().then((assets) => setImages(assets.gallery))
@@ -78,7 +80,7 @@ export function CapstoneDetail() {
     <div
       ref={panel}
       role="dialog"
-      aria-modal="false"
+      aria-modal="true"
       aria-labelledby="capstone-title"
       tabIndex={-1}
       // Phones: at most half the screen (it scrolls), so the opened panel above stays clear.
@@ -91,7 +93,10 @@ export function CapstoneDetail() {
         {capstone.company} — Capstone
       </h2>
       <p className="copy max-w-[44ch] text-sm leading-relaxed text-text/90">{capstone.summary}</p>
-      <ul className="flex flex-wrap gap-x-3 gap-y-1 ui text-xs text-text/70" aria-label="Data stack">
+      <ul
+        className="flex flex-wrap gap-x-3 gap-y-1 ui text-xs text-text/70"
+        aria-label="Data stack"
+      >
         {capstone.stack.map((item) => (
           <li key={item}>{item}</li>
         ))}

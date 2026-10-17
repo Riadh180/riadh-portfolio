@@ -13,6 +13,7 @@ import {
 } from 'three'
 import { GPUComputationRenderer } from 'three/addons/misc/GPUComputationRenderer.js'
 import { sceneConfig } from '@/styles/scene'
+import { MOTION } from '../motion/motion'
 import noise from '../shaders/noise.glsl'
 import positionShader from '../shaders/position.glsl'
 import trailShader from '../shaders/trail.glsl'
@@ -162,7 +163,10 @@ export function createSimulation(gl: WebGLRenderer, size: number) {
     updatePointer(input)
     trailUniforms.uAspect.value = aspect
     trailUniforms.uRadius.value = cursor.radius
-    trailUniforms.uDecay.value = Math.pow(0.95, rawDelta * 60)
+    // The cursor's wake fades on the air's spring envelope (MOTION.air: e^-ζωt), so the dust
+    // answers the cursor in the same voice as the glass grains.
+    const { damping, frequency } = MOTION.air
+    trailUniforms.uDecay.value = Math.exp(-damping * 2 * Math.PI * frequency * rawDelta)
     trailUniforms.uDelta.value = rawDelta
     trail.compute()
 
