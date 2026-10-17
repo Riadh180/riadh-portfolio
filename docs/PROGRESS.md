@@ -2472,16 +2472,84 @@ Sheet: `docs/screens/loop2-pockets.jpg` (4 pockets: reference | loop 1 | new, at
 
 Open point: a whole-frame hue distance ≤ 0.2 is out of the beads' reach (see Decisions).
 
-## Stage 2 — cursor flow (in progress, checkpoint)
-State: the flow field (full: 256² ping-pong, advection, curl, `MOTION.air` = the pointer spring
-0.45 Hz ζ 0.8), the lite trail (path stretches split by the falloff's integral, a linger
-factor), shared `airPush.glsl`, keep-clear areas (`data-keep-clear` text blocks, the card in
-focus), the stirred glint flicker, parallax ×2, touch drag 60% + tap ripple, the gold cloud,
-slab and hero sparks moving with the air. Measured (hero, 1440×900, scripts/cursor-flow.mjs):
-full 17 / 44 / 89 px, lite 11 / 45 / 85 px for 300 / 1000 / 2500 px/s; drift 0.2–0.4 s;
-settled 1–2.7 s. Next: the cursor sheet (scripts/capture-swipe.mjs + swipe-sheet.mjs: Work
-2.5 / hero, full / lite / phone), FPS with the cursor moving (full and HD 630 lite), the MP4,
-the Stage 2 section, commit + tag `loop2-stage-2`.
+## Stage 2 — cursor flow: dust in water (tag `loop2-stage-2`)
+Files: `particles/CursorField.tsx` (the flow field, the lite trail, the clear areas, per-place
+strength, taps), `shaders/cursorField.frag` (the flow), new `shaders/airPush.glsl` (how the
+cursor drags the air, shared by both tiers), `shaders/grainMotion.glsl` (the lite trail, the
+clear areas, the stirred glint), the grain shaders' call sites (`glitter.vert`,
+`atmosphere.vert`, `motes.vert`, `bubble.vert`, `heroSpark.vert`), `motion/motion.ts`
+(`MOTION.air`), `usePointer.ts` (taps, a finger landing), `work/WorkCards.tsx` (the card in focus
+kept clear), `journey/GoldCloud.tsx`, `journey/DustSheet.tsx`, `hero/HeroAura.tsx`,
+`journey/motes.ts` (`cursorMotes`); `data-keep-clear` on the places' text blocks (`Hero`,
+`Approach`, `WorkSection`, `SystemSection`, `DepthSection`, `ContactSection`; no visual
+change); tools: new `scripts/cursor-flow.mjs` (displacement in px per swipe, from the air
+itself), `capture-swipe.mjs`, `swipe-sheet.mjs`, `record-swipe.mjs`, `swipe.mjs` (shared: exact
+progress, a swipe played inside the page), `phone-pass.mjs` (reads the new probe).
+
+1. **Flow, not push (full tier).** A 256² half-float ping-pong field (rg how far the air has
+   moved, ba its velocity). Along its path the cursor drags the air towards a share of its own
+   velocity (little of a slow move, more of a quick one), parting it a little, with a swirl
+   either side. The air carries itself on (semi-Lagrangian advection) with a slight curl where
+   it moves, and springs home on `MOTION.air`. Phones on the full tier write into the same
+   field.
+2. **Distance.** Swipes are defined as slow 300, medium 1000 and fast 2500 px/s at 1440×900.
+   Measured at the hero (strength 1.0, `scripts/cursor-flow.mjs`, a grain at the focus; nearer
+   ones move up to 1.8×, far ones 0.6×):
+
+   | | slow | medium | fast | drift after the stop | settled (< 2 px) |
+   |---|---|---|---|---|---|
+   | Full | 17 px | 44 px | 89 px | 0.0 / 0.22 / 0.33 s | 1.0 / 1.9 / 2.7 s |
+   | Lite | 11 px | 45 px | 85 px | 0.12 / 0.27 / 0.37 s | 1.0 / 1.4 / 1.6 s |
+   | Phone, full (390×844, 60%) | 12 px | 24 px | 24 px | 0.07 / 0.22 / 0.32 s | 1.2 / 1.3 / 1.7 s |
+   | Phone, lite | 5 px | 16 px | 25 px | 0.17 / 0.32 / 0.33 s | 0.8 / 1.3 / 1.4 s |
+
+   A tap (phone): a ring ~10 px out, at its widest at 0.8 s, settled by ~2 s. A touch scroll:
+   0 px on both tiers.
+3. **Inertia and settle.** `MOTION.air` is now the cursor family's own spring (0.45 Hz, ζ 0.8,
+   ~1.5% overshoot). The field takes the cursor's push softly (grip 7/s), so part of it lands
+   just after the cursor has passed and the beads near the stop keep drifting 0.2–0.4 s.
+4. **Everywhere, per place.** Every grain system samples the same air: Work's pockets and
+   column dust, the hero's dust, its rising sparks (new) and the gold cloud (new), the slab
+   (new), the statement, System, Depth (plankton, beads), Contact's embers and the atmosphere.
+   Strength per place: hero 1, statement 0.5, Work 1, System 0.8, Depth 0.8, Contact 0.6.
+5. **Light.** A stirred bead's glint flickers on its own phase while the air moves it
+   (`grainStirred`), so a swipe leaves a short shimmer. Stirred soft dust (gold cloud, slab,
+   sparks) brightens the same way.
+6. **Depth parallax.** The field shifts against the cursor twice as far as before: with the
+   cursor at an edge, grains at the subject's depth move 1.5% of the frame, nearer ones up to
+   ~2.7% and far ones ~1%, on `MOTION.pointer`.
+7. **Boundaries.** The air never pushes grains into the clear areas: the text blocks (their
+   text's own extent, read from the page every 0.2 s while they show) and the card in focus
+   (hovered, open or at the camera's stop, projected each frame). A grain outside one slides
+   along its edge; one resting inside is left alone. No stirring while scrolling, over a
+   hovered or open card, or over the text (now the real text, not the whole lower-left
+   third). Reduced motion: no reaction and no parallax.
+8. **Phones.** A drag that doesn't scroll stirs at 60%. Any change of the page's scroll stops
+   it, so a scroll never stirs. A quick tap sends a small ripple. A finger landing elsewhere
+   doesn't stir along the jump.
+9. **Lite.** The cursor's recent path as 16 stretches (one per 0.1 s: where it went, its
+   velocity, its age), each answered in the grain's own shader with the field's spring
+   response. Each stretch's share is the falloff's integral along it, so stretches never
+   count twice at their joints. A linger factor stands in for what the field does over time
+   (it holds the air while a slow cursor lingers, takes only part of a quick pass), so both
+   tiers move grains about as far.
+
+FPS (production, Retina, the cursor moving constantly): full (discrete GPU) 59.9–60.4 at Work
+(2.4) and the hero; lite on the HD 630 59.9–60.4 at both. Main-thread time is the same as loop 1
+in alternating runs (90–104 vs 93–99 ms per 2 s).
+
+Sheets:
+- `docs/screens/loop2-cursor.jpg`: a Work pocket and the hero dust (full, lite, phone touch
+  drag), each before, during, +0.3 / 0.8 / 1.5 / 2.5 s, and "moved" (+0.3 s in red over the
+  frame before in cyan). The hero rows are shown at ×2.2 brightness: its dust is sparse by
+  design.
+- `docs/screens/loop2-cursor.mp4`: 7.7 s, a medium swipe through the hero's dust, then
+  through a Work pocket, with the cursor ring.
+
+Open points:
+- The fast swipe on full settles in 2.7 s (target 1.5–2.5 s): it moves furthest, 89 px.
+- The medium swipe's drift near the stop is 0.22 s on full (target 0.3–0.6 s); the field's
+  largest displacement comes at +0.3 s for fast swipes.
 
 ## Decisions I made
 - **The recording shows no cursor over the particles.** Across Work (26–51 s) the pointer
@@ -2510,3 +2578,27 @@ the Stage 2 section, commit + tag `loop2-stage-2`.
   come close to it too.
 - **EMPTY AREA 49.9 → 55.2% (reference 51.1).** The dim tier darkens a few sparse tiles; it is
   within the 15% band, and the sheet decides for the dimmer, softer beads.
+- **The recording gives no cursor targets, so the brief's own numbers are the target.**
+  Swipes are defined as slow 300, medium 1000 and fast 2500 px/s, and "near focus" as a grain
+  at the subject's depth (×1).
+- **`MOTION.air` is the pointer spring (0.45 Hz, ζ 0.8).** It is the family the brief points
+  to: with it, the measured drift (0.2–0.4 s) and settle (1–2.7 s) are closest to the
+  targets; 0.42 Hz / ζ 0.7 drifted no longer and settled later. The particle engine's wake
+  (the Form beat's dust) fades on the same envelope, now a little longer.
+- **The cursor's drag grows with its speed**, so a slow move nudges (17 px) and a fast one
+  scatters (89 px) while a medium swipe sits at 44 px: a constant share gave a slow drag 41 px.
+- **Lite measured on the same terms as full.** `cursor-flow.mjs` reads the air itself: the
+  field is read back on full, and on lite the trail is evaluated in JS (the same function as
+  the shader). The swipes run inside the page, since DevTools input arrives in bursts (a
+  "1000 px/s" phone drag ran at ~300 px/s that way).
+- **Clear areas from the page, not guessed zones.** The text blocks carry `data-keep-clear`, and
+  the air reads their text's own extent (a Range's rectangle) every 0.2 s, skipping blocks
+  that are faded out. This also replaces the "lower-left third" rule for where the cursor
+  doesn't stir.
+- **The gold cloud, the slab and the hero's sparks join the air** (the brief's "every particle
+  system"). The gold cloud and slab keep their soft look (a `CURSOR` define, no glass grain)
+  until Stage 3 reworks the gold cloud.
+- **Seen while capturing: on phones the Work column appears only after a second touch.**
+  After the first touch the cards and pockets mount but the column doesn't; it is the locked
+  loading order (Deferred / Soon), so it is noted, not changed. The phone captures wake the
+  scene with two passes first.

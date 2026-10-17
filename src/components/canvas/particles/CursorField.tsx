@@ -44,7 +44,7 @@ const RADIUS = { pointer: 0.26, touch: 0.32 }
  * A finger (a drag that doesn't scroll) stirs the air at 60% of a mouse; a quick tap sends a
  * small ripple (the ring's outward speed, square units / s, before the place's strength).
  */
-const TOUCH = { strength: 0.6, ripple: 0.9 }
+const TOUCH = { strength: 0.6, ripple: 0.25 }
 
 /** How strongly each place's air answers: Work and the hero most, the places with text least. */
 const PLACE_STRENGTH = { hero: 1, statement: 0.5, work: 1, system: 0.8, depth: 0.8, contact: 0.6 }
@@ -314,6 +314,11 @@ class Trail {
     this.at = -1
   }
 
+  /** The cursor jumped (a finger came down): the stretch in progress starts again there. */
+  jump() {
+    this.at = -1
+  }
+
   /**
    * Measurement only: the furthest the air has moved now, and how far it has at `at` (px,
    * screen coordinates), in px (a grain at the focus): the shader's airTrail evaluated on a
@@ -479,6 +484,7 @@ class Air {
   private velocity = new Vector2()
   private ripple = new Vector3()
   private tapped = 0
+  private landed = 0
   private scrollY = 0
   private px = new Spring(0, MOTION.pointer)
   private py = new Spring(0, MOTION.pointer)
@@ -501,8 +507,14 @@ class Air {
     areas.update(clock.time)
     areas.upload()
 
-    // The cursor in NDC and its velocity (NDC / s).
+    // The cursor in NDC and its velocity (NDC / s). A finger coming down jumps there: no
+    // velocity from the jump, and the lite trail's stretch starts again there.
     this.cursor.set(pointer.uv.x * 2 - 1, pointer.uv.y * 2 - 1)
+    if (pointer.down > this.landed) {
+      this.landed = pointer.down
+      this.last.copy(this.cursor)
+      this.trail.jump()
+    }
     this.velocity.subVectors(this.cursor, this.last).divideScalar(Math.max(delta, 1e-3))
     this.velocity.clampLength(0, 8)
     this.was.copy(this.last)

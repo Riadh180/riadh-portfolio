@@ -10,6 +10,8 @@ export type Pointer = {
    * where (NDC) and when (performance.now(); 0 = none yet).
    */
   tap: { ndc: Vector2; at: number }
+  /** When a finger last came down (performance.now()): the pointer jumped there, it didn't move. */
+  down: number
 }
 
 /** A tap, not a drag: a short touch that barely moves. */
@@ -22,7 +24,12 @@ const TAP = { time: 250, move: 10 }
  */
 export function usePointer(): Pointer {
   const pointer = useMemo<Pointer>(
-    () => ({ uv: new Vector2(0.5, 0.5), active: false, tap: { ndc: new Vector2(), at: 0 } }),
+    () => ({
+      uv: new Vector2(0.5, 0.5),
+      active: false,
+      tap: { ndc: new Vector2(), at: 0 },
+      down: 0,
+    }),
     [],
   )
 
@@ -40,7 +47,9 @@ export function usePointer(): Pointer {
     const onTouchStart = (event: TouchEvent) => {
       onTouch(event)
       const touch = event.touches[0]
-      if (touch) down = { x: touch.clientX, y: touch.clientY, time: performance.now() }
+      if (!touch) return
+      down = { x: touch.clientX, y: touch.clientY, time: performance.now() }
+      pointer.down = down.time
     }
     const onTouchEnd = (event: TouchEvent) => {
       const touch = event.changedTouches[0]

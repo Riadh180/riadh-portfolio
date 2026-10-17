@@ -46,7 +46,9 @@ export function playSwipe(page, from, to, duration, touch, rest = 1500) {
       const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
       const at = (x, y, type) => {
         if (!touch) {
-          window.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: y }))
+          window.dispatchEvent(
+            new PointerEvent('pointermove', { clientX: x, clientY: y, pointerType: 'mouse' }),
+          )
           return
         }
         const point = new Touch({ identifier: 1, target: document.body, clientX: x, clientY: y })

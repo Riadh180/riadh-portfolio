@@ -23,6 +23,7 @@ const still: Pointer = {
   uv: new Vector2(0.5, 0.5),
   active: false,
   tap: { ndc: new Vector2(), at: 0 },
+  down: 0,
 }
 
 function LabScene({ look }: { look: GlassLook }) {

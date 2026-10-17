@@ -4,8 +4,9 @@
 //   node scripts/capture-swipe.mjs <url> <outDir> <progress> <x0,y0,x1,y1> <durationMs> [phone]
 //   (TIER=lite, LOWGPU=1, SETTLE=ms at the place before the swipe: 5000)
 //
-// A first touch (or pointer move) at the place wakes what waits for the visitor's first
-// interaction (on phones the column shows only then), so every frame shows the same scene.
+// Two slow passes along the same path first wake what waits for the visitor's interaction
+// (on phones the column only shows after a second touch), so every frame shows the same
+// scene; the air settles before the swipe (SETTLE).
 //
 // The swipe is played inside the page (scripts/swipe.mjs: a pointer move, a touch drag on
 // phones), so its speed is exact; frames are named before, during, end, t0300 … t2500.
@@ -45,8 +46,10 @@ await page.evaluateOnNewDocument((lite) => {
 await page.goto(url, { waitUntil: 'networkidle2' })
 await sleep(2500)
 await goToProgress(page, Number(progressArg))
-const { width, height } = page.viewport()
-await playSwipe(page, [20, height - 140], [60, height - 140], 300, phone, 100)
+for (let pass = 0; pass < 2; pass++) {
+  await playSwipe(page, [x0, y0], [x1, y1], 1500, phone, 100)
+  await sleep(1500)
+}
 await sleep(Number(process.env.SETTLE ?? 5000))
 
 fs.rmSync(outDir, { recursive: true, force: true })

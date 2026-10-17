@@ -3,9 +3,10 @@
 // and "moved": +0.3 s in red over the frame before in cyan (a moved bead shows as a red /
 // cyan pair, a still one grey).
 //
-//   node scripts/swipe-sheet.mjs <out.jpg> <label=framesDir:x0,y0,x1,y1[:cropWidth]> …
+//   node scripts/swipe-sheet.mjs <out.jpg> <label=framesDir:x0,y0,x1,y1[:cropWidth[:gain]]> …
 //
-// cropWidth: a closer crop (px wide, 16:10, round the path's middle), for sparse dust.
+// cropWidth: another crop (px wide, 16:10, round the path's middle); gain: brighter tiles for
+// sparse, dim dust (marked on the tiles).
 import sharp from 'sharp'
 
 const [, , out, ...rows] = process.argv
@@ -31,7 +32,7 @@ const label = (text) =>
   )
 
 /** +0.3 s in the red channel over the frame before in green and blue. */
-async function moved(dir, box) {
+async function moved(dir, box, gain) {
   const grey = (file) => sharp(`${dir}/${file}.png`).extract(box).greyscale().raw().toBuffer()
   const [after, before] = await Promise.all([grey('t0300'), grey('before')])
   const rgb = Buffer.alloc(box.width * box.height * 3)
@@ -41,7 +42,7 @@ async function moved(dir, box) {
     rgb[i * 3 + 2] = before[i]
   }
   return sharp(rgb, { raw: { width: box.width, height: box.height, channels: 3 } })
-    .linear(1.6, 0)
+    .linear(1.6 * gain, 0)
     .png()
     .toBuffer()
 }
@@ -49,7 +50,10 @@ async function moved(dir, box) {
 const strips = []
 for (const row of rows) {
   const [name, rest] = row.split(/=(.*)/s)
-  const [dir, line, zoom] = rest.split(/:(?=[\d,.]+(?::\d+)?$)|:(?=\d+$)/)
+  const [dir, line, zoom, gainArg] = rest.split(
+    /:(?=[\d,.]+(?::[\d.]+)*$)|:(?=[\d.]+(?::[\d.]+)?$)/,
+  )
+  const gain = Number(gainArg ?? 1)
   const [x0, y0, x1, y1] = line.split(',').map(Number)
   const meta = await sharp(`${dir}/before.png`).metadata()
   // A 16:10 box round the path, padded, kept inside the frame.
@@ -81,16 +85,23 @@ for (const row of rows) {
         : []
     const crop =
       file === 'moved'
-        ? await moved(dir, { left, top, width, height })
+        ? await moved(dir, { left, top, width, height }, gain)
         : await sharp(`${dir}/${file}.png`)
             .extract({ left, top, width, height })
+            .linear(gain, 0)
             .composite(path)
             .png()
             .toBuffer()
     tiles.push(
       await sharp(crop)
         .resize(TILE.width, TILE.height)
-        .composite([{ input: label(`${name} · ${title}`), left: 0, top: 0 }])
+        .composite([
+          {
+            input: label(`${name} · ${title}${gain === 1 ? '' : ` (×${gain} brightness)`}`),
+            left: 0,
+            top: 0,
+          },
+        ])
         .png()
         .toBuffer(),
     )
