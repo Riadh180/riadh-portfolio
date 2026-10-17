@@ -28,25 +28,70 @@ export const GLITTER_SHADERS = {
 }
 const { vertexShader, fragmentShader } = GLITTER_SHADERS
 
-/** Glitter points: per-grain orbit / cloud / seed (positions come from the shader). */
-function chipGeometry(orbit: Float32Array, cloud: Float32Array, seed: Float32Array, count: number) {
+/**
+ * Glitter points: per-grain orbit / cloud / seed (positions come from the shader), and the
+ * pocket beads' own colours (`tint`, the pockets only).
+ */
+function chipGeometry(
+  orbit: Float32Array,
+  cloud: Float32Array,
+  seed: Float32Array,
+  count: number,
+  tint?: Float32Array,
+) {
   const geometry = new BufferGeometry()
   geometry.setAttribute('position', new Float32BufferAttribute(new Float32Array(count * 3), 3))
   geometry.setAttribute('orbit', new Float32BufferAttribute(orbit, 4))
   geometry.setAttribute('cloud', new Float32BufferAttribute(cloud, 4))
   geometry.setAttribute('seed', new Float32BufferAttribute(seed, 4))
+  if (tint) geometry.setAttribute('tint', new Float32BufferAttribute(tint, 3))
   return geometry
 }
 
-/** One pocket of grains: centre, spread and its own hue (a bucket of the palette). */
-type Pocket = { x: number; y: number; z: number; spread: number; hue: number }
+/** One pocket of grains: centre, spread and its mix of hues (an index into MIXES). */
+type Pocket = { x: number; y: number; z: number; spread: number; mix: number }
 
+/** A hue at about the same luminance as the others, so no hue outshines the rest. */
+const evened = (color: Color) => {
+  const luminance = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b
+  return color.clone().multiplyScalar(Math.sqrt(0.3 / luminance))
+}
 /**
- * Hue buckets in the glitter palette (seed.y → uPalette): violet-pink (0.7, 0.8), teal
- * (0.9) and green-gold (0.97). Weighted towards violet and teal, as in the reference's
- * clouds.
+ * The pockets' hues; the violet leans a touch towards pink and the pink towards violet (the
+ * reference's beads are blue-violet and purple, rarely magenta).
  */
-const HUES = [0.7, 0.9, 0.7, 0.9, 0.8, 0.97]
+const POCKET_HUES = {
+  teal: evened(sceneColors.teal),
+  blue: evened(sceneColors.blue),
+  violet: evened(sceneColors.violet.clone().lerp(sceneColors.pink, 0.15)),
+  pink: evened(sceneColors.pink.clone().lerp(sceneColors.violet, 0.35)),
+  gold: evened(sceneColors.warm),
+}
+type Hue = keyof typeof POCKET_HUES
+/**
+ * The pockets' mixes, as in the reference's clouds (several hues side by side in each): 3–4
+ * hues in uneven shares, the first dominant (~50%) so the pockets still differ; leaning
+ * violet / blue, a little gold.
+ */
+const MIXES: Partial<Record<Hue, number>>[] = [
+  { violet: 0.5, blue: 0.25, pink: 0.15, teal: 0.1 },
+  { blue: 0.5, violet: 0.3, teal: 0.15, gold: 0.05 },
+  { teal: 0.5, violet: 0.25, blue: 0.2, gold: 0.05 },
+  { violet: 0.5, teal: 0.2, blue: 0.2, pink: 0.1 },
+  { pink: 0.45, violet: 0.3, blue: 0.2, gold: 0.05 },
+  { violet: 0.5, blue: 0.3, teal: 0.15, gold: 0.05 },
+]
+
+/** A pocket bead's colour: one of its pocket's hues, by their shares. */
+function pocketHue(mix: number) {
+  const shares = Object.entries(MIXES[mix % MIXES.length]!) as [Hue, number][]
+  let r = Math.random()
+  for (const [hue, share] of shares) {
+    r -= share
+    if (r < 0) return POCKET_HUES[hue]
+  }
+  return POCKET_HUES[shares[0]![0]]
+}
 
 /** Camera angle round the column at Work height `y` (the stops are spread down the spiral). */
 const cameraAngle = (y: number) =>
@@ -83,10 +128,10 @@ function orbitPockets(): Pocket[] {
     }
     return true
   }
-  const place = (y: number, angle: number, reach: number, spread: number, hue: number) => {
+  const place = (y: number, angle: number, reach: number, spread: number, mix: number) => {
     for (let tries = 0; tries < 12; tries++) {
       const a = angle + tries * 0.55
-      const pocket = { x: Math.sin(a) * reach, y, z: Math.cos(a) * reach, spread, hue }
+      const pocket = { x: Math.sin(a) * reach, y, z: Math.cos(a) * reach, spread, mix }
       if (clearsCards(pocket)) {
         pockets.push(pocket)
         return
@@ -98,29 +143,29 @@ function orbitPockets(): Pocket[] {
     const y = 4.2 - k * 0.92 + (hash(k, 31, 3) - 0.5) * 0.5
     const side = k * 2.4 + hash(k, 32, 3) * 1.2
     const reach = 1.25 + hash(k, 33, 3) * 0.6
-    place(y, cameraAngle(y) + side, reach, 0.8 + hash(k, 34, 3) * 0.4, HUES[k % HUES.length]!)
+    place(y, cameraAngle(y) + side, reach, 0.8 + hash(k, 34, 3) * 0.4, k)
   }
   // In front, between the stops: the camera passes through them (bokeh on full).
   for (let k = 0; k < 4; k++) {
     const y = ORBIT_FIRST - (k + 0.5) * ORBIT_SPACING * 1.25
-    place(y, cameraAngle(y) + (k % 2 ? 0.35 : -0.35), 3.3, 0.9, HUES[(k + 2) % HUES.length]!)
+    place(y, cameraAngle(y) + (k % 2 ? 0.35 : -0.35), 3.3, 0.9, k + 2)
   }
   return pockets
 }
 
 /** Phones: three pockets round the column, between the cards (column space, see WorkPlace). */
 const COLUMN_POCKETS: Pocket[] = [
-  { x: 1.3, y: 0.3, z: 0.4, spread: 0.8, hue: 0.7 },
-  { x: -1.3, y: -4.5, z: 0.4, spread: 0.8, hue: 0.8 },
-  { x: 1.2, y: -9.3, z: 0.4, spread: 0.8, hue: 0.9 },
+  { x: 1.3, y: 0.3, z: 0.4, spread: 0.8, mix: 0 },
+  { x: -1.3, y: -4.5, z: 0.4, spread: 0.8, mix: 1 },
+  { x: 1.2, y: -9.3, z: 0.4, spread: 0.8, mix: 2 },
 ]
 
 /**
  * ~90% of the grains in the pockets (dense at the core, thinning out, a few strays trailing
  * into wisps), ~10% as a sparse silver dust: half round the column, half spread wide between
  * the cards, so no flat empty band shows between the stops. Each grain gets its orbit (angle,
- * reach, start height, speed), its pocket (or none) and a seed. Phones get fewer grains
- * (three pockets).
+ * reach, start height, speed), its pocket (or none), a seed and, in a pocket, one of the
+ * pocket's hues. Phones get fewer grains (three pockets).
  */
 function createPebbles(layout: Layout) {
   const count =
@@ -130,6 +175,7 @@ function createPebbles(layout: Layout) {
   const orbit = new Float32Array(count * 4)
   const cloud = new Float32Array(count * 4)
   const seed = new Float32Array(count * 4)
+  const tint = new Float32Array(count * 3)
   for (let i = 0; i < count; i++) {
     const inPocket = Math.random() < 0.9
     const pocket = pockets[i % pockets.length]
@@ -147,10 +193,9 @@ function createPebbles(layout: Layout) {
         i * 4,
       )
       cloud.set([pocket.x, pocket.y, pocket.z, pocket.spread], i * 4)
-      seed.set(
-        [Math.random(), pocket.hue + (Math.random() - 0.5) * 0.04, Math.random(), Math.random()],
-        i * 4,
-      )
+      seed.set([Math.random(), Math.random(), Math.random(), Math.random()], i * 4)
+      const hue = pocketHue(pocket.mix)
+      tint.set([hue.r, hue.g, hue.b], i * 3)
     } else {
       // Sparse silver dust: half round the column, half wide between the cards.
       const wide = Math.random() < 0.5
@@ -167,10 +212,10 @@ function createPebbles(layout: Layout) {
       seed.set([Math.random(), Math.random() * 0.6, Math.random(), Math.random()], i * 4)
     }
   }
-  return chipGeometry(orbit, cloud, seed, count)
+  return chipGeometry(orbit, cloud, seed, count, tint)
 }
 
-/** Muted glitter: silver-lilac dust, violet/pink, teal and a little gold (pocket hues). */
+/** Muted glitter: silver-lilac dust, violet/pink, teal and a little gold (the column dust). */
 const GLITTER = [
   sceneColors.glass.clone().lerp(sceneColors.violet, 0.45),
   sceneColors.violet.clone().lerp(sceneColors.pink, 0.4),
@@ -234,6 +279,7 @@ export function updateGlitter(
 }
 
 type Layout = 'orbit' | 'column'
+const POCKET_DEFINES = { POCKET_HUES: '' }
 type Props = { clock: SceneClock; focusDistance: number; layout?: Layout }
 
 /**
@@ -264,6 +310,7 @@ export function Pebbles({ clock, focusDistance, layout = 'orbit' }: Props) {
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
         uniforms={uniforms}
+        defines={POCKET_DEFINES}
         transparent
         depthWrite={false}
         blending={AdditiveBlending}

@@ -75,6 +75,20 @@ float grainGlint(vec3 world, vec4 seed, float time) {
   return clamp(glint + grainSweep(world) * 0.6, 0.0, 1.0);
 }
 
+/**
+ * A bead's brightness tier from a random 0..1, the same split in every place: ~70% dim, ~25%
+ * medium, ~5% bright (the reference's clouds: mostly dim, a few catching the light). The
+ * multipliers keep the place's mean brightness about where it was.
+ */
+float grainTier(float r) {
+  return r < 0.7 ? 0.42 : r < 0.95 ? 1.0 : 2.0;
+}
+
+/** Only the bright tier glints (the cursor still makes any bead it stirs catch the light). */
+float grainGlints(float r) {
+  return step(0.95, r);
+}
+
 /** A grain's colour, picking up the light that passes it: the sweep's hue for a moment. */
 vec3 grainLit(vec3 color, vec3 world) {
   float sweep = grainSweep(world);

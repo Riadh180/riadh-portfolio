@@ -2418,8 +2418,84 @@ Everything not listed above: the hero, the column, the cards' tone, titles and f
 gallery layout, the capstone layout, transition timing outside Stage 3, UI copy, content, SEO,
 legal pages, the CV, the tier system, performance work. The phone number only on /impressum.
 
+## Stage 1 — soft round beads, mixed hues (tag `loop2-stage-1`)
+Files: `shaders/glassGrain.glsl` (the bead), `shaders/grainMotion.glsl` (`grainTier`,
+`grainGlints`), `shaders/glitter.vert/.frag`, `atmosphere.vert`, `motes.vert`, `bubble.vert`,
+`cardDust.vert`, `work/Pebbles.tsx` (the pockets' mixes), `work/WorkCards.tsx` (the dissolve
+takes `grainMotion.glsl` for the tiers); tools: new `scripts/pocket-sheet.mjs` (reference |
+loop 1 | new, each at 1× and a 3× zoom), `scripts/compare-frames.mjs --ui`.
+
+1. **Shape.** Every grain from ~3 px up is a round bead: a soft round silhouette (antialiased
+   over about a pixel), a filled, slightly darker middle (0.6 of the rim: a drop, not a hollow
+   bubble), a thin-film rim (teal → pink → gold by angle), one small glint up-left on the bright
+   beads only, a chromatic fringe of at most 0.5 px on beads from 8–16 px up only; the full
+   tier keeps the soft caustic on the far side. Tiny beads stay soft points.
+2. **Colour.** Every Work pocket mixes 4 hues, one dominant at 45–50%: six mixes cycled round
+   the 20 pockets (three violet-led, one blue-, one teal-, one purple-led), gold at 5% in four of
+   them. The hues are evened to one luminance (gold and pink no longer outshine blue and
+   violet); the violet leans 15% to pink and the pink 35% to violet (the reference's beads are
+   blue-violet and purple, rarely magenta). The phones' three pockets take the first three
+   mixes.
+3. **Brightness.** Every grain in the world in three tiers (`grainTier`): 70% dim (0.42), 25%
+   medium (1.0), 5% bright (2.0); only the bright tier glints and twinkles fully
+   (`grainGlints`; a bead the cursor stirs still catches the light). Every layer keeps its mean
+   (atmosphere, motes, rising grains, dissolve); the pockets' mean is ~30% lower.
+4. **Blur.** Full tier: the circle of confusion 0.006 → 0.0095 and the largest bead 18 → 26 px
+   (at 900 px tall), so out-of-focus beads grow larger and softer (a disc feathered from 0.55 of
+   its radius) while in-focus ones stay crisp.
+5. **Every place.** The same bead in the hero dust, the statement, System, Depth (plankton and
+   beads), Contact's embers, the gold cloud and a card's dissolve; the per-place light is
+   unchanged.
+
+Passes: (1) round beads, tiers, mixes: the beads read as hollow soap bubbles at 3×, gold too
+loud, the mid tones blue; (2) a filled body, the hues evened, the mixes leaning violet; (3) the
+pink towards purple. Pass 3 kept.
+
+Metrics (Work, our scripted scroll vs the reference's 100 frames; `docs/screens/metrics/loop2/`):
+
+| | Reference | Loop 1 | Stage 1 |
+|---|---|---|---|
+| Mean luminance (0–255) | 28.4 | 30.3 | 28.4 |
+| Contrast | 21.2 | 25.9 | 21.6 |
+| 95th percentile | 70.8 | 85.9 | 72.3 |
+| Mean saturation | 0.427 | 0.447 | 0.471 |
+| EMPTY AREA | 51.1% | 49.9% | 55.2% |
+| SPARKLE, whole frame (points / MP) | 341 | 1340 | 1096 |
+| SPARKLE, HTML UI left out (`--ui`) | 347 | 557 | 195 |
+| Hue distance, whole frame | — | 0.31 | 0.33 |
+| Hue distance, bright pixels (V ≥ 0.32: the beads) | — | 0.37 | 0.20 |
+
+FPS (HD 630, Retina): lite 60 at the hero and at Work (2.0, 2.4); full at Work 51–56, the same
+as loop 1 in alternating A/B runs (the larger out-of-focus beads cost nothing measurable).
+
+Sheet: `docs/screens/loop2-pockets.jpg` (4 pockets: reference | loop 1 | new, at 1× and 3×).
+
+Open point: a whole-frame hue distance ≤ 0.2 is out of the beads' reach (see Decisions).
+
 ## Decisions I made
 - **The recording shows no cursor over the particles.** Across Work (26–51 s) the pointer
   hovers the cards (a hand over the card's edge), and in the hero's strip it crosses empty
   space; no frame has it over a pocket. Stage 2 follows the brief's own targets (flow, swirl,
   inertia, 30–60 px for a medium swipe).
+- **SPARKLE is also measured without the HTML UI.** 75% of our sparkle points (334–421 of
+  430–591 per frame) are the bright mono UI text (the filter row, the job list, the email),
+  which is locked and not a particle; the reference's UI is dim and makes none.
+  `compare-frames.mjs --ui` leaves the UI areas out on both sides, and both numbers are
+  reported. On the scene alone loop 1 was 1.6× the reference and Stage 1 is 0.56×.
+- **The whole-frame hue distance belongs to the air, not the beads.** By brightness band, the
+  dark air (V 0.08–0.16, 67% of our coloured pixels) is 78% cyan in ours and 51% blue-violet
+  in the reference (whose lower-left violet bleed fills large areas). That's Work's light,
+  which this stage keeps, so the whole-frame distance stays at ~0.33 (loop 1 0.31). The beads
+  are measured on the bright band instead: 0.37 → 0.20. The sheet shows the beads closer, so
+  this stays; Work's air goes under "what still differs".
+- **Beads filled, not hollow.** "A darker see-through middle" read as soap bubbles at 3× in
+  pass 1. The reference's beads are filled drops with a brighter edge, so the middle sits at
+  0.6 of the rim.
+- **Pocket hues evened in luminance.** At the same colour strength, gold and pink are ~2×
+  brighter than blue and violet. They are evened (by the square root of the luminance ratio),
+  so a 5% gold share reads as 5%.
+- **The pockets' mean is 30% lower; every other layer keeps its own.** With it, Work's mean
+  luminance lands on the reference's 28.4 (loop 1 30.3), and contrast and the 95th percentile
+  come close to it too.
+- **EMPTY AREA 49.9 → 55.2% (reference 51.1).** The dim tier darkens a few sparse tiles; it is
+  within the 15% band, and the sheet decides for the dimmer, softer beads.

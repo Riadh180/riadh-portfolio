@@ -63,9 +63,13 @@ void main() {
   float spread = clamp(sharp / max(size, 0.001), 0.0, 1.0);
   vSoft = 1.0 - spread;
   vPhase = fract(seed.x * 3.1 + seed.z);
-  vGlint = max(grainGlint(p, seed, uTime), stirred);
+  // Brightness tiers (mostly dim, a few bright: grainMotion.glsl), the layer's mean kept;
+  // only the bright beads glint.
+  float tier = fract(seed.y * 5.3 + seed.w * 1.7);
+  vGlint = max(grainGlint(p, seed, uTime) * grainGlints(tier), stirred);
 
   vColor = grainLit(mix(ramp(seed.w * 1.7 + seed.x * 0.3), uAccent, uAccentAmount) * 0.9, p);
+  vColor *= grainTier(tier) / 0.644;
   // Thinned over the text, so the atmosphere never competes with it.
   vec2 ndc = gl_Position.xy / gl_Position.w;
   float text = max(1.0 - smoothstep(uTextZone.x - 0.25, uTextZone.x, ndc.x), 1.0 - smoothstep(uTextZone.y - 0.25, uTextZone.y, ndc.y));

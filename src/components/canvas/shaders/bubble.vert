@@ -25,13 +25,16 @@ void main() {
   float stirred;
   mv.xyz = grainCursor(mv.xyz, 7.0, stirred);
   vec3 world = (modelMatrix * vec4(p, 1.0)).xyz;
-  vGlint = max(grainGlint(world, seed, uTime), stirred);
+  // Brightness tiers (grainMotion.glsl): only the bright beads glint, unless the cursor stirs them.
+  float tier = fract(seed.x * 7.31 + seed.z * 3.17);
+  vGlint = max(grainGlint(world, seed, uTime) * grainGlints(tier), stirred);
   vPhase = fract(seed.w * 5.3 + seed.y);
 #endif
   gl_Position = projectionMatrix * mv;
   gl_PointSize = uSize * (0.5 + seed.w) / -mv.z;
   vAlpha = smoothstep(0.0, 0.15, y / uHeight) * (1.0 - smoothstep(0.8, 1.0, y / uHeight));
 #ifdef GRAIN
+  vAlpha *= grainTier(tier) / 0.644;
   vPointSize = gl_PointSize;
   vec2 ndc = gl_Position.xy / gl_Position.w;
   float text = (1.0 - smoothstep(uTextZone.x - 0.2, uTextZone.x, ndc.y)) * step(ndc.x, uTextZone.y);

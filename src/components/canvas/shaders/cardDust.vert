@@ -1,4 +1,4 @@
-// A card's frosted glass breaking off into particles (noise.glsl and dissolve.glsl are prepended in TS). Each
+// A card's frosted glass breaking off into particles (noise.glsl, dissolve.glsl and grainMotion.glsl are prepended in TS). Each
 // particle sits on a spot of the card's face, takes that spot's colour from the card's
 // image, and is released when the dissolve front passes it (same threshold as frost.frag).
 // Released particles drift outward and towards the viewer on a curling path, then fade.
@@ -42,11 +42,13 @@ void main() {
 
   float released = step(0.0001, life);
   vAlpha = released * smoothstep(1.5, 0.15, life);
-  vColor = texture2D(uImage, spot).rgb * 1.5 + 0.08;
-  // Chips of a few pixels, a few larger: the world's glass grains (glassGrain.glsl), each
-  // turning as it drifts, so its glint flares now and then.
+  // The world's brightness tiers (grainMotion.glsl), the mean kept.
+  float tier = fract(seed.z * 5.1 + seed.y * 2.3);
+  vColor = (texture2D(uImage, spot).rgb * 1.5 + 0.08) * grainTier(tier) / 0.644;
+  // Beads of a few pixels, a few larger: the world's glass grains (glassGrain.glsl), each
+  // turning as it drifts, so the bright ones flare now and then.
   gl_PointSize = released * uPointScale * (0.7 + seed.z * seed.z * 1.6) / max(-mv.z, 0.1);
   vPointSize = gl_PointSize;
-  vGlint = pow(0.5 + 0.5 * sin(life * (4.0 + seed.x * 5.0) + seed.w * 6.2831), 12.0);
+  vGlint = pow(0.5 + 0.5 * sin(life * (4.0 + seed.x * 5.0) + seed.w * 6.2831), 12.0) * grainGlints(tier);
   vPhase = fract(seed.y * 3.3 + seed.z);
 }

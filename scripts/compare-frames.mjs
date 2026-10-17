@@ -1,7 +1,10 @@
 // Image metrics for matching the look of Work's column and air to the reference recording.
 //
-//   node scripts/compare-frames.mjs <refFrames> <refMasks> <ourFrames> <ourMasks> [--json out.json] [--overlay sheet.jpg] [--inside]
+//   node scripts/compare-frames.mjs <refFrames> <refMasks> <ourFrames> <ourMasks> [--json out.json] [--overlay sheet.jpg] [--inside] [--ui]
 //
+// --ui: SPARKLE leaves out the HTML UI's text on both sides (UI_AREAS): our bright mono UI
+// (filter, job list, email) is the sharpest detail in the frame, so it would otherwise
+// dominate a count meant for the particles and the column.
 // --inside: the opposite, the cards only (their tone against the reference's cards); EMPTY
 // AREA and SPARKLE are left out of the table then.
 //
@@ -43,6 +46,22 @@ function percentile(histogram, total, p) {
 /** Measure inside the cards instead of around them (--inside). */
 let inside = false
 
+/**
+ * The HTML UI's text areas at 1440×900 (x0, y0, x1, y1), left out of SPARKLE with --ui: the
+ * reference's left column and top-right pill; our filter row and job list (lower left) and
+ * the email / nav (upper right).
+ */
+const UI_AREAS = {
+  ref: [
+    [0, 560, 140, 870],
+    [1290, 0, 1440, 160],
+  ],
+  ours: [
+    [0, 640, 520, 870],
+    [1160, 0, 1440, 150],
+  ],
+}
+
 async function readMask(file) {
   const keep = new Uint8Array(W * H)
   const card = fs.existsSync(file)
@@ -54,11 +73,19 @@ async function readMask(file) {
   return keep
 }
 
-export async function measure(file, maskFile) {
+export async function measure(file, maskFile, ui = []) {
   const keep = await readMask(maskFile)
+  const inUi = (i) => {
+    const x = i % W
+    const y = (i / W) | 0
+    return ui.some(([x0, y0, x1, y1]) => x >= x0 && x < x1 && y >= y0 && y < y1)
+  }
   const rgb = await sharp(file).resize(W, H, { fit: 'fill' }).removeAlpha().raw().toBuffer()
   const lum = new Float32Array(W * H)
   const histogram = new Uint32Array(256)
+  /** Luminance histogram of the pixels SPARKLE looks at (the UI areas left out). */
+  const sceneHistogram = new Uint32Array(256)
+  let sceneCount = 0
   const hues = new Float64Array(12)
   let n = 0
   let sum = 0
@@ -75,6 +102,10 @@ export async function measure(file, maskFile) {
     if (!keep[i]) continue
     n++
     histogram[Math.min(255, Math.round(y))]++
+    if (!ui.length || !inUi(i)) {
+      sceneHistogram[Math.min(255, Math.round(y))]++
+      sceneCount++
+    }
     sum += y
     sumSq += y * y
     const max = Math.max(r, g, b)
@@ -96,7 +127,7 @@ export async function measure(file, maskFile) {
   }
   if (!n) return null
   const mean = sum / n
-  const p98 = percentile(histogram, n, 0.98)
+  const p98 = percentile(sceneHistogram, sceneCount, 0.98)
 
   let empty = 0
   let tiles = 0
@@ -126,7 +157,7 @@ export async function measure(file, maskFile) {
     for (let x = Math.max(4, X0); x < Math.min(W - 4, X1); x++) {
       const i = y * W + x
       const v = lum[i]
-      if (!keep[i] || v <= p98) continue
+      if (!keep[i] || v <= p98 || (ui.length && inUi(i))) continue
       let isMax = true
       for (let dy = -2; dy <= 2 && isMax; dy++) {
         for (let dx = -2; dx <= 2; dx++) {
@@ -153,17 +184,17 @@ export async function measure(file, maskFile) {
     saturation: satCount ? satSum / satCount : 0,
     hue: Array.from(hues, (c) => (hueCount ? c / hueCount : 0)),
     empty: tiles ? (empty / tiles) * 100 : 0,
-    sparkle: sparkle / (n / 1e6),
+    sparkle: sparkle / (sceneCount / 1e6),
     measured: n / ((X1 - X0) * (Y1 - Y0)),
   }
 }
 
-export async function measureDir(dir, masks) {
+export async function measureDir(dir, masks, ui = []) {
   const files = fs.readdirSync(dir).filter((f) => /\.png$/i.test(f)).sort()
   if (!files.length) throw new Error(`no frames in ${dir}`)
   const frames = []
   for (const f of files) {
-    const m = await measure(path.join(dir, f), path.join(masks, f))
+    const m = await measure(path.join(dir, f), path.join(masks, f), ui)
     // A frame that is almost all card says nothing about the air.
     if (m && m.measured > (inside ? 0.05 : 0.15)) frames.push({ file: f, ...m })
   }
@@ -256,13 +287,16 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     args.splice(at, 1)
     inside = true
   }
+  const uiAt = args.indexOf('--ui')
+  const ui = uiAt >= 0
+  if (ui) args.splice(uiAt, 1)
   const [refDir, refMasks, oursDir, oursMasks] = args
   if (!oursMasks) {
     console.error('usage: compare-frames.mjs <refFrames> <refMasks> <ourFrames> <ourMasks> [--json out] [--overlay sheet.jpg]')
     process.exit(1)
   }
-  const ref = await measureDir(refDir, refMasks)
-  const ours = await measureDir(oursDir, oursMasks)
+  const ref = await measureDir(refDir, refMasks, ui ? UI_AREAS.ref : [])
+  const ours = await measureDir(oursDir, oursMasks, ui ? UI_AREAS.ours : [])
   const { text, tv } = table(ref, ours, inside)
   console.log(text)
   if (jsonOut) fs.writeFileSync(jsonOut, JSON.stringify({ ref, ours, tv }, null, 2))

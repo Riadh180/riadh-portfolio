@@ -36,6 +36,7 @@ import frostVertex from '../shaders/frost.vert'
 import cardDustFragment from '../shaders/cardDust.frag'
 import cardDustVertex from '../shaders/cardDust.vert'
 import glassGrain from '../shaders/glassGrain.glsl'
+import grainMotion from '../shaders/grainMotion.glsl'
 import { grainUniforms } from '../particles/CursorField'
 import { MOTION, Spring } from '../motion/motion'
 import dissolve from '../shaders/dissolve.glsl'
@@ -261,7 +262,7 @@ export function createDustGeometry() {
 
 export function createDustMaterial(face: CardFace, seed: number, live?: Texture) {
   return new ShaderMaterial({
-    vertexShader: `${noise}\n${dissolve}\n${cardDustVertex}`,
+    vertexShader: `${noise}\n${dissolve}\n${grainMotion}\n${cardDustVertex}`,
     fragmentShader: `${glassGrain}\n${cardDustFragment}`,
     uniforms: {
       // The world's glass grains: the film's hues and the place's light (CursorField).

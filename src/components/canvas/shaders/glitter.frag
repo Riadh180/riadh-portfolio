@@ -1,5 +1,5 @@
-// A glitter grain: a glass grain (glassGrain.glsl): a bright point when tiny, a glass bead
-// when larger; out of focus a soft disc with low alpha; the few sparks keep a faceted look.
+// A glitter bead (glassGrain.glsl): a soft point when tiny, a round glass bead when larger;
+// out of focus a large soft disc, its light spread thin; the few sparks keep a faceted look.
 varying vec3 vColor;
 varying float vSoft;
 varying float vSpark;
@@ -13,8 +13,8 @@ void main() {
   float r = length(c);
   if (r > 1.0) discard;
   vec3 color = glassGrain(c, vPointSize * (1.0 - vSoft), vColor, vGlint, vPhase);
-  // Out of focus: a soft disc, its light spread thin.
-  vec3 disc = vColor * (1.0 - smoothstep(0.75, 1.0, r)) * 0.35;
+  // Out of focus: a soft disc, its light spread thin, its edge feathered.
+  vec3 disc = vColor * (1.0 - smoothstep(0.55, 1.0, r)) * 0.4;
   color = mix(color, disc, vSoft);
   if (vSpark > 0.5 && vSoft < 0.5) {
     float d = abs(c.x) + abs(c.y);

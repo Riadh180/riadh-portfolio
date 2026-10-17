@@ -1,10 +1,11 @@
-// Glitter round the Work spine (and in small clouds, e.g. round The Core): glass grains as
-// point sprites, moved on the GPU. Column grains rise up the spine in a slow helix; cloud
-// grains circle their cloud, whose outline is irregular (lobed, with wisps), dense at its
+// Glitter round the Work spine (and in small clouds, e.g. round The Core): glass beads as
+// point sprites, moved on the GPU. Column beads rise up the spine in a slow helix; cloud
+// beads circle their cloud, whose outline is irregular (lobed, with wisps), dense at its
 // core. Sizes follow a power law (~75% tiny points, ~20% small, ~5% medium and large beads;
-// a handful of sparks near the camera). Brightness varies per grain (most dim, a few bright)
-// with a slow twinkle; a grain's glint flares as it turns through the place's light. The
-// cursor parts the clouds (grainMotion.glsl). Full tier: bokeh away from the focus plane.
+// a handful of sparks near the camera). Brightness in tiers (~70% dim, ~25% medium, ~5%
+// bright, grainMotion.glsl) with a slow twinkle; only the bright beads glint. The cursor
+// parts the clouds. Full tier: a wide depth of field (out-of-focus beads large and soft).
+// With POCKET_HUES (Work's pockets) every pocket bead carries its own colour (`tint`).
 
 uniform float uTime;
 uniform float uSize;
@@ -33,6 +34,10 @@ attribute vec4 orbit;
 attribute vec4 cloud;
 /** size pick, colour pick, twinkle phase, twinkle period pick. */
 attribute vec4 seed;
+#ifdef POCKET_HUES
+/** A pocket bead's own colour (each pocket mixes several hues, see Pebbles.tsx). */
+attribute vec3 tint;
+#endif
 
 varying vec3 vColor;
 varying float vSoft;
@@ -80,8 +85,9 @@ void main() {
   float spark = step(0.9985, pick) * (1.0 - pocket);
   scale = mix(scale, 6.0, spark);
   float focusSize = max(uSize * scale * pixelsPerUnit, 1.0);
-  float coc = uBokeh * abs(depth - uFocusDistance) / depth * uViewportHeight * 0.006;
-  float size = min(focusSize + coc, mix(18.0, 60.0, spark) * uViewportHeight / 900.0);
+  // A wide depth of field: out-of-focus beads grow large and soft, in-focus ones stay crisp.
+  float coc = uBokeh * abs(depth - uFocusDistance) / depth * uViewportHeight * 0.0095;
+  float size = min(focusSize + coc, mix(26.0, 60.0, spark) * uViewportHeight / 900.0);
   gl_PointSize = size * ends;
   vPointSize = size;
   vSoft = clamp(coc / size, 0.0, 1.0);
@@ -89,17 +95,22 @@ void main() {
   vPhase = seed.z;
 
   // Colour: ~60% silver-lilac, ~25% violet/pink, ~10% teal, ~5% gold (the column dust);
-  // a pocket's own hue bucket for pocket grains.
+  // Work's pocket beads carry their own (POCKET_HUES).
   float c = seed.y;
   vec3 hue = c < 0.6 ? uPalette[0] : c < 0.85 ? uPalette[1] : c < 0.95 ? uPalette[2] : uPalette[3];
+#ifdef POCKET_HUES
+  if (cloud.w > 0.0) hue = tint;
+#endif
   hue = mix(vec3(dot(hue, vec3(0.299, 0.587, 0.114))), hue, uSaturation);
-  // Brightness per grain: most dim, a few bright; a slow random twinkle (period 2–6 s).
+  // Brightness in tiers (most dim, a quarter medium, a few bright) and a slow random twinkle
+  // (period 2–6 s), strong on the bright beads only.
+  float tier = fract(seed.z * 7.13 + seed.w * 3.7);
   float period = 2.0 + seed.w * 4.0;
   float twinkle = pow(max(sin(uTime * 6.2831 / period + seed.z * 6.2831), 0.0), 14.0);
-  float bright = 0.35 + 1.1 * pow(fract(seed.z * 7.13 + seed.w * 3.7), 4.0);
+  float bright = 0.62 * grainTier(tier);
   // The tiny points dimmer still: most of the glitter is a faint haze of points.
   bright *= pick < 0.75 ? 0.75 : 1.0;
-  float level = bright + twinkle * mix(1.8, 0.8, pocket) + spark * 2.0;
+  float level = bright + twinkle * mix(1.8, 0.8, pocket) * mix(0.25, 1.0, grainGlints(tier)) + spark * 2.0;
   // Pocket grains: a little brighter where the cloud is dense (its core), the strays dimmer.
   level *= mix(1.0, mix(1.05, 0.6, smoothstep(0.3, 1.2, orbit.y)), pocket);
 #ifdef FILAMENTS
@@ -114,7 +125,7 @@ void main() {
   }
   level *= 1.0 + filament * 2.5;
 #endif
-  vGlint = max(grainGlint(world.xyz, seed, uTime), stirred);
+  vGlint = max(grainGlint(world.xyz, seed, uTime) * grainGlints(tier), stirred);
   // Out of focus: the light spreads over the disc (dimmer per pixel).
   float energy = clamp((focusSize * focusSize) / (size * size), 0.08, 1.0);
   vColor = grainLit(hue * level * energy * uBrightness, world.xyz);

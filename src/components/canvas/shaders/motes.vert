@@ -57,7 +57,8 @@ void main() {
   float stirred;
   mvPosition.xyz = grainCursor(mvPosition.xyz, uFocusDistance, stirred);
   vec3 world = (modelMatrix * vec4(p, 1.0)).xyz;
-  vGlint = max(grainGlint(world, seed, uTime), stirred);
+  // Only the bright beads glint (grainMotion.glsl); any bead the cursor stirs catches the light.
+  vGlint = max(grainGlint(world, seed, uTime) * grainGlints(seed.w), stirred);
 #ifdef CAUSTIC
   // Under the water: the caustic web's light passing over the grain makes it flare.
   float web = abs(sin(world.x * 1.7 + uTime * 0.5) + sin(world.z * 1.3 - uTime * 0.4)
@@ -79,8 +80,13 @@ void main() {
   gl_PointSize = size;
 
   vec3 color = ramp(seed.y * uSpread + uCycle);
+#ifdef GRAIN
+  // Glass beads: brightness tiers (grainMotion.glsl), about the same mean as before.
+  color *= grainTier(seed.w) * 1.01;
+#else
   // A rare few sparkle bright enough to bloom.
   color *= seed.w > 0.95 ? 2.6 : 0.55;
+#endif
   color *= 0.6 + 0.4 * sin(uTime * (0.5 + seed.z) + phase);
 #ifdef CLUMP
   // Sparkles gather inside the slab's bright smoke and thin out in its dark gaps.
