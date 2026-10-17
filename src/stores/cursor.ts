@@ -2,9 +2,10 @@ import { create } from 'zustand'
 
 /**
  * What the custom cursor is over, from the 3D scene (the HTML side is read from the DOM):
- * a card ("open"), a skill node ("node"), The Core's glass ("glass"), or nothing.
+ * a card ("open"), the backdrop behind an opened card ("close"), a skill node ("node"), The
+ * Core's glass ("glass"), or nothing.
  */
-export type SceneCursor = 'open' | 'node' | 'glass' | null
+export type SceneCursor = 'open' | 'close' | 'node' | 'glass' | null
 
 type CursorState = {
   scene: SceneCursor

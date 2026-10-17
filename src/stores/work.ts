@@ -5,7 +5,8 @@ import type { WorkFilter } from '@/content/site'
  * The Work place's shared state, used by the 3D cards, their HTML list and the detail
  * panel, so each lights up or opens the others.
  * - `focused`: the card hovered or keyboard-focused; `since` (ms) starts its title scramble.
- * - `opened`: the card flown in and dissolved, its details showing.
+ * - `opened`: the card flown in and dissolved, its details showing; `openedAt` (ms) when it
+ *   was opened (a click on it closes it, once it has settled).
  * - `swipe`: phones, how far the card swipe has gone, in cards (0 = first card).
  * - `routed`: the URL has been read on the client.
  * - `filter`: the active work filter (jobs outside it dim, in the list and in 3D).
@@ -16,6 +17,7 @@ type WorkState = {
   since: number
   focus: (slug: string | null) => void
   opened: string | null
+  openedAt: number
   open: (slug: string) => void
   close: () => void
   swipe: number
@@ -35,7 +37,8 @@ export const useWork = create<WorkState>()((set, get) => ({
     if (get().focused !== slug) set({ focused: slug, since: performance.now() })
   },
   opened: null,
-  open: (slug) => set({ opened: slug, focused: slug, gallery: 0 }),
+  openedAt: 0,
+  open: (slug) => set({ opened: slug, openedAt: performance.now(), focused: slug, gallery: 0 }),
   close: () => set({ opened: null }),
   swipe: 0,
   setSwipe: (swipe) => set({ swipe }),

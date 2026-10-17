@@ -2636,6 +2636,43 @@ FPS (production, Retina; scripts/fps-open.mjs):
 Sheet: `docs/screens/loop2-open-card.jpg`: at_08 | loop 1 | new, for three cards and the
 capstone, on desktop and phone.
 
+## Stage 5 — click to close, the cursor says "CLOSE" (tag `loop2-stage-5`)
+Files: new `work/OpenCardButton.tsx` (the opened card as a button) and `work/OpenAnnouncer.tsx`
+(a live region), `work/WorkDetail.tsx` and `depth/CapstoneDetail.tsx` (an outer dialog round
+the animated details, so the card's button isn't clipped by their entry animation; the
+details marked with the default cursor), `canvas/work/openView.ts` (the open card's screen
+area; `CLOSE` guards), `canvas/work/OpenBackdrop.tsx` (a click on the smoke closes; "CLOSE"
+over it; it no longer catches the pointer while hidden), `canvas/work/WorkCards.tsx` and
+`canvas/depth/CapstonePanel.tsx` (report the area; reduced motion snaps open and shut),
+`stores/work.ts` (`openedAt`), `stores/cursor.ts` and `ui/Cursor.tsx` + `globals.css` ("close"
+mode: the same ring, label, spring and fade as "open"; the nearest of a link and a marked
+area wins); tools: new `scripts/close-check.mjs`.
+
+1. **Click to close.** A click or tap on the opened card (a real button lying over it,
+   following it on screen) or on the smoke round it closes it, with the same transition as
+   "Close". The scene stays at the same scroll position.
+2. **Cursor.** Over the card and the smoke it reads "CLOSE": the same ring, label, spring and
+   fade as "OPEN". Over the details it is its own (a link over links).
+3. **What doesn't close.** Clicks on the details (text, links, previous / next, the capstone's
+   gallery controls), the top bar or any control; a drag (> 6 px between press and release:
+   a text selection, a swipe); and clicks during the fly-in (0.6 s).
+4. **Accessibility.** The open card is a real button, "Close <project>", inside the dialog:
+   Tab reaches it, Enter or Space close, Esc still closes, focus goes back to the card's own
+   button, and a polite live region says "<project> opened / closed". Focused, it outlines the
+   card.
+5. **Phones.** A tap on the card (above the details) closes it, the details scroll without
+   closing, a tap on the smoke closes it, and there is no cursor label on touch.
+6. **Reduced motion.** The same behaviour; the card and the capstone now snap open and shut (no
+   fly-in, no dissolve).
+
+Checks (`scripts/close-check.mjs`, all six cards and the capstone): desktop 108/108,
+phone 22/22, desktop with reduced motion 108/108. Opened from its own page (no tap first), the
+dialog shows the site's focus ring once focus moves in, as loop 1's did: unchanged.
+
+Sheet: `docs/screens/loop2-close.jpg`: on desktop, the opened card with the "CLOSE" cursor, the
+cursor over the details in its own mode, and the closed state after the click (a card and the
+capstone); on the phone, open, the tap, and closed.
+
 ## Decisions I made
 - **The recording shows no cursor over the particles.** Across Work (26–51 s) the pointer
   hovers the cards (a hand over the card's edge), and in the hero's strip it crosses empty
@@ -2713,3 +2750,20 @@ capstone, on desktop and phone.
 - **HD 630 numbers move with the machine's state.** This afternoon the editor and an open
   browser tab shared the GPU, and the same build ran 49–61 FPS in one run and 29–44 in the
   next. Only alternating A/B runs at the same moment are compared.
+- **The opened card is an HTML button over the 3D card.** It is what the brief asks for
+  accessibility ("a real button"), and it takes the clicks and taps on the card with the same
+  guards. It follows the card's projected area each frame, and lives inside the dialog (which
+  has no entry animation of its own now), so the focus trap includes it and the details'
+  animation can't clip it.
+- **Clicks on the smoke are the 3D scene's, filtered.** The scene listens on the whole page, so
+  a click anywhere reaches the smoke. Clicks that land on the dialog, the top bar or any
+  control are left alone, which covers the details, links, previous / next and the gallery
+  controls.
+- **The cursor: the nearest of a link and a marked area wins.** The details are marked with the
+  default cursor, so they don't read "CLOSE" from the smoke behind them, but a link inside them
+  still reads as a link.
+- **The smoke no longer catches the pointer while hidden.** Three's raycaster ignores
+  visibility, and the smoke stays where it last stood, in front of the camera. Without this,
+  hovering and clicking the cards would have broken after the first close.
+- **Reduced motion snaps the card open and shut.** Before, the fly-in and the dissolve played
+  even with reduced motion. The brief asks for none.

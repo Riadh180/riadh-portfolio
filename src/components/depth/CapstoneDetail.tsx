@@ -5,6 +5,7 @@ import { loadAssets } from '@/components/canvas/assets'
 import { capstone } from '@/content/site'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { useWork } from '@/stores/work'
+import { OpenCardButton } from '@/components/work/OpenCardButton'
 
 /** The details appear once the panel has flown in and begun to dissolve (ms). */
 const APPEAR_DELAY = 1100
@@ -83,81 +84,88 @@ export function CapstoneDetail() {
       aria-modal="true"
       aria-labelledby="capstone-title"
       tabIndex={-1}
-      // Phones: at most half the screen (it scrolls), so the opened panel above stays clear.
-      className="detail-in flex max-h-[50svh] w-full max-w-[46ch] flex-col gap-4 overflow-y-auto outline-none lg:max-h-none lg:overflow-visible"
+      className="w-full outline-none"
     >
-      <p className="ui text-xs text-text/70">
-        <span className="text-text">{capstone.role}</span> · {capstone.dates}
-      </p>
-      <h2 id="capstone-title" className="ui-lg text-base text-text sm:text-lg">
-        {capstone.company} — Capstone
-      </h2>
-      <p className="copy max-w-[44ch] text-sm leading-relaxed text-text/90">{capstone.summary}</p>
-      <ul
-        className="flex flex-wrap gap-x-3 gap-y-1 ui text-xs text-text/70"
-        aria-label="Data stack"
+      <OpenCardButton label={`Close ${capstone.company} capstone`} />
+      <div
+        // Phones: at most half the screen (it scrolls), so the opened panel above stays clear.
+        // The cursor stays itself over the details (not "CLOSE").
+        data-cursor="default"
+        className="detail-in flex max-h-[50svh] w-full max-w-[46ch] flex-col gap-4 overflow-y-auto outline-none lg:max-h-none lg:overflow-visible"
       >
-        {capstone.stack.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-      {images.length > 1 && (
-        <nav aria-label="Capstone images" className="flex items-center gap-3 ui text-xs">
-          <button
-            type="button"
-            aria-label="Previous image"
-            onClick={() => setGallery((gallery - 1 + images.length) % images.length)}
-            className="text-text/70 transition-colors duration-(--motion-duration-ui) hover:text-text"
-          >
-            ←
-          </button>
-          <span className="text-text/70" aria-live="polite">
-            <span className="text-text">{String(gallery + 1).padStart(2, '0')}</span> /{' '}
-            {String(images.length).padStart(2, '0')}
-            <span className="sr-only">: {current ? describe(current, gallery) : ''}</span>
-          </span>
-          <button
-            type="button"
-            aria-label="Next image"
-            onClick={() => setGallery((gallery + 1) % images.length)}
-            className="text-text/70 transition-colors duration-(--motion-duration-ui) hover:text-text"
-          >
-            →
-          </button>
-          <span className="hidden gap-2 lg:flex">
-            {images.map((src, i) => (
-              <button
-                key={src}
-                type="button"
-                aria-label={describe(src, i)}
-                aria-pressed={i === gallery}
-                onClick={() => setGallery(i)}
-                className="h-7 w-11 overflow-hidden rounded-[0.3rem] border border-line opacity-60 transition-opacity duration-(--motion-duration-ui) hover:opacity-100 aria-pressed:border-text/60 aria-pressed:opacity-100"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
-              </button>
-            ))}
-          </span>
-        </nav>
-      )}
-      {capstone.repo && (
-        <a
-          href={capstone.repo}
-          target="_blank"
-          rel="noopener"
-          className="self-start ui text-xs text-violet transition-colors duration-(--motion-duration-ui) hover:text-text"
+        <p className="ui text-xs text-text/70">
+          <span className="text-text">{capstone.role}</span> · {capstone.dates}
+        </p>
+        <h2 id="capstone-title" className="ui-lg text-base text-text sm:text-lg">
+          {capstone.company} — Capstone
+        </h2>
+        <p className="copy max-w-[44ch] text-sm leading-relaxed text-text/90">{capstone.summary}</p>
+        <ul
+          className="flex flex-wrap gap-x-3 gap-y-1 ui text-xs text-text/70"
+          aria-label="Data stack"
         >
-          Repository on GitHub ↗
-        </a>
-      )}
-      <button
-        type="button"
-        onClick={close}
-        className="self-start ui text-xs text-violet hover:text-text"
-      >
-        ← Close <span className="text-muted">(Esc)</span>
-      </button>
+          {capstone.stack.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        {images.length > 1 && (
+          <nav aria-label="Capstone images" className="flex items-center gap-3 ui text-xs">
+            <button
+              type="button"
+              aria-label="Previous image"
+              onClick={() => setGallery((gallery - 1 + images.length) % images.length)}
+              className="text-text/70 transition-colors duration-(--motion-duration-ui) hover:text-text"
+            >
+              ←
+            </button>
+            <span className="text-text/70" aria-live="polite">
+              <span className="text-text">{String(gallery + 1).padStart(2, '0')}</span> /{' '}
+              {String(images.length).padStart(2, '0')}
+              <span className="sr-only">: {current ? describe(current, gallery) : ''}</span>
+            </span>
+            <button
+              type="button"
+              aria-label="Next image"
+              onClick={() => setGallery((gallery + 1) % images.length)}
+              className="text-text/70 transition-colors duration-(--motion-duration-ui) hover:text-text"
+            >
+              →
+            </button>
+            <span className="hidden gap-2 lg:flex">
+              {images.map((src, i) => (
+                <button
+                  key={src}
+                  type="button"
+                  aria-label={describe(src, i)}
+                  aria-pressed={i === gallery}
+                  onClick={() => setGallery(i)}
+                  className="h-7 w-11 overflow-hidden rounded-[0.3rem] border border-line opacity-60 transition-opacity duration-(--motion-duration-ui) hover:opacity-100 aria-pressed:border-text/60 aria-pressed:opacity-100"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+                </button>
+              ))}
+            </span>
+          </nav>
+        )}
+        {capstone.repo && (
+          <a
+            href={capstone.repo}
+            target="_blank"
+            rel="noopener"
+            className="self-start ui text-xs text-violet transition-colors duration-(--motion-duration-ui) hover:text-text"
+          >
+            Repository on GitHub ↗
+          </a>
+        )}
+        <button
+          type="button"
+          onClick={close}
+          className="self-start ui text-xs text-violet hover:text-text"
+        >
+          ← Close <span className="text-muted">(Esc)</span>
+        </button>
+      </div>
     </div>
   )
 }

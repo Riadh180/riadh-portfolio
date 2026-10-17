@@ -26,6 +26,7 @@ import { type Job, jobs } from '@/content/site'
 import { SCRAMBLE_DURATION } from '@/lib/scramble'
 import { useCursor } from '@/stores/cursor'
 import { useJourney } from '@/stores/journey'
+import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useTier } from '@/stores/tier'
 import { useWork } from '@/stores/work'
 import { sceneColors } from '@/styles/scene'
@@ -103,8 +104,11 @@ function exportCorners(
   window.__cardCorners![slug] = out
 }
 
-/** The card's area on the screen (NDC x0, y0, x1, y1), which the air keeps clear. */
-function cardArea(card: Group, camera: PerspectiveCamera, out: Vector4) {
+/**
+ * The card's area on the screen (NDC x0, y0, x1, y1): the air keeps it clear, and when the card
+ * is open the button that closes it lies over it.
+ */
+export function cardArea(card: Group, camera: PerspectiveCamera, out: Vector4) {
   out.set(Infinity, Infinity, -Infinity, -Infinity)
   projectCorners(card, camera, (x, y) =>
     out.set(Math.min(out.x, x), Math.min(out.y, y), Math.max(out.z, x), Math.max(out.w, y)),
@@ -481,6 +485,7 @@ function Card({
   )
   // Leaving: the air no longer keeps this card's area clear.
   useEffect(() => () => keepClear(job.slug, null), [job.slug])
+  const calm = useReducedMotion()
   // Per-frame state and scratch objects (refs may be mutated in the frame loop).
   const state = useRef({
     focus: 0,
@@ -551,6 +556,11 @@ function Card({
       s.dissolve = Math.max(0, s.dissolve - (dt / TIMING.dissolve) * 1.6)
       if (s.dissolve < 0.15) s.fly = Math.max(0, s.fly - dt / TIMING.fly)
     }
+    // Reduced motion: no fly-in or dissolve; the card simply is open, or home.
+    if (calm) {
+      s.fly = isOpen ? 1 : 0
+      s.dissolve = isOpen ? 2 : 0
+    }
     const flown = easeInOut(s.fly)
     const scale = layout === 'column' ? COLUMN_SCALE : 1
 
@@ -588,8 +598,6 @@ function Card({
       g.position.lerp(s.open, flown)
       s.openDistance = distance
     }
-    // The scene behind it falls back into smoke as it flies in (OpenBackdrop).
-    reportOpen(job.slug, flown, s.openDistance, g)
 
     s.rest.setFromAxisAngle(s.up, target.turn)
     g.lookAt(camera.position)
@@ -683,9 +691,12 @@ function Card({
     }
 
     // The card in focus (hovered, open or at the camera's stop): the air never pushes grains
-    // onto its face.
+    // onto its face. Flown in, its area also places the HTML button that closes it, and the
+    // scene behind it falls back into smoke (OpenBackdrop).
     const inFocus = (isFocused || isOpen || nearStop > 0.5) && shown(g)
-    keepClear(job.slug, inFocus ? cardArea(g, camera as PerspectiveCamera, s.area) : null)
+    const area = inFocus || flown > 0 ? cardArea(g, camera as PerspectiveCamera, s.area) : null
+    keepClear(job.slug, inFocus ? area : null)
+    reportOpen(job.slug, flown, s.openDistance, g, s.area)
 
     if (window.__cardCorners) {
       // The open card too: its glass block has broken away, its screen is what shows.

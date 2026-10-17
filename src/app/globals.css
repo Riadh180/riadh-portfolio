@@ -233,14 +233,16 @@
   opacity: 1;
   color: var(--color-violet);
 }
-.cursor[data-mode='open'] .cursor-ring {
+.cursor[data-mode='open'] .cursor-ring,
+.cursor[data-mode='close'] .cursor-ring {
   width: 72px;
   height: 72px;
   margin: -36px 0 0 -36px;
   border-color: color-mix(in oklab, var(--color-text) 70%, transparent);
   background-color: color-mix(in oklab, var(--color-bg) 35%, transparent);
 }
-.cursor[data-mode='open'] .cursor-label {
+.cursor[data-mode='open'] .cursor-label,
+.cursor[data-mode='close'] .cursor-label {
   opacity: 1;
 }
 .cursor[data-mode='node'] .cursor-ring {

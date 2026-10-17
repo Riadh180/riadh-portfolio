@@ -7,6 +7,7 @@ import { useWork } from '@/stores/work'
 import { useWorkUrl } from './useWorkUrl'
 import { WorkDetail } from './WorkDetail'
 import { WorkList } from './WorkList'
+import { OpenAnnouncer } from './OpenAnnouncer'
 
 const section = sections.find((s) => s.id === 'work')
 
@@ -66,6 +67,7 @@ export function WorkSection({ initial = null }: { initial?: string | null }) {
           <h2 id="work-heading" className="sr-only">
             <span className="text-text">{section?.index}</span> / {section?.label}
           </h2>
+          <OpenAnnouncer />
           {shown ? (
             <div className="bg-linear-to-t from-bg via-bg/90 to-transparent pt-16 lg:bg-none lg:pt-0">
               <WorkDetail slug={shown} />

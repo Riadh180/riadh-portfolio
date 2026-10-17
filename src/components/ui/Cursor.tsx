@@ -7,20 +7,27 @@ import { type SceneCursor, useCursor } from '@/stores/cursor'
 
 type Mode = 'default' | 'link' | Exclude<SceneCursor, null>
 
-/** The HTML element under the pointer decides first; then the 3D scene. */
+/**
+ * The HTML element under the pointer decides first (the nearest of a marked area and a link
+ * wins: a link inside the opened card's details is a link, the card's own button is
+ * "close"); then the 3D scene.
+ */
 function htmlMode(target: EventTarget | null): Mode | null {
   if (!(target instanceof Element)) return null
   const marked = target.closest<HTMLElement>('[data-cursor]')
-  if (marked?.dataset.cursor) return marked.dataset.cursor as Mode
-  return target.closest('a, button, [role="button"], label, summary') ? 'link' : null
+  const link = target.closest('a, button, [role="button"], label, summary')
+  if (marked?.dataset.cursor && (!link || link.contains(marked))) {
+    return marked.dataset.cursor as Mode
+  }
+  return link ? 'link' : null
 }
 
 /**
  * The custom cursor: a small ring following the pointer with a soft lag, around the
- * native cursor (which stays, for accessibility). It grows and reads "OPEN" over a card,
- * becomes a wider ring on a skill node, shrinks to a dot with an arrow on links, and
- * wobbles over The Core's glass. Only for a fine pointer that can hover; no lag with
- * reduced motion.
+ * native cursor (which stays, for accessibility). It grows and reads "OPEN" over a card and
+ * "CLOSE" over an opened one or the smoke behind it (one pair), becomes a wider ring on a
+ * skill node, shrinks to a dot with an arrow on links, and wobbles over The Core's glass.
+ * Only for a fine pointer that can hover; no lag with reduced motion.
  */
 export function Cursor() {
   const root = useRef<HTMLDivElement>(null)
@@ -97,7 +104,7 @@ export function Cursor() {
   return (
     <div ref={root} aria-hidden className="cursor" data-mode={mode} data-visible="false">
       <span className="cursor-ring" />
-      <span className="cursor-label">Open</span>
+      <span className="cursor-label">{mode === 'close' ? 'Close' : 'Open'}</span>
       <span className="cursor-arrow">→</span>
     </div>
   )

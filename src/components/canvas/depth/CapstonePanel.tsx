@@ -1,26 +1,28 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import {
+  AdditiveBlending,
+  BufferGeometry,
+  Euler,
+  Float32BufferAttribute,
   type Group,
   type InstancedMesh,
   Matrix4,
   type Mesh,
-  type MeshPhysicalMaterial as PhysicalMaterial,
   MeshPhysicalMaterial,
+  type MeshPhysicalMaterial as PhysicalMaterial,
   OctahedronGeometry,
   type PerspectiveCamera,
   type Points,
   Quaternion,
+  type ShaderMaterial,
   Vector2,
   Vector3,
-  BufferGeometry,
-  Float32BufferAttribute,
-  AdditiveBlending,
-  Euler,
-  type ShaderMaterial,
+  Vector4,
 } from 'three'
 import { capstone } from '@/content/site'
 import { useCursor } from '@/stores/cursor'
+import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useTier } from '@/stores/tier'
 import { useWork } from '@/stores/work'
 import { depthPalette } from './depthPalette'
@@ -33,6 +35,7 @@ import { CardFace } from '../work/cardFace'
 import {
   BLOCK,
   CARD,
+  cardArea,
   createBlock,
   createBlockGlass,
   createDustGeometry,
@@ -154,6 +157,7 @@ export function CapstonePanel({ clock }: Props) {
     scale: new Vector3(),
     axis: new Vector3(0.2, 1, 0.4).normalize(),
   })
+  const calm = useReducedMotion()
   const state = useRef({
     hover: 0,
     fly: 0,
@@ -176,8 +180,9 @@ export function CapstonePanel({ clock }: Props) {
     screen: new Quaternion(),
     tilt: new Quaternion(),
     euler: new Euler(),
-    /** Flown in: its distance from the camera (the backdrop stands behind it). */
+    /** Flown in: its distance from the camera (the backdrop stands behind it), its screen area. */
     openDistance: 0,
+    area: new Vector4(),
   })
   const uniforms = useMemo(() => ({ uTime: { value: 0 } }), [])
 
@@ -243,6 +248,11 @@ export function CapstonePanel({ clock }: Props) {
         s.dissolve = Math.max(0, s.dissolve - (dt / TIMING.dissolve) * 1.6)
         if (s.dissolve < 0.15) s.fly = Math.max(0, s.fly - dt / TIMING.fly)
       }
+      // Reduced motion: no fly-in or dissolve; the panel simply is open, or home.
+      if (calm) {
+        s.fly = isOpen ? 1 : 0
+        s.dissolve = isOpen ? 2 : 0
+      }
       const flown = easeInOut(s.fly)
       const scale = column ? REST.phoneScale : REST.scale
 
@@ -282,8 +292,10 @@ export function CapstonePanel({ clock }: Props) {
         g.quaternion.multiply(s.tilt.setFromEuler(s.euler))
         s.openDistance = distance
       }
-      // The scene behind it falls back into smoke as it flies in (OpenBackdrop).
-      reportOpen(capstone.slug, flown, s.openDistance, g)
+      // The scene behind it falls back into smoke as it flies in (OpenBackdrop); its area places
+      // the HTML button that closes it.
+      if (flown > 0) cardArea(g, camera as PerspectiveCamera, s.area)
+      reportOpen(capstone.slug, flown, s.openDistance, g, s.area)
 
       // The gallery: a band of frost crosses the open pane; the image changes behind it.
       if (gallery !== s.shown && s.wipe < -0.5 && s.images.length > 1) s.wipe = -0.3
