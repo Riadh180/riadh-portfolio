@@ -12,7 +12,9 @@ import oilFragment from '../shaders/oil.glsl'
  * and hollows fall to near-black. The thin parts (the processes, and a little every edge seen
  * at a grazing angle) read as tinted glass: a dark see-through body, the film glowing along
  * their rims. A soft band of light runs down the column every 7 s. Opaque, no transmission:
- * one material, one draw call.
+ * one material, one draw call. The sculpted column (SCULPTED) is carved with fine wandering
+ * ridges that break its highlights into a speckled sheen and mottle the film; the procedural
+ * stand-in has broad facets and grooves instead.
  *
  * The detail is added to three's physical shader (oil.glsl).
  */
@@ -62,6 +64,10 @@ export function createOilMaterial() {
         uniform float uOilFilm;
         uniform float uOilTime;
         uniform vec2 uOilEnds;
+        #ifndef USE_NORMALMAP_OBJECTSPACE
+          // The carving's slope turns into view space as a normal does.
+          uniform mat3 normalMatrix;
+        #endif
         ${noise}
         ${oilFragment}`,
       )
@@ -77,7 +83,9 @@ export function createOilMaterial() {
       .replace(
         '#include <normal_fragment_maps>',
         `#include <normal_fragment_maps>
-        #ifndef SCULPTED
+        #ifdef SCULPTED
+          normal = oilBump(normal, normalMatrix * oilCrustSlope, 0.006);
+        #else
           #ifndef OIL_LITE
             normal = oilFacets(normal, vSpinePosition);
           #endif
@@ -87,6 +95,12 @@ export function createOilMaterial() {
       .replace(
         '#include <roughnessmap_fragment>',
         `#include <roughnessmap_fragment>
+        #ifdef SCULPTED
+          // The carving (here, before the normal: three sets the roughness first); rougher in
+          // the troughs, so the sheen breaks up along it.
+          oilCrust(vSpinePosition);
+          roughnessFactor = clamp(roughnessFactor * (1.6 - oilCrustHeight), 0.04, 1.0);
+        #endif
         #ifndef OIL_LITE
           roughnessFactor = oilRoughness(roughnessFactor);
         #endif
@@ -106,13 +120,24 @@ export function createOilMaterial() {
           // white.
           float bright = dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722));
           vec3 film = oilFilm((1.0 - facing) * 1.3
-            + sin(vSpinePosition.y * 1.7 + sin(vSpinePosition.x * 2.3 + vSpinePosition.z * 1.9)) * 0.18,
+            + sin(vSpinePosition.y * 1.7 + sin(vSpinePosition.x * 2.3 + vSpinePosition.z * 1.9)) * 0.18
+            + oilCrustHeight * 0.9,
             uOilTeal, uOilPink, uOilGold);
+          #ifdef SCULPTED
+            // The sculpt's highlights are small: the film colours all but the hottest.
+            vec2 white = vec2(1.4, 3.0);
+          #else
+            vec2 white = vec2(0.9, 2.2);
+          #endif
           float filmed = uOilFilm * (0.65 + 0.35 * smoothstep(0.2, 0.85, 1.0 - facing))
-            * (1.0 - smoothstep(0.9, 2.2, bright));
+            * (1.0 - smoothstep(white.x, white.y, bright));
           outgoingLight = mix(outgoingLight, film * bright * 1.9, filmed);
           // The necks and hollows fall to near-black; the plates keep their light.
           outgoingLight *= mix(1.0, 0.08, smoothstep(0.2, 0.85, vCrevice));
+          #ifdef SCULPTED
+            // The carving's troughs darker: a speckled surface, not one smooth chrome.
+            outgoingLight *= 0.55 + 0.45 * oilCrustHeight;
+          #endif
           // Away from the silhouette only: at grazing angles a mirror highlight (and the
           // glitter) aliases into single bright pixels along the outline.
           float inside = smoothstep(0.08, 0.3, facing);
@@ -157,9 +182,4 @@ export function createOilMaterial() {
       )
   }
   return material
-}
-
-export function disposeOilMaterial(material: MeshPhysicalMaterial) {
-  material.normalMap?.dispose()
-  material.dispose()
 }

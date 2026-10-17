@@ -1,92 +1,71 @@
-import {
-  type BufferGeometry,
-  Float32BufferAttribute,
-  Mesh,
-  type MeshStandardMaterial,
-  type Texture,
-  type WebGLRenderer,
-} from 'three'
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+import { BufferAttribute, BufferGeometry, Mesh } from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { sceneConfig } from '@/styles/scene'
+import { afterHero } from '../afterHero'
 import { loadAssets } from '../assets'
 
 /**
- * Where the sculpted spine goes (docs/SPINE_MODEL_SPEC.md). Drop the file in and reload:
- * nothing else changes. Decoders are self-hosted under /decoders.
+ * The sculpted column, built by scripts/build-spine.mjs from a short sculpted piece: one for
+ * the full tier and a lighter one for the lite tier and phones, both already in column space
+ * (Work's y, the column's own path), meshopt-compressed.
  */
-export const SPINE_MODEL_URL = '/models/spine.glb'
+export const SPINE_MODEL_URL = { full: '/models/spine.glb', lite: '/models/spine-lite.glb' }
 
-export type SpineModel = { geometry: BufferGeometry; normalMap: Texture | null }
+export type SpineLod = keyof typeof SPINE_MODEL_URL
+
+/** The attributes the oil material reads, by their name in the file (custom ones lower-cased). */
+const ATTRIBUTES = { position: 'position', normal: 'normal', _crevice: 'crevice', _thin: 'thin' }
 
 /**
- * Loads the sculpted spine if the file exists (/assets.json lists it), otherwise resolves
- * null (the procedural stand-in stays). Every mesh in the file is merged into one geometry (one draw call),
- * centred on the axis and scaled to the column's height. Only the baked normal map is
- * kept from the file's material: the spine always wears its own oil material.
+ * Loads the sculpted column once the visitor has left the hero, if the file exists
+ * (/assets.json lists it); otherwise resolves null (the procedural stand-in stays). Every
+ * mesh in the file is merged into one geometry (one draw call); the file's materials are
+ * ignored: the spine always wears its own oil material.
  */
-export async function loadSpineModel(gl: WebGLRenderer): Promise<SpineModel | null> {
+export async function loadSpineModel(lod: SpineLod): Promise<BufferGeometry | null> {
   if (!(await loadAssets()).spine) return null
-
-  const draco = new DRACOLoader().setDecoderPath('/decoders/draco/')
-  const ktx2 = new KTX2Loader().setTranscoderPath('/decoders/basis/').detectSupport(gl)
-  const loader = new GLTFLoader()
-    .setDRACOLoader(draco)
-    .setKTX2Loader(ktx2)
-    .setMeshoptDecoder(MeshoptDecoder)
-
+  await afterHero()
   try {
-    const gltf = await loader.loadAsync(SPINE_MODEL_URL)
+    const gltf = await new GLTFLoader()
+      .setMeshoptDecoder(MeshoptDecoder)
+      .loadAsync(SPINE_MODEL_URL[lod])
     gltf.scene.updateMatrixWorld(true)
     const parts: BufferGeometry[] = []
-    let normalMap: Texture | null = null
     gltf.scene.traverse((object) => {
-      if (!(object instanceof Mesh)) return
-      const geometry = (object.geometry as BufferGeometry).clone()
-      geometry.applyMatrix4(object.matrixWorld)
-      // Merging needs the same attributes everywhere: keep position, normal, uv.
-      for (const name of Object.keys(geometry.attributes)) {
-        if (!['position', 'normal', 'uv'].includes(name)) geometry.deleteAttribute(name)
-      }
-      if (!geometry.getAttribute('normal')) geometry.computeVertexNormals()
-      parts.push(geometry)
-      normalMap ??= (object.material as MeshStandardMaterial).normalMap ?? null
+      if (object instanceof Mesh) parts.push(inColumnSpace(object))
     })
     if (parts.length === 0) return null
-
-    const geometry = mergeGeometries(parts)
-    parts.forEach((part) => part.dispose())
-    fitToColumn(geometry)
-    return { geometry, normalMap }
-  } finally {
-    draco.dispose()
-    ktx2.dispose()
+    const geometry = parts.length === 1 ? parts[0]! : mergeGeometries(parts)
+    if (parts.length > 1) parts.forEach((part) => part.dispose())
+    geometry.computeBoundingSphere()
+    return geometry
+  } catch {
+    return null
   }
 }
 
-/** Centre on the vertical axis, scale to the column's height, add the film's uv1. */
-function fitToColumn(geometry: BufferGeometry) {
-  geometry.computeBoundingBox()
-  const box = geometry.boundingBox
-  if (!box) return
-  const { height } = sceneConfig.spine
-  const scale = height / Math.max(box.max.y - box.min.y, 1e-3)
-  geometry.translate(
-    -(box.min.x + box.max.x) / 2,
-    -(box.min.y + box.max.y) / 2,
-    -(box.min.z + box.max.z) / 2,
-  )
-  geometry.scale(scale, scale, scale)
-
-  // uv1 wraps round the column (angle, height), as on the stand-in.
-  const positions = geometry.getAttribute('position')
-  const uv1 = new Float32Array(positions.count * 2)
-  for (let i = 0; i < positions.count; i++) {
-    const angle = Math.atan2(positions.getZ(i), positions.getX(i)) / (Math.PI * 2) + 0.5
-    uv1.set([angle, positions.getY(i) / height + 0.5], i * 2)
+/**
+ * A mesh's geometry as plain floats in column space: the file's attributes are quantized
+ * (their scale and offset sit in the node's transform), and merging needs the same
+ * attributes everywhere, so only the material's are kept.
+ */
+function inColumnSpace(mesh: Mesh) {
+  const source = mesh.geometry as BufferGeometry
+  const geometry = new BufferGeometry()
+  for (const [name, target] of Object.entries(ATTRIBUTES)) {
+    const attribute = source.getAttribute(name)
+    if (!attribute) continue
+    const { count, itemSize } = attribute
+    const array = new Float32Array(count * itemSize)
+    for (let i = 0; i < count; i++) {
+      for (let k = 0; k < itemSize; k++) array[i * itemSize + k] = attribute.getComponent(i, k)
+    }
+    geometry.setAttribute(target, new BufferAttribute(array, itemSize))
   }
-  geometry.setAttribute('uv1', new Float32BufferAttribute(uv1, 2))
+  geometry.setIndex(source.getIndex())
+  geometry.applyMatrix4(mesh.matrixWorld)
+  if (!geometry.getAttribute('normal')) geometry.computeVertexNormals()
+  source.dispose()
+  return geometry
 }

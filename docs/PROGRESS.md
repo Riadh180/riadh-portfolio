@@ -3019,8 +3019,137 @@ and bevel, the gallery composition, the opened-card layout and backdrop, click t
 System, Depth's layout, Contact, UI copy and content, SEO, legal pages, the CV, the tier system.
 The phone number only on /impressum.
 
+## Stage 1 — the sculpted column (tag `look-stage-1`)
+Files: new `scripts/build-spine.mjs` and `canvas/afterHero.ts`; `canvas/work/spineModel.ts`
+(rewritten), `canvas/work/Spine.tsx`, `canvas/work/oilMaterial.ts`, `canvas/shaders/oil.glsl`,
+`app/assets.json/route.ts`; `public/models/spine.glb`, `spine-lite.glb` (built),
+`public/models/README.md`, a note at the top of `docs/SPINE_MODEL_SPEC.md`.
+
+**The raw piece (inspection).** `spine-raw.glb`: one mesh, 8,320 triangles, 6,653 vertices
+(4,160 once welded: the export splits them along its UV seams), positions and UVs only, one
+1024² colour texture (not used: the site's own material replaces it). Watertight: 0 open edges,
+0 non-manifold edges, one island, genus 1 (the canal runs through it). 0.27 × 1.0 × 0.39, Y up,
+already centred. One piece of eight vertebrae (a short stretch, not a whole column): route A,
+copies along the column's path.
+
+**The build** (`node scripts/build-spine.mjs`, repeatable):
+1. Weld; report holes and non-manifold edges; drop islands under 2% (none here); centre.
+2. The oil material's attributes, computed on the piece. `crevice` comes from a cavity measure:
+   how far the ring of neighbours sits out along the normal, smoothed. It catches the hollows
+   and the groove down the middle. `thin` is the distance from the axis between the body's
+   radius and the processes' reach, so the horns read glassy.
+3. One step of Loop subdivision (8,320 → 33,280 triangles per piece), so the silhouettes are
+   round at the close camera. The lite file is then simplified (meshoptimizer, vertices moved
+   to keep the shape).
+4. The column is four copies, from y 10.3 down past −12.5. Each copy is 0.8–1.2 of the base
+   height (6.5), its height easing from one copy to the next, and some are mirrored. The turn
+   round the axis, the width (0.88–1.12) and a slight squash (±8%) flow from one copy's value
+   to the next, so the two copies at a joint agree. Each copy overlaps the next by exactly one
+   vertebra: the joints fuse with no seam. Then everything bends along the procedural column's
+   own path (`deform()`: swell, twist, S-curve). The ends dissolve into grains as before: the
+   material is unchanged there.
+5. Normals with a 70° crease, per corner: smooth across the sculpt, crisp only where it truly
+   folds. (A first try grouped faces greedily and turned the whole surface into facets.)
+6. Quantized and meshopt-compressed.
+
+**Budgets.**
+| | triangles | vertices | file |
+|---|---|---|---|
+| full (`spine.glb`) | 133,120 | 69,039 | 724 KB |
+| lite + phones (`spine-lite.glb`) | 58,000 | 32,618 | 358 KB |
+
+Both are within the brief (≤ 150k / ≤ 60k, ≤ 3 MB). There are no textures, so there is no
+KTX2.
+
+**Loading.** The files load only once the visitor has left the hero: `afterHero()` waits for
+progress 0.3, or resolves at once on a page that starts further down, such as /work/<slug>.
+They go through the same loader as before (GLTFLoader + meshopt; Draco and KTX2 are dropped,
+the build never uses them). The procedural column is still built in its worker at start-up. It
+shows until the model arrives and stays if the model cannot load. The full tier loads
+`spine.glb`; the lite tier and phones load `spine-lite.glb`. A drop to lite swaps in the lite
+file. Phones keep the loop 1 column width (×0.85).
+
+**Material: the carving.** The model takes the oil material's `SCULPTED` path:
+- **Carved micro-ridges** (the brief's detail normal map, made procedurally: no UVs, no
+  texture). There are two scales of ridged simplex noise in object space; lite keeps the
+  larger only. The bump comes from the noise's analytic gradient. An earlier version took the
+  slope across the screen (`dFdx`), and that showed 2×2-pixel blocks.
+- **The film mottled by the carving**, so colour changes along the ridges.
+- **Rougher, darker troughs.**
+- **The film colours all but the hottest highlights** (white from luminance 1.4–3.0 instead of
+  0.9–2.2).
+
+Everything else is the loop 2c / loop 1 chrome language, unchanged: the near-black body, the
+teal → pink → gold film, glassy thin parts (full: the tinted see-through body; lite: the rim
+tint), the 7 s light band and the sparse glitter. The procedural stand-in keeps its own
+facets and grooves.
+
+**Tuning passes** (sheet crops at Work 2.35 and 2.95):
+1. Ridges at ×7 / ×19, 0.02 deep: glitter like sandpaper, white sparkles everywhere.
+2. ×5 / ×12, 0.006 deep: carved, but grey-white chrome; the vertebrae are half the
+   reference's size on screen.
+3. The piece at 6.5 tall (was 5.2) and more film. A faint sheen on the ridges was tried in
+   this pass. It washed the near-black body lilac-grey, so it was removed. Then the bump was
+   moved to the analytic gradient (a fix for the blocks, not a look change).
+
+**Sheet:** `docs/screens/look-column.jpg`. The rows: reference column crops (at_04–at_07),
+then current (v3) full, new full, new lite, current phone and new phone, each at the same 4
+orbit angles (Work 2.05 / 2.35 / 2.65 / 2.95), framed on the column.
+- **Closer:** the column now reads as a spine. Stacked vertebrae with horn-like processes and
+  dark gaps between them, like at_04's top and at_06. v3's column read as smooth lobes with a
+  few blades.
+- **Closer:** scale. The vertebrae are about 0.8 units tall, close to the reference's on-screen
+  size next to a card (v3's lobes were one per card height).
+- **Closer:** surface. The carving breaks the highlights into small sharp glints over a
+  near-black body, instead of one smooth chrome reflection.
+- **Still different:** colour. The reference's surface is a saturated oil-slick mottle (magenta,
+  violet and teal patches on black). Ours stays a darker chrome whose colour lives on the ridges
+  and highlight edges. Open point; it needs art (a baked iridescence texture on the piece) or a
+  further round.
+- **Still different:** the reference's vertebral bodies are wide drums with ridged rims. Ours
+  follow the supplied sculpt (narrower bodies, longer curved horns). That needs art (the model).
+
+**FPS** (production, Retina, A/B against v3 with rests):
+| 2 s windows, min of two runs | Work 2.35 | Work 2.95 |
+|---|---|---|
+| full · new | 59.9 | 59.9 |
+| full · v3 | 59.9 | 59.9 |
+| lite (HD 630) · new | 59.9 | 59.9 |
+| lite (HD 630) · v3 | 59.9 | 59.9 |
+
+Every window was 59.9–60.4 on both builds and both tiers. Loading: at the hero (8 s, desktop and
+phone) no model is requested; after the first scroll, desktop fetches `spine.glb` and the phone
+`spine-lite.glb`. The arrival (Work 1.75) and the way out (3.25) show the dissolving tip and no
+cut ends.
+
 ## Decisions I made
 - **The raw model stays out of git.** `spine-raw.glb` is a source asset, possibly licensed for
   use, not for redistribution, and the repository is public. Only the processed,
   compressed column the site loads is committed; `scripts/build-spine.mjs` rebuilds it from the
   raw file. The raw file is git-ignored.
+- **Stage 1: copies, not a bent single piece.** The raw file is eight vertebrae, so the brief's
+  "short piece" route applies. The joints were the risk. Each copy overlaps the next by exactly
+  one vertebra, and the per-copy turn, width and squash ease from one copy's value to the next,
+  so both copies agree where they meet. The 0.8–1.2 heights change smoothly from copy to copy,
+  so the vertebrae at a joint match.
+- **Stage 1: the piece is 6.5 units tall** (vertebrae about 0.8). It came closest to the
+  reference's vertebra size beside a card, and its processes still stay clear of the cards at
+  every stop. 5.2 read as a thin chain; the cards' positions are locked, so the column could not
+  grow further.
+- **Stage 1: the detail "normal map" is procedural.** The welded piece has no usable UVs across
+  its copies, and a texture would add bytes and a lookup. The carving is two octaves of ridged
+  simplex noise in object space with an analytic gradient, inside the existing oil shader
+  (`SCULPTED`). The define used to mean "the file has a baked normal map", a path no file ever
+  used. The derivative-based bump was dropped for its 2×2-pixel blocks.
+- **Stage 1: the column loads after the hero.** `canvas/afterHero.ts` (progress ≥ 0.3, or at once
+  on deeper URLs) gates it. Stage 2's videos use the same gate. The procedural column still
+  builds in its worker at start-up, as the column shown until the model arrives and as the
+  fallback.
+- **Stage 1: the spine loader keeps only meshopt.** The build never writes Draco or textures, so
+  the Draco and KTX2 loaders are gone from it. Their self-hosted decoders (`public/decoders`,
+  1.3 MB of deploy) had no other user and are removed. The meshopt decoder ships inside three's
+  JS.
+- **Found, left alone:** in the stand-in's path, `oilRoughness` reads the facet value before
+  `oilFacets` sets it (three computes roughness before the normal), so the stand-in's patchy
+  roughness never took effect. The stand-in is only the fallback now and this round doesn't list
+  it, so it is unchanged. The sculpted path computes its carving before the roughness.

@@ -5,7 +5,7 @@ import { useTier } from '@/stores/tier'
 import { sceneConfig } from '@/styles/scene'
 import { compileForTarget } from '../compile'
 import type { SceneClock } from '../useSceneClock'
-import { createOilMaterial, disposeOilMaterial } from './oilMaterial'
+import { createOilMaterial } from './oilMaterial'
 import { createSpineGeometry } from './spineGeometry'
 import { loadSpineModel } from './spineModel'
 
@@ -13,9 +13,9 @@ type Props = { clock: SceneClock }
 
 /**
  * The Work spine: one heavy, sculpted column of dark pieces with an oily sheen, turning
- * slowly. Uses the sculpted model from public/models/spine.glb when it exists (with its
- * baked normal map), otherwise the procedural stand-in. Either way: one mesh, one
- * reflective material, one draw call.
+ * slowly. The sculpted column (public/models/spine.glb; spine-lite.glb on the lite tier and
+ * phones) replaces the procedural stand-in once it has loaded; the stand-in stays if it
+ * cannot. Either way: one mesh, one reflective material, one draw call.
  */
 export function Spine({ clock }: Props) {
   const mesh = useRef<Mesh>(null)
@@ -23,34 +23,34 @@ export function Spine({ clock }: Props) {
   const scene = useThree((state) => state.scene)
   const camera = useThree((state) => state.camera)
   const lite = useTier((state) => state.tier === 'lite')
+  const phone = useThree((state) => state.size.width < 700)
   const standIn = useStandIn(lite ? 0.2 : 0.12)
   const material = useMemo(() => createOilMaterial(), [])
   const [model, setModel] = useState<BufferGeometry | null>(null)
+  const lod = lite || phone ? 'lite' : 'full'
 
   useEffect(() => {
     let cancelled = false
-    let loaded: BufferGeometry | undefined
-    void loadSpineModel(gl).then((result) => {
-      if (!result) return
-      loaded = result.geometry
+    void loadSpineModel(lod).then((geometry) => {
+      if (!geometry) return
       if (cancelled) {
-        result.geometry.dispose()
-        result.normalMap?.dispose()
+        geometry.dispose()
         return
       }
-      // The sculpt carries its own detail: use its normal map, drop the procedural grain.
-      if (result.normalMap) {
-        material.normalMap = result.normalMap
+      // The sculpt has its own forms: it takes the carved crust instead of the stand-in's
+      // facets and grooves (one recompile, before Work is in view).
+      if (!material.defines?.SCULPTED) {
         material.defines = { ...material.defines, SCULPTED: '' }
         material.needsUpdate = true
       }
-      setModel(result.geometry)
+      setModel(geometry)
     })
     return () => {
       cancelled = true
-      loaded?.dispose()
     }
-  }, [gl, material])
+  }, [material, lod])
+  // A column is let go once the next one is in place (the lite one after a drop to lite).
+  useEffect(() => () => model?.dispose(), [model])
 
   useEffect(() => () => standIn?.dispose(), [standIn])
 
@@ -60,7 +60,7 @@ export function Spine({ clock }: Props) {
   useEffect(() => {
     if (mesh.current) void compileForTarget(gl, mesh.current, camera, scene)
   }, [geometry, gl, camera, scene])
-  useEffect(() => () => disposeOilMaterial(material), [material])
+  useEffect(() => () => material.dispose(), [material])
 
   useFrame(() => {
     if (!mesh.current) return

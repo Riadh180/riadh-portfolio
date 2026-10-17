@@ -1,5 +1,11 @@
 # The Spine: 3D model spec
 
+> **Look round (2026-10-18):** the column is now built from a short sculpted piece
+> (`public/models/spine-raw.glb`, git-ignored) by `scripts/build-spine.mjs`, which lays
+> varied copies of it down the column's path and writes `spine.glb` and `spine-lite.glb`.
+> A new piece only needs to be a watertight stretch of spine, Y up. The spec below is the
+> original brief for a full custom sculpt.
+
 The Work section's central sculpture: a tall, heavy column that the camera spirals down
 along while the job cards orbit it. This spec works for three routes:
 
