@@ -2673,6 +2673,23 @@ Sheet: `docs/screens/loop2-close.jpg`: on desktop, the opened card with the "CLO
 cursor over the details in its own mode, and the closed state after the click (a card and the
 capstone); on the phone, open, the tap, and closed.
 
+## Stage 6 — small fixes (tag `loop2-stage-6`)
+Files: `canvas/work/cardFace.ts` (diagrams graded down), `canvas/system/SystemDust.tsx` (the
+phone's dust below the graph).
+
+1. **The medallion flow no longer glares.** The capstone's second image (a diagram on a pale
+   blue panel) is drawn through a tone curve (γ 1.7) as it goes onto the card. The panel and the
+   mid-tones sink to the dashboard's darkness, and the medals, the title and the box text stay
+   bright and readable. The surround was already the dark screen. The asset is unchanged.
+2. **The phone's arrival at System is never more than 60% empty.** Below the graph, three
+   clouds of glass dust now hold ~600 grains each (2400 in all, was 1050 shared with the graph's
+   own clouds). On phones the graph is seen from ~1.8× further away, so its grains are drawn
+   1.7× larger (as large as on desktop). EMPTY AREA at 3.65–4.0: 61–64% before, 53–59% now
+   (the worst 59%, at 3.65 and 3.70).
+
+Sheet: `docs/screens/loop2-small-fixes.jpg` (the capstone's two images, the medallion before
+and after; the phone's System arrival before and after, with each frame's empty share).
+
 ## Decisions I made
 - **The recording shows no cursor over the particles.** Across Work (26–51 s) the pointer
   hovers the cards (a hand over the card's edge), and in the hero's strip it crosses empty
@@ -2767,3 +2784,10 @@ capstone); on the phone, open, the tap, and closed.
   hovering and clicking the cards would have broken after the first close.
 - **Reduced motion snaps the card open and shut.** Before, the fly-in and the dissolve played
   even with reduced motion. The brief asks for none.
+- **The diagram is graded in code, not edited.** A tone curve keeps the brightest parts
+  (medals, text) and sinks the panel; a flat darkening would have dimmed the text with it.
+  The original SVG stays as it was (it is also the project's own artwork).
+- **System's phone grains are scaled to the phone's camera distance.** The phone sees the graph
+  from 30 units instead of 16.5, so the same grains read half as large. 2.4× the fine grain
+  (desktop 1.4×) puts them back at their desktop size, and with the denser clouds below the
+  graph that fills the band.

@@ -64,6 +64,41 @@ const HEIGHT = 640
  * large, in Departure Mono. `draw(elapsed)` redraws the title mid-scramble; the cover is
  * drawn once and reused.
  */
+/**
+ * A light diagram graded down to the dark screen, as the dashboard is (the capstone's
+ * medallion flow on its pale blue panel glared in the dark scene): a tone curve that sinks
+ * the background and the mid-tones and keeps the bright medals and the text readable.
+ */
+const DIAGRAM_GAMMA = 1.7
+
+function gradeDiagram(
+  image: HTMLImageElement,
+  sx: number,
+  sy: number,
+  sw: number,
+  sh: number,
+  w: number,
+  h: number,
+) {
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(w))
+  canvas.height = Math.max(1, Math.round(h))
+  const context = canvas.getContext('2d', { willReadFrequently: true })
+  if (!context) return canvas
+  context.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
+  const pixels = context.getImageData(0, 0, canvas.width, canvas.height)
+  const curve = new Uint8ClampedArray(256)
+  for (let v = 0; v < 256; v++) curve[v] = Math.round(255 * (v / 255) ** DIAGRAM_GAMMA)
+  const data = pixels.data
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = curve[data[i]!]!
+    data[i + 1] = curve[data[i + 1]!]!
+    data[i + 2] = curve[data[i + 2]!]!
+  }
+  context.putImageData(pixels, 0, 0)
+  return canvas
+}
+
 export class CardFace {
   /** The title layer: transparent, drawn crisp over the frosted glass. */
   readonly texture: CanvasTexture
@@ -137,7 +172,7 @@ export class CardFace {
       const context = this.backgroundContext()
       if (!context) return
       if (url.endsWith('.svg')) {
-        // A diagram: shown whole on the dark screen, never cropped.
+        // A diagram: shown whole on the dark screen, never cropped, graded down to it.
         context.fillStyle = palette.bg
         context.fillRect(0, 0, WIDTH, HEIGHT)
         const [sx, sy, sw, sh] = crop ?? [0, 0, image.width, image.height]
@@ -148,7 +183,7 @@ export class CardFace {
         const w = sw * fit
         const h = sh * fit
         const top = whole ? (HEIGHT - h) / 2 : HEIGHT * 0.06
-        context.drawImage(image, sx, sy, sw, sh, (WIDTH - w) / 2, top, w, h)
+        context.drawImage(gradeDiagram(image, sx, sy, sw, sh, w, h), (WIDTH - w) / 2, top)
       } else if (image.width < image.height) {
         // A phone screenshot: shown whole, right of centre, over a blurred, darkened
         // enlargement of itself (so the card stays full and its colours carry).

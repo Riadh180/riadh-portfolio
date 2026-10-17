@@ -27,14 +27,17 @@ const CLOUDS: [number, number, number, number][] = [
 
 /**
  * Phones: the graph sits in the upper part of the frame (the text comes in below), so more
- * clouds hang below it, where the phone's frame would otherwise stay dark. Listed four
- * times: each gets four clouds' share of the grains (50 a share, as the graph's own).
+ * clouds hang below it, where the phone's frame would otherwise stay dark (the arrival read
+ * as 61–64% empty). Listed ten times: each gets ten clouds' share of the grains (~60 a share,
+ * as the graph's own), ~600 grains each.
  */
 const PHONE_CLOUDS: [number, number, number, number][] = [
   [-1.2, -6.4, 0.6, 2.2],
   [1.4, -9.2, -0.8, 2.4],
   [-0.4, -12, 0.2, 2.6],
 ]
+
+const PHONE_GRAINS = 2400
 
 /** Fine, cool glass: silver-blue, blue, a little violet and aqua. */
 const PALETTE = [
@@ -59,7 +62,10 @@ export function SystemDust({ clock }: Props) {
   const geometry = useMemo(
     () =>
       phone
-        ? createCluster([...CLOUDS, ...Array.from({ length: 4 }, () => PHONE_CLOUDS).flat()], 1050)
+        ? createCluster(
+            [...CLOUDS, ...Array.from({ length: 10 }, () => PHONE_CLOUDS).flat()],
+            PHONE_GRAINS,
+          )
         : createCluster(CLOUDS, 1100),
     [phone],
   )
@@ -80,7 +86,8 @@ export function SystemDust({ clock }: Props) {
   useFrame(({ size, viewport }, delta) => {
     const m = material.current
     if (!m) return
-    updateGlitter(m, clock, size.height * viewport.dpr, 1.4)
+    // Phones see the graph from ~1.8× further away: grains as large as on desktop.
+    updateGlitter(m, clock, size.height * viewport.dpr, phone ? 2.4 : 1.4)
     // A thread is active when both its ends are lit by the focused node (hover); every
     // thread keeps a little, for its travelling pulses.
     const focused = useSystem.getState().focused
