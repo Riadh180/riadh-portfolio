@@ -3544,3 +3544,131 @@ in 30° bins: 180–210° cyan-blue / 210–240° blue / 240–270° blue-violet
   reference than loop 2 (0.43, 0.60, 0.41 against 0.34), and none read clearly closer on the
   sheet, so by the brief's rule the air went back to loop 2's state. The analysis and the next
   step are in the stage's notes.
+- **Gate: the refraction picture rests while a card is open or flying home.** The gate's first
+  full-tier open/close run dipped to 52.9: the picture rendered on top of the open card's own
+  scene picture, and the dissolve dust took its refraction path. Off for the whole flight, the
+  open card's backdrop smoke covers what the beads would bend anyway; min 58.9–59.1, above v3's
+  55.8–55.9.
+- **Kept: the decisions above, by stage.** Stage 1: copies, size 6.5, a procedural carving, loaded
+  after the hero. Stage 2: the recorded dashboard, Bliggit's screenshots, offline renders outside
+  Next, VideoTexture uploads, the sRGB decode. Stage 3: the scene picture at Work only, one
+  premultiplied blending. Stage 4: baked anchors. Stage 5: larger hero beads. Stage 6: reverted.
+
+## Final report — look round
+Branch `look-round` (from `v3`, tagged `before-look`); not merged, nothing on `main`.
+
+### Per stage
+| Stage | Tag | What changed |
+|---|---|---|
+| 1. The sculpted column | `look-stage-1` | `spine-raw.glb` (eight vertebrae, watertight) built by `scripts/build-spine.mjs`: welded, Loop-subdivided, four varied copies fused one vertebra deep, bent along the column's path, creased normals, meshopt. Loaded after the hero, lite LOD on lite and phones, procedural column as fallback. The oil material carves it with fine ridges (analytic noise gradient) that break the highlights and mottle the film. |
+| 2. Moving imagery in the cards | `look-stage-2` | Every card has a seamless 10 s loop (1280×800 H.264 + VP9, 640×400 pair, poster). The capstone's is a recording of its live dashboard; Bliggit's animates its two real screenshots; the confidential jobs and Freelance are offline renders of their own scenes with drift, depth of field, a light sweep and grain. Loops load when first seen, play only while seen, upload on the card's cadence, and stay posters with reduced motion; video frames decoded from sRGB in the card shaders. |
+| 3. True glass beads | `look-stage-3` | A glass bead: filled body, thin film-tinted edge, half-pixel split on large beads, a sharp sparkle toward the place's light (flaring with the light and the cursor), bokeh discs out of focus. On the full tier at Work, medium and large beads refract a low-res picture of the frame like ball lenses (premultiplied blending). |
+| 4. Clinging clouds | `look-stage-4` | 16,000 anchors baked into the column files (36 clouds on hollows and processes); beads cling just off the surface and turn with it. Small clouds hug the cards' edges nearest the column; the free pockets halve; beads fade inside the keep-clear areas. |
+| 5. A visible mouse effect | `look-stage-5` | The hero's dust becomes a sparse layer of 1,400 glass beads round and behind The Core; stirred beads flare a third brighter. Video `look-cursor.mp4`. |
+| 6. Blue-violet air | `look-stage-6` | Three passes, none closer to the reference than loop 2's air by the metric (0.43 / 0.60 / 0.41 vs 0.34) or clearly on the sheet: reverted, open point. |
+
+### Inputs used
+- `public/models/spine-raw.glb`: found and used (route A, "a short piece").
+- `public/work/bliggit/demo.mp4`: not found. Bliggit's loop is the fallback: its two real
+  screenshots, animated.
+- Dashboard URL: found in the capstone repository's README (https://aiwork-eu.streamlit.app/),
+  woken and recorded (not the fallback).
+
+### Metrics
+**Work, column and air** (scripted scroll, cards masked; `docs/screens/metrics/look/`):
+| | Reference | Loop 2 | Look round |
+|---|---|---|---|
+| Mean luminance (0–255) | 28.4 | 28.6 | 30.6 |
+| 95th percentile | 70.8 | 73.9 | 85.9 |
+| EMPTY AREA | 51.1% | 54.8% | 59.0% |
+| SPARKLE, HTML UI left out (points / MP) | 347 | 202 | 334 (0.96×, target ≤ 2×) |
+| SPARKLE, whole frame | 341 | 1110 | 1163 (the bright mono UI text dominates it) |
+| Hue distance, whole frame | — | 0.33 | 0.34 (target ≤ 0.2: missed, Stage 6) |
+
+**The column:** full `spine.glb` 133,120 triangles plus 16,000 bead anchors, 912 KB; lite
+`spine-lite.glb` 58,000 triangles plus 5,333 anchors, 422 KB. Budgets: ≤ 150k / ≤ 60k triangles,
+≤ 3 MB. No textures.
+
+**The loops:** every 1280 file ≤ 2.5 MB, every 640 file ≤ 0.8 MB (sizes per loop in Stage 2).
+
+**Cursor displacement** (a grain at the focus, full tier, 1440×900; slow / medium / fast swipes
+at 300 / 1000 / 2500 px/s): Work 18 / 46 / 87 px, the hero 17 / 45 / 88 px. Each drifts on
+0.07–0.3 s and settles under 2 px within 1.0 / 1.9 / 2.7 s, with no overshoot. The air is loop
+2's (17 / 44 / 89); what changed is what it moves (the clinging clouds, the hero's beads) and the
+stirred beads' flare.
+
+### Gate
+**FPS** (production, Retina; 2 s windows unless noted):
+| | Full | Lite (HD 630) |
+|---|---|---|
+| Every place | 60 | 60 |
+| Down the Work cards (loops playing) | 59.6–60 | 59.9–60 |
+| Idle hero 60 s after a 3-minute rest | 60 | 50.9–53.2 in the gate sequence; A/B at the same moment new 60 / 60 against v3 60 / 52–53 |
+| Fast scroll through two loops (1 s windows) | min 59.8 | min 56.9 |
+| Cursor moving over Work / the hero | min 59.9 / 59.9 | min 59.5 / 59.9 |
+| Opening and closing cards | min 58.9 / 59.1 after the fix below (v3 55.8 / 55.9) | min 50.8 (loop 2's gate 46.8) |
+
+The full tier holds ≥ 55 everywhere. The gate first measured opening and closing at min 52.9,
+which failed. The beads' refraction picture was rendering through the open card's flight, on top
+of the open card's own picture of the scene. It now stays off until the card is home again. The
+open card's video is cheaper than v3's per-frame live scene, so the result now beats v3. On lite,
+the idle hero and the open/close dips equal or beat the previous build at the same moment (the
+HD 630 drifts with heat; see the A/B).
+
+**Lighthouse** (3 runs each): desktop 93 / 93 / 95, mobile 94 / 95 / 94. Accessibility, best
+practices and SEO 100 every run. Desktop LCP 0.6 s, CLS 0; mobile LCP 2.5–2.6 s, CLS 0.
+
+**Media weight added:**
+- On disk: all loop files 22.7 MB, the column 1.33 MB (both files). The unused decoders (1.3 MB)
+  were removed.
+- Per visitor: a desktop visitor who sees every card downloads 7.7 MB of WebM (8.7 MB of MP4 in
+  Safari), 0.55 MB of posters and the 0.91 MB column. A phone takes 2.7 MB of loops, the posters
+  and the 0.42 MB column.
+- What loads when:
+  - At the hero, nothing (not even the posters: checked on desktop and phone).
+  - The column after the first scroll.
+  - The posters when Work's cards mount.
+  - Each loop when its card is first in view.
+- Videos and the model never block the first paint (Lighthouse above).
+
+**Checks:**
+- Reduced motion: posters only, no loop is requested, no stirring.
+- No WebGL: the static fallback, desktop and phone.
+- The phone number appears only on /impressum: in the build output (the page's own files and
+  its server module; client bundles 0), the 15 live routes, and nowhere in the CV PDF.
+- Console: clean with no warnings on desktop, phone, reduced motion and no WebGL.
+
+### What still differs from the reference
+1. **The cards' imagery.** Theirs are rich, colourful, near-photographic renders. Ours are
+   abstract scenes for every confidential job (by rule), plus a phone app and a dashboard.
+   *Needs art:* client-approved footage or commissioned renders.
+2. **Work's air.** Theirs is darker and nearly neutral: teal-dark across the frame with purple
+   from the lower left. Ours is a lighter, more saturated cyan haze (hue distance 0.34, darks at
+   15.3 vs 10.8). *Code can fix:* a backdrop that keeps the two tones apart and sinks the darks.
+3. **The column's surface colour.** Theirs is a saturated oil-slick mottle (magenta, violet and
+   teal on black). Ours is near-black chrome with its colour on the carved ridges and the
+   highlights' edges. *Needs art:* a baked iridescence texture on the piece (or another
+   material round).
+4. **The bead clouds.** Theirs are colourful foam over whole stretches of the column, of chunky,
+   slightly irregular pebbles. Ours are patches of perfect circles. *Code can fix:* more anchors
+   or larger clouds, and a per-bead outline wobble.
+5. **Brightness.** Mean luminance 30.6 against 28.4, highlights 85.9 against 70.8: the sculpted
+   chrome column catches more light than theirs. *Code can fix:* a darker chrome base and
+   narrower highlights at Work.
+
+### Sheets
+- `docs/screens/look-column.jpg`: the column (reference crops | v3 | new; full, lite, phone; four
+  orbit angles).
+- `docs/screens/look-card-media.jpg`: the card media (reference cards | before | new; closed,
+  hover, opened; all six cards and the capstone; desktop and phone).
+- `docs/screens/look-glass-beads.jpg`: the beads (reference pockets | loop 2 | new, 1× and 4×).
+- `docs/screens/look-pockets.jpg`: the clouds (reference Work at the six stops | loop 2 | new,
+  then the pocket crops).
+- `docs/screens/look-cursor.mp4`: the mouse effect (7.7 s: a hero swipe, a Work swipe through a
+  column cloud and a card-edge cloud).
+- `docs/screens/look-air.jpg`: the air (reference | loop 2, kept | the three passes).
+- `docs/screens/look-vs-reference.jpg`: the hero, the first scroll, eight matched Work frames,
+  the column close-up and the opened card against the reference.
+- `docs/screens/look-journey.jpg`: 0–7 at 0.5 on desktop full, desktop lite and phone 390×844.
+- Metrics: `docs/screens/metrics/look/final.json`, `final-ui.json`.
+

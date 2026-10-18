@@ -12,6 +12,7 @@ import { GrainScene } from '../particles/grainScene'
 import type { SceneClock } from '../useSceneClock'
 import { Pebbles } from './Pebbles'
 import { Spine } from './Spine'
+import { openView } from './openView'
 import { WorkCards } from './WorkCards'
 
 type Props = { journey: JourneyState; clock: SceneClock }
@@ -42,7 +43,11 @@ export function WorkPlace({ journey, clock }: Props) {
     // their column's dissolving foot is still leaving the frame.
     g.visible = journey.toWork > 0.02 && journey.toSystem < (column ? 0.65 : 0.55)
     g.position.set(WORK.x, PLACES.work, 0)
-    if (g.visible && !column && useTier.getState().tier === 'full') picture.take(gl, scene, camera)
+    // Not while a card is open or still flying home: its backdrop's smoke covers what they
+    // would bend, and the open card's own picture of the scene (OpenBackdrop) already costs a
+    // render.
+    const refract = g.visible && !column && !useWork.getState().opened && !openView.owner
+    if (refract && useTier.getState().tier === 'full') picture.take(gl, scene, camera)
     else picture.off()
   })
 
