@@ -3,6 +3,7 @@
 // the column from 0°, 120°, 180° and 300°.
 //
 //   node scripts/capture-stops.mjs <url> <outDir> [phone]   (LOWGPU=1: integrated GPU; DPR=2: Retina)
+//   HOVER=1 (desktop): a second shot of each with the pointer resting on the card (its defrost).
 //
 // Flies to Work by the nav, then one wheel gesture at a time (the scroll's magnet settles on
 // the next stop); after each settle, the card nearest the frame's centre names the shot.
@@ -96,6 +97,18 @@ for (let step = 0; step < 14 && seen.size < 6; step++) {
     // The card's projected corners (for scripts/card-tone.mjs).
     const corners = await page.evaluate((s) => window.__cardCorners?.[s] ?? null, slug)
     fs.writeFileSync(path.join(outDir, `${seen.size}-${slug}.json`), JSON.stringify(corners))
+    if (process.env.HOVER && !phone && corners) {
+      // On the card, a little off its title; the defrost and the title's scramble settle.
+      const xs = corners.filter((_, k) => k % 2 === 0)
+      const ys = corners.filter((_, k) => k % 2 === 1)
+      const cx = xs.reduce((a, b) => a + b, 0) / xs.length
+      const cy = ys.reduce((a, b) => a + b, 0) / ys.length
+      await page.mouse.move(cx + (Math.max(...xs) - cx) * 0.45, cy - (cy - Math.min(...ys)) * 0.35, { steps: 12 })
+      await sleep(2200)
+      await page.screenshot({ path: path.join(outDir, `${seen.size}-${slug}-hover.png`) })
+      await page.mouse.move(width - 6, height - 6, { steps: 8 })
+      await sleep(800)
+    }
   }
   for (let k = 0; k < 4; k++) {
     await page.mouse.wheel({ deltaY: phone ? 120 : 100 })

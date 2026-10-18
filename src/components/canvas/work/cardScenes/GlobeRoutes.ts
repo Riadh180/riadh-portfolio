@@ -26,7 +26,7 @@ export class GlobeRoutes extends CardScene {
   private globe = new Group()
   private routeMaterial: ShaderMaterial
 
-  constructor() {
+  constructor(detail = 1) {
     super(sceneColors.teal, sceneColors.warm)
     const body = new Mesh(
       this.own(new SphereGeometry(1, 48, 32)),
@@ -40,7 +40,7 @@ export class GlobeRoutes extends CardScene {
       Math.random() * 6.28,
     ])
     const cities: number[] = []
-    for (let i = 0; i < 700; i++) {
+    for (let i = 0; i < 700 * detail; i++) {
       const [lat = 0, lon = 0] = hubs[i % hubs.length] ?? []
       const p = onSphere(lat + (Math.random() - 0.5) * 0.5, lon + (Math.random() - 0.5) * 0.7)
       cities.push(...p.multiplyScalar(1.004).toArray())

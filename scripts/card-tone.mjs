@@ -45,7 +45,7 @@ async function tone(image, cornersFile) {
 }
 
 const rows = []
-for (const file of fs.readdirSync(stopsDir).filter((f) => f.endsWith('.png')).sort()) {
+for (const file of fs.readdirSync(stopsDir).filter((f) => f.endsWith('.png') && !f.endsWith('-hover.png')).sort()) {
   const slug = file.replace(/^\d+-/, '').replace(/\.png$/, '')
   const closed = await tone(path.join(stopsDir, file), path.join(stopsDir, file.replace('.png', '.json')))
   const open = fs.existsSync(path.join(openDir, `${slug}.json`))

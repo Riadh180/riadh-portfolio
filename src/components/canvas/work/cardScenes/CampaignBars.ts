@@ -28,8 +28,9 @@ export class CampaignBars extends CardScene {
   private flow: ShaderMaterial
   private tops = new Array<number>(8).fill(0)
 
-  constructor() {
+  constructor(detail = 1) {
     super(CARD_TONES.wine, sceneColors.warm)
+    const count = POINTS * detail
     const box = this.own(new BoxGeometry(WIDTH, 1, WIDTH))
     box.translate(0, 0.5, 0)
     // Deep wine glass, a warm gold light on the bar tops.
@@ -55,11 +56,11 @@ export class CampaignBars extends CardScene {
       ),
     )
 
-    const positions = new Float32Array(POINTS * 3)
-    const sources = new Float32Array(POINTS * 3)
-    const seeds = new Float32Array(POINTS * 4)
-    const bars = new Float32Array(POINTS)
-    for (let i = 0; i < POINTS; i++) {
+    const positions = new Float32Array(count * 3)
+    const sources = new Float32Array(count * 3)
+    const seeds = new Float32Array(count * 4)
+    const bars = new Float32Array(count)
+    for (let i = 0; i < count; i++) {
       const bar = Math.floor(Math.random() * BARS)
       bars[i] = bar
       positions.set(

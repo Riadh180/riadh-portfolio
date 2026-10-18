@@ -1,11 +1,10 @@
 import { useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   BufferGeometry,
   Frustum,
   Matrix4,
   Sphere,
-  type Texture,
   Color,
   Float32BufferAttribute,
   type PerspectiveCamera,
@@ -43,11 +42,13 @@ import { reportOpen } from './openView'
 import { MOTION, Spring } from '../motion/motion'
 import dissolve from '../shaders/dissolve.glsl'
 import noise from '../shaders/noise.glsl'
+import srgb from '../shaders/srgb.glsl'
 import type { JourneyState } from '../journey/path'
 import type { SceneClock } from '../useSceneClock'
 import { CardFace } from './cardFace'
 import { FrostField } from './frostField'
-import { type CardScene, createCardScene } from './cardScenes'
+import { type CardMedia, CardVideo, loopFiles, NO_MEDIA, shown, stepMedia } from './cardMedia'
+import { createCardScene } from './cardScenes'
 import { APPROACH, COLUMN_SPACING, ORBIT_SPACING, orbitPose } from './layout'
 
 /** Big, like the reference: the nearest card fills ~45% of the screen width. */
@@ -225,21 +226,18 @@ export function createScreenGeometry() {
 }
 
 /** The frosted screen: sits on the block's flat front face (inside the bevel). */
-export function createScreenMaterial(
-  face: CardFace,
-  field: FrostField,
-  seed: number,
-  live?: Texture,
-) {
+export function createScreenMaterial(face: CardFace, field: FrostField, seed: number) {
   return new ShaderMaterial({
     vertexShader: frostVertex,
-    fragmentShader: `${noise}\n${dissolve}\n${frostFragment}`,
+    fragmentShader: `${noise}\n${dissolve}\n${srgb}\n${frostFragment}`,
     uniforms: {
-      uImage: { value: live ?? face.image },
+      // The face until the card's media takes over (stepMedia).
+      uImage: { value: face.image },
       uTitle: { value: face.texture },
       uField: { value: field.target.texture },
-      uShade: { value: live ? 1 : 0 },
-      uClarity: { value: live || face.clear ? 1 : 0 },
+      uShade: { value: 0 },
+      uDecode: { value: 0 },
+      uClarity: { value: face.clear ? 1 : 0 },
       uSmoke: { value: 0.42 },
       uBrightness: { value: 1 },
       uBlur: { value: 0 },
@@ -289,15 +287,16 @@ export function createDustGeometry() {
   return geometry
 }
 
-export function createDustMaterial(face: CardFace, seed: number, live?: Texture) {
+export function createDustMaterial(face: CardFace, seed: number) {
   return new ShaderMaterial({
-    vertexShader: `${noise}\n${dissolve}\n${grainMotion}\n${cardDustVertex}`,
+    vertexShader: `${noise}\n${dissolve}\n${grainMotion}\n${srgb}\n${cardDustVertex}`,
     fragmentShader: `${glassGrain}\n${cardDustFragment}`,
     uniforms: {
       // The world's glass grains: the film's hues and the place's light (CursorField).
       uGrainFilm: grainUniforms.uGrainFilm,
       uGrainLightColor: grainUniforms.uGrainLightColor,
-      uImage: { value: live ?? face.image },
+      uImage: { value: face.image },
+      uDecode: { value: 0 },
       uDissolve: { value: 0 },
       uSeed: { value: seed },
       uSize: { value: [CARD.width, CARD.height] },
@@ -357,40 +356,62 @@ export function WorkCards({ layout, clock, journey }: Props) {
   const plane = useMemo(() => createScreenGeometry(), [])
   const dust = useMemo(() => createDustGeometry(), [])
   const faces = useMemo(() => jobs.map((job, i) => new CardFace(job, i)), [])
-  // Confidential work (and Freelance): a live scene in the card instead of an image.
-  const scenes = useMemo(() => jobs.map((job) => createCardScene(job.slug)), [])
   const fields = useMemo(() => jobs.map((_, i) => new FrostField(i * 1.37)), [])
   const screens = useMemo(
-    () =>
-      faces.map((face, i) =>
-        createScreenMaterial(face, fields[i]!, i * 1.37, scenes[i]?.target.texture),
-      ),
-    [faces, fields, scenes],
+    () => faces.map((face, i) => createScreenMaterial(face, fields[i]!, i * 1.37)),
+    [faces, fields],
   )
   const gl = useThree((state) => state.gl)
+  // What each card shows, once /assets.json says what exists: its video loop (its poster on
+  // the face until the loop plays), its cover, or, for confidential work without a loop, its
+  // live scene (an original abstract scene in the site's style).
+  const [media, setMedia] = useState<CardMedia[]>(() => jobs.map(() => NO_MEDIA))
   useEffect(() => {
-    scenes.forEach((scene) => void scene?.precompile(gl))
-  }, [scenes, gl])
+    let cancelled = false
+    void loadAssets().then(({ work, loops }) => {
+      if (cancelled) return
+      setMedia(
+        jobs.map((job, i) => {
+          if (loops.includes(job.slug)) {
+            faces[i]?.setCover(loopFiles(job.slug).poster, null)
+            return { video: new CardVideo(job.slug), live: null }
+          }
+          const cover = work[job.slug]
+          if (cover) {
+            faces[i]?.setCover(cover)
+            return NO_MEDIA
+          }
+          const live = createCardScene(job.slug)
+          if (live) void live.precompile(gl)
+          return { video: null, live }
+        }),
+      )
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [faces, gl])
+  useEffect(
+    () => () =>
+      media.forEach(({ video, live }) => {
+        video?.dispose()
+        live?.dispose()
+      }),
+    [media],
+  )
   // The reliefs bake inside the render loop (once each), where the renderer's state is
   // settled; baked from a mount effect the first card could come out blank.
   // Each live scene also renders once here, one per frame: its first render allocates its
   // render target and the GPU pipeline, which otherwise lands mid-scroll as a dropped frame
   // when the card first comes into view.
   const warmed = useRef(0)
+  useEffect(() => {
+    warmed.current = 0
+  }, [media])
   useFrame(() => {
     fields.forEach((field) => field.bake(gl))
-    if (warmed.current < scenes.length) scenes[warmed.current++]?.render(gl, 0)
+    if (warmed.current < media.length) media[warmed.current++]?.live?.render(gl, 0)
   }, -1)
-  useEffect(() => {
-    void loadAssets().then(({ work }) => {
-      jobs.forEach((job, i) => {
-        const cover = work[job.slug]
-        if (cover && !scenes[i]) {
-          faces[i]?.setCover(cover, job.gallery?.[0]?.src)
-        }
-      })
-    })
-  }, [faces, scenes])
   useEffect(
     () => () => {
       block.dispose()
@@ -398,10 +419,9 @@ export function WorkCards({ layout, clock, journey }: Props) {
       dust.dispose()
       screens.forEach((screen) => screen.dispose())
       faces.forEach((face) => face.dispose())
-      scenes.forEach((scene) => scene?.dispose())
       fields.forEach((field) => field.dispose())
     },
-    [block, plane, dust, screens, faces, scenes, fields],
+    [block, plane, dust, screens, faces, fields],
   )
 
   return (
@@ -419,7 +439,7 @@ export function WorkCards({ layout, clock, journey }: Props) {
           dust={dust}
           screen={screens[i]}
           face={faces[i]}
-          live={scenes[i] ?? null}
+          media={media[i] ?? NO_MEDIA}
         />
       ))}
     </group>
@@ -437,18 +457,8 @@ type CardProps = {
   dust: BufferGeometry
   screen: ShaderMaterial | undefined
   face: CardFace | undefined
-  /** The card's live scene, rendered into its screen while the card is in view. */
-  live: CardScene | null
-}
-
-/** Whether an object and all its parents are visible. */
-function shown(object: { visible: boolean; parent: unknown } | null): boolean {
-  let node = object as { visible: boolean; parent: unknown } | null
-  while (node) {
-    if (!node.visible) return false
-    node = node.parent as typeof node
-  }
-  return true
+  /** What the card shows under its frost (its loop, its live scene, or its face). */
+  media: CardMedia
 }
 
 /** How far a card's own tilt goes (radians): a few degrees, never flat. */
@@ -465,7 +475,7 @@ function Card({
   dust,
   screen,
   face,
-  live,
+  media,
 }: CardProps) {
   const group = useRef<Group>(null)
   const screenMesh = useRef<Mesh>(null)
@@ -473,8 +483,8 @@ function Card({
   const dustPoints = useRef<Points>(null)
   const blockGlass = useMemo(() => createBlockGlass(), [])
   const dustMaterial = useMemo(
-    () => (face ? createDustMaterial(face, index * 1.37, live?.target.texture) : null),
-    [face, index, live],
+    () => (face ? createDustMaterial(face, index * 1.37) : null),
+    [face, index],
   )
   useEffect(
     () => () => {
@@ -665,9 +675,9 @@ function Card({
       useTier.getState().tier === 'lite' ? DUST.lite : Infinity,
     )
 
-    // The live scene renders only while its card can be seen (and not while another card
-    // is open, or once this one has broken away completely).
-    // At rest it updates every other frame (staggered between cards): inside the frost the
+    // The card's media plays only while the card can be seen (in the frame, and not while
+    // another card is open or once this one, at home, has broken away completely). At rest it
+    // takes a new frame every other frame (staggered between cards): inside the frost the
     // difference doesn't show, and it halves the cost; focused or open, every frame.
     s.frame++
     const lite = useTier.getState().tier === 'lite'
@@ -681,14 +691,21 @@ function Card({
       glass.iridescence = 0
       glass.clearcoat = 0
     }
-    if (live && due && shown(g) && s.others < 0.95 && s.dissolve < 1.6) {
+    let seen = shown(g) && s.others < 0.95 && (isOpen || s.dissolve < 1.6)
+    if (seen) {
       s.projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
       s.frustum.setFromProjectionMatrix(s.projection)
       g.getWorldPosition(s.bounds.center)
-      if (s.frustum.intersectsSphere(s.bounds)) {
-        live.render(gl, clock.time)
-      }
+      seen = s.frustum.intersectsSphere(s.bounds)
     }
+    stepMedia(media, face, [screenMaterial, dustShader], {
+      gl,
+      time: clock.time,
+      seen,
+      due,
+      small: lite || layout === 'column',
+      still: calm,
+    })
 
     // The card in focus (hovered, open or at the camera's stop): the air never pushes grains
     // onto its face. Flown in, its area also places the HTML button that closes it, and the

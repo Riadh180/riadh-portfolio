@@ -341,6 +341,8 @@ export const capstone: Job = {
   ],
   repo: 'https://github.com/Riadh180/data-engineering-capstone',
   galleryAlt: {
+    'loop.mp4':
+      'The live dashboard, recorded: hovering the AI-exposure bubble chart and switching the year',
     'dashboard.png':
       'The live dashboard: occupations posted in 2026 by how exposed their tasks are to generative AI',
     'aiwork_medallion.svg':

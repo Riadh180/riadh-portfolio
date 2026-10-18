@@ -9,20 +9,21 @@ export type { CardScene }
 
 /**
  * The live scene for a job whose real work is confidential (or, for Freelance, is this
- * site); null for the jobs that show their own images (Bliggit, the capstone).
+ * site); null for the jobs that show their own images (Bliggit, the capstone). `detail`
+ * multiplies the particle counts (the offline loops render with more).
  */
-export function createCardScene(slug: string): CardScene | null {
+export function createCardScene(slug: string, detail = 1): CardScene | null {
   switch (slug) {
     case 'kuehne-nagel':
-      return new GlobeRoutes()
+      return new GlobeRoutes(detail)
     case 'eon':
       return new DeviceGrid()
     case 'adesso':
       return new ShieldLattice()
     case 'licht-und-schatten':
-      return new CampaignBars()
+      return new CampaignBars(detail)
     case 'freelance':
-      return new MiniWorld()
+      return new MiniWorld(detail)
     default:
       return null
   }

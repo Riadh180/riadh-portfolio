@@ -29,6 +29,8 @@ uniform float uSweep;
 uniform float uWipe;
 /** 1 for live scenes: darken the lower part here, where the title sits (covers are pre-shaded). */
 uniform float uShade;
+/** 1 when the image is a video frame (sRGB values, see srgb.glsl). */
+uniform float uDecode;
 /** 0..1: lighter frost (live scenes, the capstone's dashboard) so the media read. */
 uniform float uClarity;
 /** How dim the media sits behind the frosted glass (1 = not at all). */
@@ -89,6 +91,7 @@ void main() {
     color.b += texture2D(uImage, tap - fringe).b;
   }
   color /= float(TAPS);
+  color = mix(color, decodeSrgb(color), uDecode);
   color *= 1.0 - uShade * 0.75 * smoothstep(0.55, 0.0, vUv.y);
 
   // Milky grey-green body: a base tint everywhere (the image sits inside the glass), thicker

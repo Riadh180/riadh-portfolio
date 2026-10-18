@@ -3122,6 +3122,133 @@ phone) no model is requested; after the first scroll, desktop fetches `spine.glb
 `spine-lite.glb`. The arrival (Work 1.75) and the way out (3.25) show the dissolving tip and no
 cut ends.
 
+## Stage 2 — moving imagery in the cards (tag `look-stage-2`)
+Files:
+- New scripts: `scripts/record-dashboard.mjs`, `scripts/make-loops.mjs`, `scripts/loops/encode.mjs`,
+  `scripts/loops/stage.ts`, `scripts/loops/phones.ts`.
+- New canvas code: `canvas/work/cardMedia.ts` (the loop as a texture, and one frame of a card's
+  media) and `canvas/shaders/srgb.glsl`.
+- Changed: `canvas/work/WorkCards.tsx`, `canvas/work/cardFace.ts` (the static two-phone drawing
+  moved to the loop stage), `canvas/work/cardScenes/` (`view()`, a `detail` multiplier),
+  `canvas/depth/CapstonePanel.tsx`, `components/depth/CapstoneDetail.tsx`,
+  `canvas/shaders/frost.frag`, `cardDust.vert`, `app/assets.json/route.ts`,
+  `canvas/assets.ts`, `content/site.ts` (the loop's description in the capstone gallery),
+  `scripts/capture-stops.mjs` (`HOVER=1`), `scripts/card-tone.mjs`.
+- Media: `public/work/<slug>/loop.mp4`, `loop.webm`, `loop-640.mp4`, `loop-640.webm`,
+  `poster.jpg` for all six jobs and the capstone. esbuild 0.28.2 is a dev dependency.
+
+**The loops** (every one is 10 s at 30 fps, seamless, 1280×800 H.264 + VP9 with no audio,
+plus a 640×400 pair and a poster):
+- **Capstone: real media.** The live dashboard (https://aiwork-eu.streamlit.app/, woken from
+  sleep) was recorded with a headless browser on the Jobs tab's AI-exposure bubble chart:
+  - a slow scroll, the cursor gliding over the bubbles so their tooltips show (an arrow is
+    drawn: headless screenshots carry no pointer), and one change of the year (2026 → 2025);
+  - frames taken step by step, so the motion is even; the year change waits for the redraw;
+  - graded a little darker and cooler for Depth.
+
+  The recording, not the fallback.
+- **Bliggit: real media, fallback route** (no `demo.mp4`). The two real screenshots sit in the
+  card's own two-phone composition (unchanged positions). The home screen pans slowly in the
+  front phone (zoom 1.06: enough to move, not enough to cut its edges), the phones drift in
+  counterpoint, and a soft light crosses once. No invented UI.
+- **The confidential jobs and Freelance: illustrative.** Each card's own live scene is rendered
+  offline with a production esbuild bundle of the same scene code:
+  - twice the particles (campaign bars keep the card's own count: their stream is the subject,
+    and doubling it cost the file its quality);
+  - a slow camera drift that repeats every loop;
+  - depth of field holding the whole subject sharp;
+  - bloom on the highlights, a light sweep once per loop, a vignette, fine grain from the
+    encoder;
+  - scene time at half speed: calmer, and the seam's one-second crossfade joins two close
+    views.
+
+  Abstract only, as the live cards were: no logos, screens or text.
+
+| Loop | mp4 | webm | 640 mp4 | 640 webm | poster |
+|---|---|---|---|---|---|
+| bliggit | 976 KB | 848 KB | 361 KB | 274 KB | 94 KB |
+| kuehne-nagel | 713 KB | 437 KB | 205 KB | 135 KB | 50 KB |
+| adesso | 1234 KB | 848 KB | 434 KB | 312 KB | 70 KB |
+| eon | 1365 KB | 1085 KB | 399 KB | 344 KB | 69 KB |
+| licht-und-schatten | 2206 KB | 2372 KB | 758 KB | 779 KB | 99 KB |
+| freelance | 1714 KB | 1634 KB | 636 KB | 647 KB | 78 KB |
+| capstone | 515 KB | 445 KB | 241 KB | 224 KB | 91 KB |
+
+Every 1280 file is ≤ 2.5 MB (decimal) and every 640 file ≤ 0.8 MB, a budget I added for phones.
+Licht & Schatten is the heaviest: its stream of moving points compresses worst, even at the
+card's own particle count. A desktop visitor who sees every card downloads ~7.7 MB of WebM; a
+phone ~2.7 MB; the posters are 0.55 MB; 22.7 MB sit on disk across all variants. Nothing loads
+at the hero: at Work, the posters, then only the loops of the cards in view (desktop: 4 WebM at
+the first stop; phone: 2 small WebM).
+
+**Playback** (`cardMedia.ts`):
+- A card's loop downloads the first time the card is in view; its poster, drawn on the face,
+  shows until then and until the first frame. It plays while the card is seen and pauses
+  otherwise.
+- New frames reach the texture on the card's own cadence: every frame when focused or open,
+  every other frame at rest (lite: every third), only if the video drew one since. A
+  `VideoTexture` subclass marks frames pending instead of uploading each one.
+- The lite tier and phones take the 640×400 file. Reduced motion never loads a loop: the
+  posters stay.
+- The live scenes no longer render where a loop replaces them. Their code stays: the offline
+  renders use it, and a job without a loop still gets its live scene.
+- The capstone panel plays its loop at rest (frosted) and as the first item of the open
+  gallery (sharp), with the dashboard screenshot (in its cover crop) and the medallion after
+  it. The HTML gallery's thumbnail for the loop is its poster, described for screen readers.
+- Found: three uploads video frames as stored (sRGB) and decodes them only in its own materials.
+  The card shaders now decode them (`srgb.glsl`, `uDecode`). Without it every loop showed
+  about twice too bright in the mid-tones.
+
+**Tone** (`scripts/card-tone.mjs`: inside each card's outline, closed at its stop vs opened):
+| Card | closed v3 → new | open / closed v3 → new |
+|---|---|---|
+| bliggit | 56.5 → 51.9 | 1.40× → 1.34× |
+| kuehne-nagel | 46.5 → 45.1 | 1.35× → 1.26× |
+| adesso | 36.7 → 36.4 | 1.36× → 1.23× |
+| eon | 51.6 → 49.1 | 1.39× → 1.38× |
+| licht-und-schatten | 40.1 → 45.1 | 1.37× → 1.37× |
+| freelance | 46.1 → 44.2 | 1.25× → 1.39× |
+
+Closed, the cards sit where v3's did (frosted and dim, the same family grade). Opened, every
+card is within the loop 1 rule (≤ 1.4×). Getting there took three passes:
+1. Without the sRGB decode the loops read 1.3–1.8× brighter closed and up to 1.57× opened.
+2. With it, Freelance (1.50×), E.ON (1.43×) and Licht & Schatten (1.41×) were still over.
+3. A softer light sweep and bloom, and Freelance's dust at 1.5× instead of 2×, brought them
+   under. The first renders' depth of field also softened the opened globe; the in-focus range
+   was widened so whole subjects stay sharp.
+
+**Sheet:** `docs/screens/look-card-media.jpg`.
+- Desktop: a row of reference cards (at_05, at_06, at_07, seg_44), then per card closed before
+  / closed new / hover new / opened before / opened new, for all six jobs and the capstone.
+- Phone: closed and opened, before and new.
+
+What it shows:
+- **Closer:** every card now carries moving imagery, as the reference's do.
+  - The capstone shows the real dashboard in motion: tooltips, a year change.
+  - Bliggit's real screens move in their phones.
+  - The illustrative scenes have drift, depth of field and a passing light. Under the frost the
+    stills are near-identical to v3; the gain is the motion.
+- **Closer:** opened, the media now has the depth and light of a render (the device grid's far
+  rows fall soft, the light crosses the shield) instead of a flat live scene.
+- **Same:** closed tone and saturation stay in the family grade (no card glares in the gallery).
+- **Still different:** the reference's cards hold rich, colourful, near-photographic renders
+  (flowers, landscapes, characters). Ours stay abstract for every confidential job, by rule,
+  and the real media are a phone app and a dashboard. Needs art: client-approved footage or
+  commissioned renders.
+
+**FPS** (production, Retina, 2 s windows, min of two runs, A/B against v3 with rests; the loops
+playing):
+| | Work 2.35 | Work 2.95 | Depth 5.0 |
+|---|---|---|---|
+| full · new | 59.8 | 59.9 | 59.8 |
+| full · v3 | 59.9 | 59.9 | 59.9 |
+| lite (HD 630) · new | 59.9 | 59.8 | 59.9 |
+| lite (HD 630) · v3 | 59.9 | 59.9 | 59.9 |
+
+These were measured with the final playback code, before the last loop renders and the sRGB
+decode (one more `pow` per pixel on a playing card). No console errors or warnings on desktop,
+phone or reduced motion.
+
 ## Decisions I made
 - **The raw model stays out of git.** `spine-raw.glb` is a source asset, possibly licensed for
   use, not for redistribution, and the repository is public. Only the processed,
@@ -3153,3 +3280,28 @@ cut ends.
   `oilFacets` sets it (three computes roughness before the normal), so the stand-in's patchy
   roughness never took effect. The stand-in is only the fallback now and this round doesn't list
   it, so it is unchanged. The sculpted path computes its carving before the roughness.
+- **Stage 2: the capstone's loop is the real recording**, not the fallback: the dashboard woke
+  from sleep and was recorded headless. A pointer is drawn into the frames (headless captures
+  have none), so the tooltips appear under a cursor as they would for a visitor.
+- **Stage 2: Bliggit's loop comes from the two screenshots** (no `demo.mp4`). The front phone
+  pans through the home screen at a small zoom (1.06), since a true scroll would need UI that
+  doesn't exist. The card's static two-phone drawing moved out of `cardFace.ts` into the loop
+  stage (`scripts/loops/phones.ts`): the poster and the loop replace it.
+- **Stage 2: the illustrative loops render outside Next.** An esbuild production bundle of the
+  same scene code runs in headless Chrome from a script, instead of a hidden route in the site.
+  The scenes gained only `view()` and a `detail` multiplier. A one-second crossfade joins
+  each seam: the scenes' own motion isn't periodic. The camera drift is periodic, and scene time
+  runs at half speed, so the crossfade joins two close views.
+- **Stage 2: loops load when their card is first in view**, not when Work is near. At Work the
+  neighbouring cards are already in frame, so this loads only what is seen.
+- **Stage 2: a VideoTexture subclass, not a plain texture.** Three sizes a plain texture's video
+  upload from the element's (zero) width and height, and only a VideoTexture gets mutable
+  storage. The subclass marks new frames pending and uploads only on the card's cadence (every
+  frame focused or open, every other at rest, every third on lite).
+- **Stage 2: an open card's media keeps playing.** Before, the live scene stopped rendering once
+  the card had fully broken away; the brief wants the opened card at full rate.
+- **Stage 2: one content line added.** The capstone gallery's new first item (the loop) has a
+  description for screen readers in `content/site.ts`. The dashboard screenshot keeps its
+  cover crop as item 2.
+- **Stage 2: a 0.8 MB budget for the 640×400 files, and decimal megabytes** (2.5 MB = 2.5e6
+  bytes) everywhere, so any reading of the brief's limit holds.

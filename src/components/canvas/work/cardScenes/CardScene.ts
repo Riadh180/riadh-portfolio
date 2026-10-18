@@ -82,6 +82,15 @@ export abstract class CardScene {
     gl.setRenderTarget(previous)
   }
 
+  /**
+   * The scene and its camera at `time`, to be drawn elsewhere: the offline card loops
+   * (scripts/loops) render them at video size with their own finish.
+   */
+  view(time: number) {
+    this.update(time)
+    return { scene: this.scene, camera: this.camera }
+  }
+
   /** Compiles the scene's shaders ahead of time (in parallel where supported), so the
    * first frame it shows doesn't stall. */
   precompile(gl: WebGLRenderer) {

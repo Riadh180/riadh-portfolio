@@ -32,6 +32,7 @@ import edgeFragment from '../shaders/skillEdge.frag'
 import edgeVertex from '../shaders/skillEdge.vert'
 import type { SceneClock } from '../useSceneClock'
 import { CardFace } from '../work/cardFace'
+import { type CardMedia, CardVideo, loopFiles, NO_MEDIA, shown, stepMedia } from '../work/cardMedia'
 import {
   BLOCK,
   CARD,
@@ -166,8 +167,11 @@ export function CapstonePanel({ clock }: Props) {
     /** The cursor's pull: the shared pointer spring, as on the job cards. */
     pull: { x: new Spring(0, MOTION.pointer), y: new Spring(0, MOTION.pointer) },
     cursorUv: new Vector2(0.5, 0.5),
-    /** The gallery: images (cover first), the one shown, the wipe's progress. */
+    /** The gallery: its loop, then its images (cover first), the one shown, the wipe's progress. */
     images: [] as string[],
+    /** The capstone's loop (gallery item 0), when it has one. */
+    media: NO_MEDIA as CardMedia,
+    frame: 0,
     shown: 0,
     wipe: -1,
     forward: new Vector3(),
@@ -187,17 +191,38 @@ export function CapstonePanel({ clock }: Props) {
   const uniforms = useMemo(() => ({ uTime: { value: 0 } }), [])
 
   useEffect(() => {
-    void loadAssets().then(({ work, gallery }) => {
-      const cover = work.capstone
-      if (cover) face.setCover(cover)
+    let video: CardVideo | null = null
+    let cancelled = false
+    void loadAssets().then(({ work, gallery, loops }) => {
+      if (cancelled) return
       state.current.images = gallery
+      // Its recorded dashboard, frosted at rest (its poster until it plays); else its cover.
+      if (loops.includes(capstone.slug)) {
+        video = new CardVideo(capstone.slug)
+        state.current.media = { video, live: null }
+        face.setCover(loopFiles(capstone.slug).poster, null)
+      } else if (work.capstone) face.setCover(work.capstone)
       // Warm the browser's cache, so a gallery change never waits on a download.
-      gallery.slice(1).forEach((src) => {
-        const image = new Image()
-        image.src = src
-      })
+      gallery
+        .filter((src) => !src.endsWith('.mp4'))
+        .forEach((src) => {
+          const image = new Image()
+          image.src = src
+        })
     })
+    return () => {
+      cancelled = true
+      video?.dispose()
+    }
   }, [face])
+  /** A gallery item on the face: the loop's poster, or the image (the dashboard in its cover crop). */
+  const still = useMemo(
+    () => (src: string) =>
+      src.endsWith('.mp4')
+        ? face.setCover(loopFiles(capstone.slug).poster, null)
+        : face.setCover(src, src.endsWith(`/${capstone.coverFile}`) ? capstone.coverCrop : null),
+    [face],
+  )
   useEffect(
     () => () => {
       block.dispose()
@@ -305,15 +330,15 @@ export function CapstonePanel({ clock }: Props) {
         if (before < 0.5 && s.wipe >= 0.5) {
           s.shown = gallery
           const src = s.images[gallery]
-          if (src) face.setCover(src, undefined, gallery === 0 ? capstone.coverCrop : null)
+          if (src) still(src)
         }
         if (s.wipe > 1.3) s.wipe = -1
       }
       if (!isOpen && s.dissolve < 0.01 && s.shown !== 0) {
-        // Closed again: back to its cover for next time.
+        // Closed again: back to its first item for next time.
         s.shown = 0
         const src = s.images[0]
-        if (src) face.setCover(src)
+        if (src) still(src)
       }
 
       const u = screenMaterial.uniforms
@@ -327,6 +352,20 @@ export function CapstonePanel({ clock }: Props) {
       blockGlass.opacity = 1 - Math.min(1, s.dissolve * 1.2)
       blockGlass.visible = blockGlass.opacity > 0.01
       const dustShader = dustPoints.current.material as ShaderMaterial
+      // The loop plays while it is the item shown (at rest, and first in the open gallery):
+      // every frame when hovered or open, every other frame at rest.
+      s.frame++
+      const lite = useTier.getState().tier === 'lite'
+      const looping = s.shown === 0
+      if (!looping) s.media.video?.play(false)
+      stepMedia(looping ? s.media : NO_MEDIA, face, [screenMaterial, dustShader], {
+        gl,
+        time: t,
+        seen: shown(g),
+        due: isOpen || s.hover > 0.05 || s.frame % 2 === 0,
+        small: lite || column,
+        still: calm,
+      })
       dustShader.uniforms.uDissolve!.value = s.dissolve
       dustShader.uniforms.uPointScale!.value = size.height * viewport.dpr * DUST_SIZE
       dustPoints.current.visible = s.dissolve > 0

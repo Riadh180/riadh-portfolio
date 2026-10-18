@@ -25,7 +25,7 @@ export class MiniWorld extends CardScene {
   private dust: ReturnType<CardScene['dots']>
   private material: ShaderMaterial
 
-  constructor() {
+  constructor(detail = 1) {
     super(sceneColors.teal, sceneColors.glow)
     // Cool silver-teal glass (the site's own Core, in the cards' family tones).
     this.material = this.glass([sceneColors.glow, CARD_TONES.silver, sceneColors.teal], 1.5)
@@ -36,7 +36,7 @@ export class MiniWorld extends CardScene {
     this.core.position.set(0.55, 0.25, 0)
 
     const positions: number[] = []
-    for (let i = 0; i < 900; i++) {
+    for (let i = 0; i < 900 * detail; i++) {
       const r = 0.9 + Math.random() ** 2 * 1.8
       const a = Math.random() * Math.PI * 2
       positions.push(Math.cos(a) * r, (Math.random() - 0.5) * 1.2 * (r / 2), Math.sin(a) * r)

@@ -45,16 +45,6 @@ function splitTitle(title: string, measure: (text: string) => number) {
   return best
 }
 
-/** Loads an image (resolves once decoded). */
-function loadImage(url: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image()
-    image.onload = () => resolve(image)
-    image.onerror = reject
-    image.src = url
-  })
-}
-
 const WIDTH = 1024
 const HEIGHT = 640
 
@@ -153,19 +143,14 @@ export class CardFace {
   }
 
   /**
-   * Uses the real cover once it has loaded; with a `second` portrait screenshot, the two
-   * are composed as a product shot (two phones side by side). `crop` (source pixels): the
-   * job's cover crop by default; null shows the image whole (the capstone's other images).
+   * Uses the real cover (or a loop's poster) once it has loaded. `crop` (source pixels): the
+   * job's cover crop by default; null shows the image whole (a poster, the capstone's other
+   * images).
    */
   setCover(
     url: string,
-    second?: string,
     crop: [number, number, number, number] | null | undefined = this.job.coverCrop,
   ) {
-    if (second) {
-      void Promise.all([url, second].map(loadImage)).then((images) => this.drawPhones(images))
-      return
-    }
     const image = new Image()
     image.onload = () => {
       this.hasCover = true
@@ -229,71 +214,6 @@ export class CardFace {
       this.draw(Infinity)
     }
     image.src = url
-  }
-
-  /**
-   * Two phone screenshots as a product shot: large, side by side, slightly angled, in dark
-   * bezels with a soft shadow, on a rich gradient from the app's own colours (sampled from
-   * the first screenshot's top and bottom).
-   */
-  private drawPhones(images: HTMLImageElement[]) {
-    const c = this.backgroundContext()
-    const [first, second] = images
-    if (!c || !first || !second) return
-    this.hasCover = true
-    const sample = (image: HTMLImageElement, y: number) => {
-      const probe = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
-      if (!probe) return palette.bg
-      probe.drawImage(image, 0, -y * image.height, image.width, image.height)
-      const [r = 0, g = 0, b = 0] = probe.getImageData(image.width / 2, 0, 1, 1).data
-      return `rgb(${r}, ${g}, ${b})`
-    }
-    const gradient = c.createLinearGradient(0, 0, WIDTH, HEIGHT)
-    // Deep wine → plum (the app's red, held back for the card family).
-    gradient.addColorStop(0, mix(palette.bg, '#5a1426', 0.75))
-    gradient.addColorStop(0.55, mix(palette.bg, '#3a1838', 0.7))
-    gradient.addColorStop(1, mix(palette.bg, '#24204a', 0.7))
-    c.fillStyle = gradient
-    c.fillRect(0, 0, WIDTH, HEIGHT)
-    // A soft glow of the app's own top colour behind the phones.
-    const glow = c.createRadialGradient(
-      WIDTH * 0.55,
-      HEIGHT * 0.45,
-      0,
-      WIDTH * 0.55,
-      HEIGHT * 0.45,
-      WIDTH * 0.45,
-    )
-    glow.addColorStop(0, sample(first, 0.05).replace('rgb', 'rgba').replace(')', ', 0.45)'))
-    glow.addColorStop(1, 'rgba(0, 0, 0, 0)')
-    c.fillStyle = glow
-    c.fillRect(0, 0, WIDTH, HEIGHT)
-    const phone = (image: HTMLImageElement, cx: number, angle: number, scale: number) => {
-      const h = HEIGHT * scale
-      const w = (image.width / image.height) * h
-      c.save()
-      c.translate(cx, HEIGHT * 0.5)
-      c.rotate(angle)
-      c.shadowColor = 'rgba(0, 0, 0, 0.6)'
-      c.shadowBlur = 40
-      c.shadowOffsetY = 18
-      c.fillStyle = '#05070a'
-      c.beginPath()
-      c.roundRect(-w / 2 - 9, -h / 2 - 9, w + 18, h + 18, 40)
-      c.fill()
-      c.shadowColor = 'transparent'
-      c.beginPath()
-      c.roundRect(-w / 2, -h / 2, w, h, 32)
-      c.clip()
-      c.drawImage(image, -w / 2, -h / 2, w, h)
-      c.restore()
-    }
-    // On the right, so the title (left) crosses no white screen area.
-    phone(second, WIDTH * 0.66, -0.08, 0.92)
-    phone(first, WIDTH * 0.84, 0.07, 0.98)
-    this.image.needsUpdate = true
-    this.scrimBand = null
-    this.draw(Infinity)
   }
 
   /** Mean relative luminance (0..1) of the media in a box centred on (x, y). */

@@ -16,6 +16,10 @@ function describe(src: string, index: number) {
   return capstone.galleryAlt?.[file] ?? `Capstone image ${index + 1}`
 }
 
+/** A gallery item's thumbnail: the loop's poster (a still of it) for the loop. */
+const thumbnail = (src: string) =>
+  src.endsWith('.mp4') ? src.replace(/[^/]+$/, 'poster.jpg') : src
+
 /**
  * The capstone's opened panel, in small mono at the left over Depth (the same layout as a
  * job's details): the title, the one-liner, the data stack, the repository, its images (the
@@ -142,7 +146,12 @@ export function CapstoneDetail() {
                   className="h-7 w-11 overflow-hidden rounded-[0.3rem] border border-line opacity-60 transition-opacity duration-(--motion-duration-ui) hover:opacity-100 aria-pressed:border-text/60 aria-pressed:opacity-100"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  <img
+                    src={thumbnail(src)}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
                 </button>
               ))}
             </span>

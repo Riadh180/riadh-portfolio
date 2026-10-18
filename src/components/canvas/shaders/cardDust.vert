@@ -5,6 +5,8 @@
 // Run uDissolve backwards and they fly back and re-form the card.
 
 uniform sampler2D uImage;
+/** 1 when the image is a video frame (sRGB values, see srgb.glsl). */
+uniform float uDecode;
 uniform float uDissolve;
 uniform float uSeed;
 uniform vec2 uSize;
@@ -44,7 +46,9 @@ void main() {
   vAlpha = released * smoothstep(1.5, 0.15, life);
   // The world's brightness tiers (grainMotion.glsl), the mean kept.
   float tier = fract(seed.z * 5.1 + seed.y * 2.3);
-  vColor = (texture2D(uImage, spot).rgb * 1.5 + 0.08) * grainTier(tier) / 0.644;
+  vec3 image = texture2D(uImage, spot).rgb;
+  image = mix(image, decodeSrgb(image), uDecode);
+  vColor = (image * 1.5 + 0.08) * grainTier(tier) / 0.644;
   // Beads of a few pixels, a few larger: the world's glass grains (glassGrain.glsl), each
   // turning as it drifts, so the bright ones flare now and then.
   gl_PointSize = released * uPointScale * (0.7 + seed.z * seed.z * 1.6) / max(-mv.z, 0.1);
