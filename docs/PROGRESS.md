@@ -3428,6 +3428,34 @@ beads' shimmer), `scripts/record-swipe.mjs` (`SETTLE`).
 The hero's 1,400 beads cost nothing measurable, the lite tier's idle hero included (60 on both
 builds today; loop 2's gate saw 52 on both when the machine was warmer).
 
+## Stage 6 — blue-violet air at Work (tag `look-stage-6`): open, reverted
+Files: none kept. `canvas/Backdrop.tsx` was tuned in three passes and reverted to loop 2's air.
+Sheet `docs/screens/look-air.jpg` (reference | loop 2's air, kept | the three passes; four Work
+frames).
+
+Measured on Work's scripted scroll against the reference (`compare-frames.mjs --ui`; hue shares
+in 30° bins: 180–210° cyan-blue / 210–240° blue / 240–270° blue-violet):
+| | cyan-blue | blue | blue-violet | hue distance | mean luminance |
+|---|---|---|---|---|---|
+| reference | 37% | 17% | 33% | — | 28.4 |
+| loop 2's air (kept) | 64% | 25% | 6% | 0.34 | 30.9 |
+| pass 1: fog, backlight, darks and corner bleed one deep blue-violet | 2% | 37% | 56% | 0.43 | — |
+| pass 2: the fog's teal kept, the rest blue-violet | 4% | 77% | 15% | 0.60 | — |
+| pass 3: loop 2's air, the lower-left bleed violet at half strength | 28% | 58% | 9% | 0.41 | 33.2 |
+
+- **Why it failed:** the reference's air is two-toned in place, not one hue. It is teal-dark
+  across the frame with purple from the lower-left corner (and the beads). Our backdrop
+  lays its fog, darks, backlight and bleeds over the same pixels, so every mix of teal and violet
+  averaged into blue (pass 2) or swung entirely to violet (pass 1).
+- **On the sheet** neither direction is clearly closer. The reference's air is darker and more
+  neutral (5th percentile 10.8 against our 13–16); ours is a lighter, more saturated haze whether
+  cyan (loop 2) or indigo (pass 1). With three passes spent and none better than loop 2 by the
+  metric, loop 2's air stays.
+- **Open point, code can fix:** keep the two tones apart in the backdrop shader (teal confined
+  to the upper and right frame, the violet bleed to the lower left, never added over each other)
+  and sink the darks towards the reference's (lower base, less fog lift). That is a new round's
+  backdrop work, not a colour tweak.
+
 ## Decisions I made
 - **The raw model stays out of git.** `spine-raw.glb` is a source asset, possibly licensed for
   use, not for redistribution, and the repository is public. Only the processed,
@@ -3512,3 +3540,7 @@ builds today; loop 2's gate saw 52 on both when the machine was warmer).
   stays calm at rest.
 - **Stage 5: the air itself is unchanged** (loop 2's strengths, drift and settle). What changed
   is what it moves (the clinging clouds, the hero's beads) and the stirred beads' flare.
+- **Stage 6: reverted, not kept half-done.** All three passes measured further from the
+  reference than loop 2 (0.43, 0.60, 0.41 against 0.34), and none read clearly closer on the
+  sheet, so by the brief's rule the air went back to loop 2's state. The analysis and the next
+  step are in the stage's notes.
