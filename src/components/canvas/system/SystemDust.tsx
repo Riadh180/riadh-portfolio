@@ -1,6 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import { AdditiveBlending, type ShaderMaterial, Vector4 } from 'three'
+import { type ShaderMaterial, Vector4 } from 'three'
+import { grainBlending } from '../particles/CursorField'
 import { useSystem } from '@/stores/system'
 import { sceneColors } from '@/styles/scene'
 import {
@@ -111,7 +112,7 @@ export function SystemDust({ clock }: Props) {
         uniforms={uniforms}
         transparent
         depthWrite={false}
-        blending={AdditiveBlending}
+        {...grainBlending}
       />
     </points>
   )

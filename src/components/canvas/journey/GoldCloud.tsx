@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { AdditiveBlending, Color, type Group, type ShaderMaterial, Vector3 } from 'three'
 import { useTier } from '@/stores/tier'
 import { sceneColors, sceneConfig } from '@/styles/scene'
-import { syncGrainTier } from '../particles/CursorField'
+import { grainBlending, syncGrainTier } from '../particles/CursorField'
 import noise from '../shaders/noise.glsl'
 import smokeFragment from '../shaders/smoke.frag'
 import smokeVertex from '../shaders/smoke.vert'
@@ -170,7 +170,7 @@ export function GoldCloud({ journey, clock, reducedMotion }: Props) {
           fragmentShader={grainMotes.fragmentShader}
           defines={grainMotes.defines}
           uniforms={uniforms}
-          blending={AdditiveBlending}
+          {...grainBlending}
           transparent
           depthWrite={false}
         />

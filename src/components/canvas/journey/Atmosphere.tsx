@@ -1,15 +1,8 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import {
-  AdditiveBlending,
-  BufferGeometry,
-  Color,
-  Float32BufferAttribute,
-  type Object3D,
-  ShaderMaterial,
-} from 'three'
+import { BufferGeometry, Color, Float32BufferAttribute, type Object3D, ShaderMaterial } from 'three'
 import { sceneColors } from '@/styles/scene'
-import { grainMotion, grainUniforms, syncGrainTier } from '../particles/CursorField'
+import { grainBlending, grainMotion, grainUniforms, syncGrainTier } from '../particles/CursorField'
 import atmosphereFragment from '../shaders/atmosphere.frag'
 import atmosphereVertex from '../shaders/atmosphere.vert'
 import glassGrain from '../shaders/glassGrain.glsl'
@@ -113,7 +106,7 @@ function createMaterial(layer: Layer) {
     },
     transparent: true,
     depthWrite: false,
-    blending: AdditiveBlending,
+    ...grainBlending,
   })
 }
 

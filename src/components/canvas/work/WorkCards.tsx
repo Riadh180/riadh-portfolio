@@ -295,6 +295,10 @@ export function createDustMaterial(face: CardFace, seed: number) {
       // The world's glass grains: the film's hues and the place's light (CursorField).
       uGrainFilm: grainUniforms.uGrainFilm,
       uGrainLightColor: grainUniforms.uGrainLightColor,
+      uGrainLightView: grainUniforms.uGrainLightView,
+      uGrainScene: grainUniforms.uGrainScene,
+      uGrainSceneOn: grainUniforms.uGrainSceneOn,
+      uGrainResolution: grainUniforms.uGrainResolution,
       uImage: { value: face.image },
       uDecode: { value: 0 },
       uDissolve: { value: 0 },

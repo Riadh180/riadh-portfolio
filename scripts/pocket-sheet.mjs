@@ -1,5 +1,5 @@
-// The pockets sheet: for each pocket, the reference | then the builds given, each at 1× and 3×
-// (a nearest-neighbour zoom of the crop's middle), labelled.
+// The pockets sheet: for each pocket, the reference | then the builds given, each at 1× and a
+// zoom of the crop's middle (nearest-neighbour; ZOOM=4 for 4×, default 3×), labelled.
 //
 //   node scripts/pocket-sheet.mjs <out.jpg> <crops.json> <label=framesDir> …
 //
@@ -16,7 +16,12 @@ const label = (text) =>
   Buffer.from(
     `<svg width="${W}" height="${H}"><rect x="0" y="0" width="${Math.min(W, 12 + text.length * 8.4)}" height="22" fill="#000" fill-opacity="0.75"/><text x="6" y="16" fill="#fff" font-size="13" font-family="Menlo, monospace">${text}</text></svg>`,
   )
-const zoom = (c) => ({ left: c.left + 120, top: c.top + 75, width: 120, height: 75 })
+const Z = Number(process.env.ZOOM ?? 3)
+const zoom = (c) => {
+  const width = Math.round(W / Z)
+  const height = Math.round(H / Z)
+  return { left: c.left + Math.round((W - width) / 2), top: c.top + Math.round((H - height) / 2), width, height }
+}
 async function tile(file, crop, text, nearest) {
   const buf = await sharp(file)
     .extract(crop)
@@ -32,13 +37,13 @@ const rows = []
 for (const [k, pocket] of crops.entries()) {
   const row = [
     await tile(pocket.ref, pocket.refCrop, `ref ${k + 1}`),
-    await tile(pocket.ref, zoom(pocket.refCrop), `ref ${k + 1} 3x`, true),
+    await tile(pocket.ref, zoom(pocket.refCrop), `ref ${k + 1} ${Z}x`, true),
   ]
   for (const build of builds) {
     const [name, dir] = build.split('=')
     const file = path.join(dir, pocket.frame)
     row.push(await tile(file, pocket.crop, `${name} ${k + 1}`))
-    row.push(await tile(file, zoom(pocket.crop), `${name} ${k + 1} 3x`, true))
+    row.push(await tile(file, zoom(pocket.crop), `${name} ${k + 1} ${Z}x`, true))
   }
   rows.push(row)
 }

@@ -12,7 +12,7 @@ import {
 } from 'three'
 import { sceneColors } from '@/styles/scene'
 import { createMotesGeometry, createMotesUniforms, gaussian, grainMotes } from '../journey/motes'
-import { syncGrainTier } from '../particles/CursorField'
+import { grainBlending, syncGrainTier } from '../particles/CursorField'
 import noise from '../shaders/noise.glsl'
 import shaftFragment from '../shaders/shaft.frag'
 import shaftVertex from '../shaders/shaft.vert'
@@ -221,7 +221,7 @@ export function DepthWorld({ clock, fog }: Props) {
           fragmentShader={grainMotes.fragmentShader}
           defines={PLANKTON_DEFINES}
           uniforms={uniforms.plankton}
-          blending={AdditiveBlending}
+          {...grainBlending}
           transparent
           depthWrite={false}
         />

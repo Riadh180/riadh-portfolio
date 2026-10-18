@@ -1,7 +1,6 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import {
-  AdditiveBlending,
   BufferGeometry,
   Float32BufferAttribute,
   type Color,
@@ -14,7 +13,7 @@ import { jobs } from '@/content/site'
 import { WORK } from '../journey/path'
 import { hash } from '../noise'
 import { ORBIT_FIRST, ORBIT_SPACING, orbitPose, SPIRAL } from './layout'
-import { grainMotion, grainUniforms, syncGrainTier } from '../particles/CursorField'
+import { grainBlending, grainMotion, grainUniforms, syncGrainTier } from '../particles/CursorField'
 import glitterFragment from '../shaders/glitter.frag'
 import glitterVertex from '../shaders/glitter.vert'
 import glassGrain from '../shaders/glassGrain.glsl'
@@ -312,7 +311,7 @@ export function Pebbles({ clock, focusDistance, layout = 'orbit' }: Props) {
         defines={POCKET_DEFINES}
         transparent
         depthWrite={false}
-        blending={AdditiveBlending}
+        {...grainBlending}
       />
     </points>
   )
@@ -359,7 +358,7 @@ export function ChipCluster({
         uniforms={uniforms}
         transparent
         depthWrite={false}
-        blending={AdditiveBlending}
+        {...grainBlending}
       />
     </points>
   )

@@ -1,10 +1,10 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import { AdditiveBlending, type Color, type Group, type ShaderMaterial } from 'three'
+import type { Color, Group, ShaderMaterial } from 'three'
 import { useTier } from '@/stores/tier'
 import { valueNoise3 } from '../noise'
 import type { SceneClock } from '../useSceneClock'
-import { syncGrainTier } from '../particles/CursorField'
+import { grainBlending, syncGrainTier } from '../particles/CursorField'
 import { createMotesGeometry, createMotesUniforms, gaussian, grainMotes } from './motes'
 
 /** The sheet: a wide disc of dust, thin, gathered into clouds with dark gaps between. */
@@ -114,7 +114,7 @@ export function ParticleWall({ clock, y, tilt, colors, seed }: Props) {
           fragmentShader={grainMotes.fragmentShader}
           defines={grainMotes.defines}
           uniforms={uniforms}
-          blending={AdditiveBlending}
+          {...grainBlending}
           transparent
           depthWrite={false}
         />

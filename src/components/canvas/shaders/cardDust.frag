@@ -12,7 +12,7 @@ void main() {
   if (length(c) > 1.0) discard;
   float body = grainBody(c, vPointSize, vPhase);
   if (body <= 0.01) discard;
-  vec3 color = glassGrain(c, vPointSize, vColor * 0.8, vGlint, vPhase);
+  vec3 color = glassGrain(c, vPointSize, vColor * 0.8, vGlint, vPhase).rgb;
   gl_FragColor = vec4(color / max(body, 0.3), vAlpha * body);
   #include <colorspace_fragment>
 }

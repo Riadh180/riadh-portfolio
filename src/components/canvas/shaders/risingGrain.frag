@@ -10,5 +10,5 @@ void main() {
   vec2 c = gl_PointCoord * 2.0 - 1.0;
   c.y = -c.y;
   if (length(c) > 1.0) discard;
-  gl_FragColor = vec4(glassGrain(c, vPointSize, uColor * 1.6, vGlint, vPhase) * vAlpha, 1.0);
+  gl_FragColor = glassGrain(c, vPointSize, uColor * 1.6, vGlint, vPhase) * vAlpha;
 }

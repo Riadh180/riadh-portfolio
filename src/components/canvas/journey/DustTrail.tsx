@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import { AdditiveBlending, type Color, type Points, type ShaderMaterial } from 'three'
-import { syncGrainTier } from '../particles/CursorField'
+import type { Color, Points, ShaderMaterial } from 'three'
+import { grainBlending, syncGrainTier } from '../particles/CursorField'
 import { createMotesGeometry, createMotesUniforms, gaussian, grainMotes } from './motes'
 
 type Trail = {
@@ -93,7 +93,7 @@ export function DustTrail({
         fragmentShader={grainMotes.fragmentShader}
         defines={grainMotes.defines}
         uniforms={uniforms}
-        blending={AdditiveBlending}
+        {...grainBlending}
         transparent
         depthWrite={false}
       />

@@ -1,12 +1,14 @@
 import { useFrame, useThree } from '@react-three/fiber'
-import { useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Color, type Group } from 'three'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { useTier } from '@/stores/tier'
 import { useWork } from '@/stores/work'
 import { sceneColors } from '@/styles/scene'
 import { SceneWord } from '../journey/SceneWord'
 import { PLACES, WORK, type JourneyState } from '../journey/path'
 import { Drift } from '../motion/Drift'
+import { GrainScene } from '../particles/grainScene'
 import type { SceneClock } from '../useSceneClock'
 import { Pebbles } from './Pebbles'
 import { Spine } from './Spine'
@@ -28,8 +30,11 @@ export function WorkPlace({ journey, clock }: Props) {
   const group = useRef<Group>(null)
   const column = useThree((state) => state.size.width < 700)
   const reducedMotion = useReducedMotion()
+  // What the glass beads refract here (full tier; phones keep the lite beads).
+  const picture = useMemo(() => new GrainScene(), [])
+  useEffect(() => () => picture.dispose(), [picture])
 
-  useFrame(() => {
+  useFrame(({ gl, scene, camera }) => {
     const g = group.current
     if (!g) return
     // Gone once the camera has descended past it (it would still cost the full Work
@@ -37,6 +42,8 @@ export function WorkPlace({ journey, clock }: Props) {
     // their column's dissolving foot is still leaving the frame.
     g.visible = journey.toWork > 0.02 && journey.toSystem < (column ? 0.65 : 0.55)
     g.position.set(WORK.x, PLACES.work, 0)
+    if (g.visible && !column && useTier.getState().tier === 'full') picture.take(gl, scene, camera)
+    else picture.off()
   })
 
   return (

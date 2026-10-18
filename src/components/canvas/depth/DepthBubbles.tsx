@@ -8,7 +8,7 @@ import {
   type ShaderMaterial,
 } from 'three'
 import { sceneColors } from '@/styles/scene'
-import { grainMotion, grainUniforms, syncGrainTier } from '../particles/CursorField'
+import { grainBlending, grainMotion, grainUniforms, syncGrainTier } from '../particles/CursorField'
 import fragmentShader from '../shaders/bubble.frag'
 import vertexShader from '../shaders/bubble.vert'
 import glassGrain from '../shaders/glassGrain.glsl'
@@ -121,7 +121,7 @@ export function DepthBubbles({ clock, journey }: { clock: SceneClock; journey: J
           ref={beadMaterial}
           {...BEAD_SHADERS}
           uniforms={beadUniforms}
-          blending={AdditiveBlending}
+          {...grainBlending}
           transparent
           depthWrite={false}
         />

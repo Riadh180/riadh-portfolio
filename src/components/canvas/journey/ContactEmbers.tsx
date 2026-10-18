@@ -1,7 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import {
-  AdditiveBlending,
   BufferGeometry,
   Color,
   Float32BufferAttribute,
@@ -10,7 +9,7 @@ import {
 } from 'three'
 import { sceneColors } from '@/styles/scene'
 import { warmth } from '../Backdrop'
-import { grainMotion, grainUniforms, syncGrainTier } from '../particles/CursorField'
+import { grainBlending, grainMotion, grainUniforms, syncGrainTier } from '../particles/CursorField'
 import bubbleVertex from '../shaders/bubble.vert'
 import glassGrain from '../shaders/glassGrain.glsl'
 import risingFragment from '../shaders/risingGrain.frag'
@@ -94,7 +93,7 @@ export function ContactEmbers({ journey, clock }: { journey: JourneyState; clock
         fragmentShader={fragmentShader}
         defines={DEFINES}
         uniforms={uniforms}
-        blending={AdditiveBlending}
+        {...grainBlending}
         transparent
         depthWrite={false}
       />

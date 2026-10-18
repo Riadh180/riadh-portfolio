@@ -1,11 +1,15 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
 import {
+  type Camera,
   Color,
+  CustomBlending,
   DataUtils,
   HalfFloatType,
   LinearFilter,
   Mesh,
+  OneFactor,
+  OneMinusSrcAlphaFactor,
   OrthographicCamera,
   PlaneGeometry,
   RGBAFormat,
@@ -88,7 +92,23 @@ export const grainUniforms = {
   uGrainSweep: { value: new Vector2() },
   uGrainSweepColor: { value: new Color() },
   uGrainFilm: { value: [sceneColors.teal, sceneColors.pink, sceneColors.warm] },
+  /** The place's light in view space: the side of a bead its sparkle sits on. */
+  uGrainLightView: { value: new Vector3(0.45, 0.75, 0.5) },
+  /** What the beads refract (grainScene.ts), whether it is there, the frame's size in px. */
+  uGrainScene: { value: null as Texture | null },
+  uGrainSceneOn: { value: 0 },
+  uGrainResolution: { value: new Vector2(1, 1) },
 }
+
+/**
+ * How every glass grain draws: premultiplied, so a bead adds its light (alpha 0, as additive
+ * blending did) or, refracting, takes the place of what is behind it (alpha > 0).
+ */
+export const grainBlending = {
+  blending: CustomBlending,
+  blendSrc: OneFactor,
+  blendDst: OneMinusSrcAlphaFactor,
+} as const
 
 /**
  * Keeps a grain material on its tier: the lite tier drops the bead's refraction (one
@@ -448,7 +468,7 @@ type Props = {
   reducedMotion: boolean
 }
 
-type FrameInput = Props & { gl: WebGLRenderer; delta: number; aspect: number }
+type FrameInput = Props & { gl: WebGLRenderer; camera: Camera; delta: number; aspect: number }
 
 const smooth = (x: number) => {
   const t = Math.min(1, Math.max(0, x))
@@ -494,7 +514,7 @@ class Air {
   /** A finger, not a mouse (phones and tablets): a drag stirs at 60%, a tap sends a ripple. */
   touch = false
 
-  frame({ gl, delta, aspect, pointer, journey, clock, reducedMotion }: FrameInput) {
+  frame({ gl, camera, delta, aspect, pointer, journey, clock, reducedMotion }: FrameInput) {
     const dt = Math.min(delta, 1 / 30)
     const u = grainUniforms
     const lite = useTier.getState().tier === 'lite'
@@ -599,6 +619,7 @@ class Air {
       .addScaledVector(LIGHTS.depth.from, depth)
       .addScaledVector(LIGHTS.contact.from, contact)
     u.uGrainLight.value.copy(this.direction.normalize())
+    u.uGrainLightView.value.copy(this.direction).transformDirection(camera.matrixWorldInverse)
     // The hero's light drifts to warm copper with The Core's (full tier).
     const warm = lite ? 0 : lightDrift(clock.time, sceneConfig.light.warmPeriod) * hero
     const { color, scratch } = this
@@ -644,8 +665,8 @@ export function CursorField(props: Props) {
     return () => current?.field.dispose()
   }, [])
 
-  useFrame(({ gl, size }, delta) => {
-    air.current?.frame({ ...props, gl, delta, aspect: size.width / size.height })
+  useFrame(({ gl, camera, size }, delta) => {
+    air.current?.frame({ ...props, gl, camera, delta, aspect: size.width / size.height })
   }, -2)
 
   return null

@@ -3249,6 +3249,77 @@ These were measured with the final playback code, before the last loop renders a
 decode (one more `pow` per pixel on a playing card). No console errors or warnings on desktop,
 phone or reduced motion.
 
+## Stage 3 — true glass beads (tag `look-stage-3`)
+Files:
+- `shaders/glassGrain.glsl` (the bead, rewritten).
+- Its callers: `grain.frag`, `atmosphere.frag`, `glitter.frag`, `risingGrain.frag`,
+  `cardDust.frag`.
+- `particles/CursorField.tsx`: the shared uniforms, `grainBlending`, the place's light in view
+  space.
+- New `particles/grainScene.ts`: the picture the beads refract; `work/WorkPlace.tsx` takes it.
+- Ten bead materials switched to the shared blending: `work/Pebbles.tsx` (×2),
+  `system/SystemDust.tsx`, `journey/Atmosphere.tsx`, `ContactEmbers.tsx`, `GoldCloud.tsx`,
+  `ParticleWall.tsx`, `DustTrail.tsx`, `depth/DepthBubbles.tsx`, `DepthWorld.tsx`.
+- The card dust's uniforms (`work/WorkCards.tsx`); `scripts/pocket-sheet.mjs` (`ZOOM`).
+
+1. **Refraction** (full tier, at Work):
+   - Each frame a low-resolution picture of the frame without its particles is taken (0.35×,
+     the column, the cards and the air: `grainScene.ts`).
+   - Beads from ~5 px up bend it like small ball lenses: inverted and slightly magnified in the
+     middle, the surroundings drawn in at the rim. Red and blue bend a few hundredths apart
+     (well under half a pixel) on the large beads. Small beads keep a tint and an edge.
+   - All bead materials now draw premultiplied. A bead adds its light as before (alpha 0) or,
+     refracting, takes 55% of the place of what is behind it.
+   - Lite, phones and the other places don't take the picture: their beads keep the soft light
+     on their far side instead.
+2. **Glass shading:**
+   - a filled body, a little darker in the middle (0.5 of its colour, 0.8 at the rim);
+   - a thin bright edge tinted by thin film (teal → pink → gold by angle);
+   - the half-pixel chromatic split on the large beads only;
+   - one sharp sparkle on the side the place's light comes from (from its direction in view
+     space, `uGrainLightView`).
+3. **Light:**
+   - Every bead's sparkle is faintly on (0.28) and flares as the bead turns through the light
+     (the existing per-bead facet against the place's light, and the column's sweep band).
+   - The cursor's stir (loop 2's shimmer) also flares it (to 1.98).
+4. **Depth:** out-of-focus beads are bokeh discs: a soft fill with the faint bright edge of
+   out-of-focus glass (`grainBokeh`). In-focus beads are unchanged: crisp.
+5. **Lite and phones:** core, edge, sparkle and tint, no refraction.
+
+Sizes, hues, the 70 / 25 / 5 brightness split and placement are unchanged.
+
+**Passes** (sheet crops at 4×):
+1. Dark core (0.34), a bright ring (0.42), refraction taking 92%. The beads read as hollow
+   soap bubbles: over Work's dark air the lens has nothing bright to bend, so the core emptied.
+2. A filled core (0.5–0.8), a thinner edge (0.24), refraction at 55%. Filled glass drops, the
+   reference's look.
+
+**Sheet:** `docs/screens/look-glass-beads.jpg`. Reference pocket crops | loop 2 | new, each at 1×
+and 4×. Rows 1–4 are the loop 2 pockets (at_05, at_06, at_07, at_09); row 5 is the cloud
+against the column, row 6 beads at a card's edge and the column's process.
+- **Closer:** the beads read as pieces of glass: a defined edge with a coloured film, a filled
+  body and, on the bright ones, a sharp sparkle. Loop 2's were soft dots.
+- **Closer:** out of focus, the bokeh discs carry the faint bright rim the reference's soft
+  beads show.
+- **Still different:** refraction is hard to see in this composition. Clouds hang beside the
+  column and the cards, and the keep-clear rule holds them off the faces, so little that is
+  bright sits behind a bead. Stage 4's clinging clouds put beads on the column and the cards'
+  edges; the effect shows there.
+- **Still different:** the reference's beads vary in shape (chunky, slightly irregular pebbles,
+  some faceted); ours are perfect circles. Code can fix: a per-bead outline wobble, or a little
+  faceting at the rim.
+
+**FPS** (production, Retina, 2 s windows, min of two runs, A/B against v3 with rests):
+| | Work 2.0 | Work 2.35 | Work 2.95 |
+|---|---|---|---|
+| full · new (with the picture) | 59.9 | 59.8 | 59.9 |
+| full · v3 | 59.9 | 59.9 | 59.9 |
+| lite (HD 630) · new | 59.9 | 59.9 | 59.9 |
+| lite (HD 630) · v3 | 59.9 | 59.8 | 59.8 |
+
+The extra low-resolution scene render costs nothing measurable on the full tier. Lite doesn't
+take it. Console clean.
+
 ## Decisions I made
 - **The raw model stays out of git.** `spine-raw.glb` is a source asset, possibly licensed for
   use, not for redistribution, and the repository is public. Only the processed,
@@ -3305,3 +3376,14 @@ phone or reduced motion.
   cover crop as item 2.
 - **Stage 2: a 0.8 MB budget for the 640×400 files, and decimal megabytes** (2.5 MB = 2.5e6
   bytes) everywhere, so any reading of the brief's limit holds.
+- **Stage 3: the beads refract a picture of their own, at Work only.** No existing buffer fits:
+  three's transmission pass serves only its own materials, and the open card's backdrop picture
+  exists only while a card is open. A 0.35× picture of the frame without particles is taken
+  each frame while Work is in view on the full tier, the place the brief names (pockets, the
+  column, the cards). The other places' beads keep their light without refraction, as lite does.
+- **Stage 3: one blending for every bead** (premultiplied: `One, OneMinusSrcAlpha`). It equals
+  the old additive blending wherever a bead doesn't refract (alpha 0), so the hero, System,
+  Depth and Contact beads look as before apart from the new shading.
+- **Stage 3: the second pass, not the first.** The brief asks for a darker core and a bright
+  edge. Taken literally over a dark background, that gave hollow bubbles. The kept version has a
+  filled body that is still a little darker in the middle, and a thin bright edge.
