@@ -5,7 +5,8 @@
 // a handful of sparks near the camera). Brightness in tiers (~70% dim, ~25% medium, ~5%
 // bright, grainMotion.glsl) with a slow twinkle; only the bright beads glint. The cursor
 // parts the clouds. Full tier: a wide depth of field (out-of-focus beads large and soft).
-// With POCKET_HUES (Work's pockets) every pocket bead carries its own colour (`tint`).
+// With POCKET_HUES (Work's pockets) every pocket bead carries its own colour (`tint`); with
+// SURFACE (Work's clinging clouds) beads sit on the column's own surface (`position`, `normal`).
 
 uniform float uTime;
 uniform float uSize;
@@ -49,6 +50,12 @@ varying float vPhase;
 void main() {
   vec3 p;
   float ends = 1.0;
+#ifdef SURFACE
+  // On the column (Pebbles.tsx, ColumnBeads): just off its surface, in its own space so the
+  // clouds turn with it, further out at a cloud's rim; each bead breathes a little along the
+  // surface's normal.
+  p = position + normal * (0.035 + orbit.y * 0.07 + 0.015 * sin(uTime * 0.5 * orbit.w + orbit.x));
+#else
   if (cloud.w > 0.0) {
     float a = orbit.x + uTime * 0.12 * orbit.w;
     // An irregular cloud: lobes round its outline and a slow wobble, so no pocket is a round
@@ -66,6 +73,7 @@ void main() {
     p = vec3(cos(a) * r, y, sin(a) * r);
     ends = smoothstep(uHalfHeight, uHalfHeight - 1.0, abs(y));
   }
+#endif
 
   vec4 world = modelMatrix * vec4(p, 1.0);
   vec3 view = (viewMatrix * world).xyz;
@@ -126,6 +134,8 @@ void main() {
   level *= 1.0 + filament * 2.5;
 #endif
   vGlint = max(grainGlint(world.xyz, seed, uTime) * grainGlints(tier), grainStirred(stirred, seed, uTime));
+  // Faded inside the clear areas (a focused card's face, the text).
+  level *= 1.0 - 0.7 * grainClear(gl_Position.xy / gl_Position.w);
   // Out of focus: the light spreads over the disc (dimmer per pixel).
   float energy = clamp((focusSize * focusSize) / (size * size), 0.08, 1.0);
   vColor = grainLit(hue * level * energy * uBrightness, world.xyz);

@@ -7,9 +7,11 @@ import { compileForTarget } from '../compile'
 import type { SceneClock } from '../useSceneClock'
 import { createOilMaterial } from './oilMaterial'
 import { createSpineGeometry } from './spineGeometry'
-import { loadSpineModel } from './spineModel'
+import { ColumnBeads } from './Pebbles'
+import { loadSpineModel, type SpineModel } from './spineModel'
 
-type Props = { clock: SceneClock }
+/** `focusDistance`: where the beads clinging to it are sharp (the camera's distance at Work). */
+type Props = { clock: SceneClock; focusDistance: number }
 
 /**
  * The Work spine: one heavy, sculpted column of dark pieces with an oily sheen, turning
@@ -17,7 +19,7 @@ type Props = { clock: SceneClock }
  * phones) replaces the procedural stand-in once it has loaded; the stand-in stays if it
  * cannot. Either way: one mesh, one reflective material, one draw call.
  */
-export function Spine({ clock }: Props) {
+export function Spine({ clock, focusDistance }: Props) {
   const mesh = useRef<Mesh>(null)
   const gl = useThree((state) => state.gl)
   const scene = useThree((state) => state.scene)
@@ -26,15 +28,16 @@ export function Spine({ clock }: Props) {
   const phone = useThree((state) => state.size.width < 700)
   const standIn = useStandIn(lite ? 0.2 : 0.12)
   const material = useMemo(() => createOilMaterial(), [])
-  const [model, setModel] = useState<BufferGeometry | null>(null)
+  const [model, setModel] = useState<SpineModel | null>(null)
   const lod = lite || phone ? 'lite' : 'full'
 
   useEffect(() => {
     let cancelled = false
-    void loadSpineModel(lod).then((geometry) => {
-      if (!geometry) return
+    void loadSpineModel(lod).then((loaded) => {
+      if (!loaded) return
       if (cancelled) {
-        geometry.dispose()
+        loaded.geometry.dispose()
+        loaded.anchors?.dispose()
         return
       }
       // The sculpt has its own forms: it takes the carved crust instead of the stand-in's
@@ -43,20 +46,26 @@ export function Spine({ clock }: Props) {
         material.defines = { ...material.defines, SCULPTED: '' }
         material.needsUpdate = true
       }
-      setModel(geometry)
+      setModel(loaded)
     })
     return () => {
       cancelled = true
     }
   }, [material, lod])
   // A column is let go once the next one is in place (the lite one after a drop to lite).
-  useEffect(() => () => model?.dispose(), [model])
+  useEffect(
+    () => () => {
+      model?.geometry.dispose()
+      model?.anchors?.dispose()
+    },
+    [model],
+  )
 
   useEffect(() => () => standIn?.dispose(), [standIn])
 
   // The mesh appears after the start-up warm-up (its geometry comes from a worker), so its
   // material is compiled here, off the frame, rather than on the first frame Work is drawn.
-  const geometry = model ?? standIn
+  const geometry = model?.geometry ?? standIn
   useEffect(() => {
     if (mesh.current) void compileForTarget(gl, mesh.current, camera, scene)
   }, [geometry, gl, camera, scene])
@@ -80,7 +89,14 @@ export function Spine({ clock }: Props) {
     ;(oil.userData.time as { value: number }).value = clock.time
   })
 
-  return geometry ? <mesh ref={mesh} geometry={geometry} material={material} /> : null
+  return geometry ? (
+    <mesh ref={mesh} geometry={geometry} material={material}>
+      {/* The glass beads clinging to it turn with it. */}
+      {model?.anchors && (
+        <ColumnBeads anchors={model.anchors} clock={clock} focusDistance={focusDistance} />
+      )}
+    </mesh>
+  ) : null
 }
 
 type Built = {

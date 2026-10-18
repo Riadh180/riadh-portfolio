@@ -85,7 +85,11 @@ function WorkScene({ version, mode }: { version: number; mode: View }) {
       <HeroLighting look={workLook} clock={clock} calm={() => 1} />
       <LabCamera mode={mode} />
       <Backdrop />
-      <Spine key={`spine-${version}`} clock={clock} />
+      <Spine
+        key={`spine-${version}`}
+        clock={clock}
+        focusDistance={mode === 'phone' ? 6 : view.distance}
+      />
       <Pebbles
         key={`pebbles-${version}`}
         clock={clock}

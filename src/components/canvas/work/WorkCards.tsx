@@ -43,7 +43,8 @@ import { MOTION, Spring } from '../motion/motion'
 import dissolve from '../shaders/dissolve.glsl'
 import noise from '../shaders/noise.glsl'
 import srgb from '../shaders/srgb.glsl'
-import type { JourneyState } from '../journey/path'
+import { type JourneyState, WORK } from '../journey/path'
+import { ChipCluster, EDGE_PALETTE } from './Pebbles'
 import type { SceneClock } from '../useSceneClock'
 import { CardFace } from './cardFace'
 import { FrostField } from './frostField'
@@ -55,6 +56,19 @@ import { APPROACH, COLUMN_SPACING, ORBIT_SPACING, orbitPose } from './layout'
 export const CARD = { width: 2.4, height: 1.5, radius: 0.1 }
 /** A thin glass pane (seg_44): almost no frame, a narrow bevel that catches the light. */
 export const BLOCK = { depth: 0.06, bevel: 0.02 }
+
+/**
+ * Small bead clouds at each card's edges nearest the column (its left side at the stops),
+ * in card space (x, y, z, spread): just outside the left edge and round the lower left
+ * corner, a little in front of the glass, clear of the title and the kicker. A bead in front
+ * of the edge bends the card's imagery (glassGrain.glsl).
+ */
+const EDGE_CLOUDS: [number, number, number, number][] = [
+  [-CARD.width / 2 - 0.04, 0.28, 0.12, 0.15],
+  [-CARD.width / 2 + 0.06, -CARD.height / 2 + 0.06, 0.14, 0.19],
+  [-CARD.width / 2 + 0.45, -CARD.height / 2 - 0.02, 0.1, 0.12],
+]
+const EDGE_BEADS = 300
 
 /**
  * Where the cards sit. `orbit` (desktop): a descending helix round the spine, facing out.
@@ -485,6 +499,7 @@ function Card({
   const screenMesh = useRef<Mesh>(null)
   const blockMesh = useRef<Mesh>(null)
   const dustPoints = useRef<Points>(null)
+  const edgeClouds = useRef<Group>(null)
   const blockGlass = useMemo(() => createBlockGlass(), [])
   const dustMaterial = useMemo(
     () => (face ? createDustMaterial(face, index * 1.37) : null),
@@ -668,6 +683,8 @@ function Card({
     u.uHover!.value = s.hover
     ;(u.uCursor!.value as Vector2).lerp(s.cursorUv, ease)
     u.uSweep!.value = s.dissolve > 1 ? -0.3 + (s.dissolve - 1) * 2.4 : -1
+    // The edge clouds stay with the card at home, not when it flies in.
+    if (edgeClouds.current) edgeClouds.current.visible = flown < 0.02 && s.dissolve < 0.02
     // The thick glass block breaks away with the frost.
     glass.opacity = (1 - Math.min(1, s.dissolve * 1.2)) * near
     glass.visible = glass.opacity > 0.01
@@ -766,6 +783,18 @@ function Card({
     >
       <mesh ref={blockMesh} geometry={block} material={blockGlass} />
       {screen && <mesh ref={screenMesh} geometry={plane} material={screen} position-z={front} />}
+      {layout === 'orbit' && (
+        <group ref={edgeClouds}>
+          <ChipCluster
+            clusters={EDGE_CLOUDS}
+            count={EDGE_BEADS}
+            size={2.1}
+            clock={clock}
+            focusDistance={WORK.distance - WORK.dolly - 2}
+            palette={EDGE_PALETTE}
+          />
+        </group>
+      )}
       {dustMaterial && (
         // Not interactive: no raycasting (24k points per card would be tested on every
         // pointer / wheel event that reaches the card's handlers).

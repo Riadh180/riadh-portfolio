@@ -137,7 +137,11 @@ export const sceneConfig = {
   },
   /** Work: round coloured pebbles clumped round the spine and in a few small clouds. */
   pebbles: {
-    count: 16000,
+    /**
+     * The free pockets' grains (desktop; phones a quarter). Most of Work's beads cling to the
+     * column instead (Pebbles.tsx, ColumnBeads: 12k anchors from scripts/build-spine.mjs).
+     */
+    count: 6000,
     size: 0.022,
     brightness: 1,
     /** Distance from the axis where they gather. */

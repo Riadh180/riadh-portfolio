@@ -108,6 +108,21 @@ vec2 airKeepClear(vec2 ndc, vec2 d) {
 }
 
 /**
+ * 0..1: how far a grain (at this NDC) lies inside a clear area (the card in focus, the text):
+ * grains fade there, so no cloud sits on a focused card's face or over the text.
+ */
+float grainClear(vec2 ndc) {
+  float inside = 0.0;
+  for (int i = 0; i < AIR_CLEAR; i++) {
+    vec4 r = uKeepClear[i];
+    if (r.x > r.z) continue;
+    vec2 m = min(ndc - r.xy, r.zw - ndc);
+    inside = max(inside, smoothstep(0.0, 0.05, min(m.x, m.y)));
+  }
+  return inside;
+}
+
+/**
  * Moves a grain (view space) with the air: carried along the cursor's path and curling round
  * it, drifting on, then springing home (the flow field on full, the cursor's recent path on
  * lite), never into the clear areas. Near grains move more than far ones (`focus` is the

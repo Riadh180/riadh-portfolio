@@ -3320,6 +3320,76 @@ against the column, row 6 beads at a card's edge and the column's process.
 The extra low-resolution scene render costs nothing measurable on the full tier. Lite doesn't
 take it. Console clean.
 
+## Stage 4 — particles on the cards and the column, denser clouds (tag `look-stage-4`)
+Files: `scripts/build-spine.mjs` (the bead anchors), `public/models/spine*.glb`,
+`work/spineModel.ts`, `work/Spine.tsx`, `work/Pebbles.tsx` (`ColumnBeads`, the free pockets,
+`EDGE_PALETTE`), `shaders/glitter.vert` (`SURFACE`; the fade in clear areas),
+`shaders/grainMotion.glsl` (`grainClear`), `work/WorkCards.tsx` (the cards' edge clouds),
+`work/WorkPlace.tsx`, `styles/scene.ts` (`pebbles.count`), `lab/WorkLab.tsx`.
+
+1. **The column's clouds:**
+   - `build-spine.mjs` samples 16,000 anchors on the full column's surface, in 36 clouds 0.22–0.5
+     units across. A cloud's centre falls where the surface is hollow or a process (weighted
+     by `crevice` and `thin` as well as area). Anchors pick triangles nearer the centre more
+     often: a dense core, a wispy rim, bare surface between clouds.
+   - They travel inside the column files as a points primitive; the lite file (lite tier,
+     phones) holds a third.
+   - `ColumnBeads` draws them as a child of the column's mesh, so they turn with it, 3.5–10.5 cm
+     off the surface (further out at a cloud's rim), each breathing a little along the normal.
+   - They are pocket beads: the pocket size scale, one of the pockets' mixes per cloud, the
+     70 / 25 / 5 tiers. Bigger beads come more often at a cloud's core, so they overlap there.
+2. **The cards' edges:** three small clouds per card (300 beads, the violet-led pocket mix) at
+   the edge nearest the column: just outside its left edge and round its lower left corner, a
+   little in front of the glass, clear of the title and the kicker. They move with the card,
+   hide while it flies in, and refract its imagery through Stage 3's glass.
+3. **Balance:**
+   - The free pockets drop from 20 to 10: six further out round the column, four between the
+     stops.
+   - Their grains drop from 16,000 to 6,000 (phones 1,500).
+   - Desktop: 16,000 on the column, 6,000 free, 1,800 at card edges, so 67% of Work's beads cling
+     to the column and 75% to the column or the cards.
+4. **Clear areas:** a glitter bead inside a keep-clear area (the card in focus, the text) fades
+   to 30%. No cloud sits on a focused card's face, and the work list stays legible where the
+   column's clouds turn past it.
+5. **The dissolve and Depth:** the opened card's dissolve dust and Depth's beads already draw
+   with the same glass bead (Stage 3).
+
+Passes:
+1. 12,000 anchors in 40 clouds (0.25–0.6). On the column, but thinner than the reference's
+   foam.
+2. 16,000 in 36 tighter clouds (0.22–0.5), larger beads more often at the core. Dense,
+   overlapping cores with bare column between.
+
+**Metrics** (Work recorded on the scripted scroll, HTML UI left out, against the reference;
+`compare-frames.mjs --ui`, pass 2): SPARKLE 367 / MP vs 347 (1.06×, within ≤ 2×; loop 2 202).
+Mean luminance 30.9 vs 28.4 (loop 2 28.6): the brighter sculpted column and its beads. EMPTY
+AREA 58.4% vs 51.1%. Hue distance 0.34: the air, Stage 6.
+
+**Sheet:** `docs/screens/look-pockets.jpg`. The reference Work frames at six moments matched to
+our six card stops, against loop 2 and new; then the four pocket crops (reference | loop 2 |
+new, 1× and 4×).
+- **Closer:** the beads now gather on the column, clinging round its vertebrae and processes in
+  clouds of mixed hues, as the reference's do. Loop 2's pockets floated beside it.
+- **Closer:** small clouds hug the cards' inner edges, where the reference's gather.
+- **Closer:** denser, overlapping cores with real dark space between clouds.
+- **Still different:** the reference's clouds are larger and denser at the column, a colourful
+  foam that covers whole stretches of it. Ours are patches. Code can fix: more anchors or
+  larger clouds, at a cost to file size and fill rate.
+
+**FPS** (production, Retina, 2 s windows, min of two runs, A/B against v3 with rests; pass 2):
+| | Work 2.0 | Work 2.35 | Work 2.95 |
+|---|---|---|---|
+| full · new | 59.9 | 59.8 | 59.9 |
+| full · v3 | 59.9 | 59.9 | 59.9 |
+| lite (HD 630) · new | 59.9 | 59.9 | 59.9 |
+| lite (HD 630) · v3 | 59.8 | 59.9 | 59.9 |
+
+The fade in clear areas and the lite file's third of the anchors came after the measurement.
+The fade is one small loop per bead; lite draws the same third it drew then.
+
+**Files:** `spine.glb` 912 KB (the column, 724 KB, and 16,000 anchors), `spine-lite.glb` 422 KB
+(358 KB, and 5,333 anchors); both well within 3 MB.
+
 ## Decisions I made
 - **The raw model stays out of git.** `spine-raw.glb` is a source asset, possibly licensed for
   use, not for redistribution, and the repository is public. Only the processed,
@@ -3387,3 +3457,14 @@ take it. Console clean.
 - **Stage 3: the second pass, not the first.** The brief asks for a darker core and a bright
   edge. Taken literally over a dark background, that gave hollow bubbles. The kept version has a
   filled body that is still a little darker in the middle, and a thin bright edge.
+- **Stage 4: the clouds' anchors are baked into the column files.** Sampling them at load time
+  would have cost the main thread tens of milliseconds when the model arrives. Baked offline,
+  they are repeatable, with seeded randomness. The lite file carries a third.
+- **Stage 4: beads cling as a child of the column's mesh**, so they turn with it and follow it
+  through the phone's column scale, with no extra per-frame work.
+- **Stage 4: about two thirds on the column, not exactly 60%.** With the free pockets halved and
+  the edge clouds added, 67% of Work's beads sit on the column and 75% on the column or the
+  cards, the brief's "60% on the column" plus its card clouds.
+- **Stage 4: beads fade inside the keep-clear areas** (a focused card, the text). Before, nothing
+  kept a cloud off the work list; with the column's clouds turning past it, the list would have
+  lost legibility.

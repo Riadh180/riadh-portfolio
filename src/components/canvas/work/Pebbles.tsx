@@ -103,11 +103,11 @@ function toSegment(p: Vector3, a: Vector3, b: Vector3) {
 }
 
 /**
- * Desktop: 20 foam pockets, 2–3× the old ones. Most wrap the column at every height and
- * side (on its surface and just off it, so the camera sees some in front of it and some
- * behind as it turns); a few hang between the camera and the column between the stops (out
- * of focus there). None sits between a card and the camera at the card's stop: candidates
- * that would cover a card's face are pushed round the column.
+ * Desktop: 10 free pockets, off the column (its own clouds cling to it, ColumnBeads): six
+ * further out round it at every height and side (so the camera sees some in front of it and
+ * some behind as it turns), four between the camera and the column between the stops (out of
+ * focus there). None sits between a card and the camera at the card's stop: candidates that
+ * would cover a card's face are pushed round the column.
  */
 function orbitPockets(): Pocket[] {
   const pockets: Pocket[] = []
@@ -136,11 +136,11 @@ function orbitPockets(): Pocket[] {
       }
     }
   }
-  // Wrapping the column: 16, every ~0.9 units down, alternating sides and depths.
-  for (let k = 0; k < 16; k++) {
-    const y = 4.2 - k * 0.92 + (hash(k, 31, 3) - 0.5) * 0.5
+  // Round the column, off it: 6, every ~2.4 units down, alternating sides and depths.
+  for (let k = 0; k < 6; k++) {
+    const y = 4.2 - k * 2.4 + (hash(k, 31, 3) - 0.5) * 0.6
     const side = k * 2.4 + hash(k, 32, 3) * 1.2
-    const reach = 1.25 + hash(k, 33, 3) * 0.6
+    const reach = 1.8 + hash(k, 33, 3) * 0.5
     place(y, cameraAngle(y) + side, reach, 0.8 + hash(k, 34, 3) * 0.4, k)
   }
   // In front, between the stops: the camera passes through them (bokeh on full).
@@ -212,6 +212,95 @@ function createPebbles(layout: Layout) {
   }
   return chipGeometry(orbit, cloud, seed, count, tint)
 }
+
+/**
+ * The column's clinging clouds (anchors from scripts/build-spine.mjs: position, normal, and
+ * `_cloud` = which cloud, as a fraction, and how far out in it). Each bead gets a seed (bigger
+ * beads more often at a cloud's core, so they overlap there), one of its cloud's hues (a stable
+ * pick of the pockets' mixes from the cloud's id) and its distance out (orbit.y: dimmer and
+ * further off the surface at the rim).
+ */
+function surfaceGeometry(anchors: BufferGeometry) {
+  const count = anchors.getAttribute('position').count
+  const cloudOf = anchors.getAttribute('_cloud')
+  const orbit = new Float32Array(count * 4)
+  const cloud = new Float32Array(count * 4)
+  const seed = new Float32Array(count * 4)
+  const tint = new Float32Array(count * 3)
+  for (let i = 0; i < count; i++) {
+    const out = cloudOf.getY(i)
+    orbit.set(
+      [Math.random() * Math.PI * 2, out, Math.random() * 6, 0.5 + Math.random() * 0.5],
+      i * 4,
+    )
+    // A pocket bead (the pockets' size and brightness rules).
+    cloud.set([0, 0, 0, 1], i * 4)
+    seed.set(
+      [Math.random() ** (0.55 + out * 0.7), Math.random(), Math.random(), Math.random()],
+      i * 4,
+    )
+    const hue = pocketHue(Math.floor(cloudOf.getX(i) * 997))
+    tint.set([hue.r, hue.g, hue.b], i * 3)
+  }
+  const geometry = chipGeometry(orbit, cloud, seed, count, tint)
+  geometry.setAttribute('position', anchors.getAttribute('position'))
+  geometry.setAttribute('normal', anchors.getAttribute('normal'))
+  return geometry
+}
+
+const SURFACE_DEFINES = { POCKET_HUES: '', SURFACE: '' }
+
+/**
+ * Work's clinging clouds: most of its glass beads, in clouds on the column's own surface
+ * (dense in its hollows and round its processes, bare surface between), just off it and
+ * turning with it: a child of the column's mesh. The lite file (lite tier, phones) holds a
+ * third of the anchors.
+ */
+export function ColumnBeads({
+  anchors,
+  clock,
+  focusDistance,
+}: {
+  anchors: BufferGeometry
+  clock: SceneClock
+  focusDistance: number
+}) {
+  const material = useRef<ShaderMaterial>(null)
+  const geometry = useMemo(() => surfaceGeometry(anchors), [anchors])
+  const uniforms = useMemo(
+    () => createGlitterUniforms(focusDistance, undefined, POCKET_SCALE, 1),
+    [focusDistance],
+  )
+  useEffect(() => () => geometry.dispose(), [geometry])
+  useFrame(({ size, viewport }) =>
+    updateGlitter(material.current, clock, size.height * viewport.dpr),
+  )
+  return (
+    <points geometry={geometry} frustumCulled={false}>
+      <shaderMaterial
+        ref={material}
+        vertexShader={vertexShader}
+        fragmentShader={fragmentShader}
+        uniforms={uniforms}
+        defines={SURFACE_DEFINES}
+        transparent
+        depthWrite={false}
+        {...grainBlending}
+      />
+    </points>
+  )
+}
+
+/**
+ * The cards' edge clouds' hues (ChipCluster's four, by its shares 60 / 25 / 10 / 5): the
+ * pockets' violet-led mix.
+ */
+export const EDGE_PALETTE = [
+  POCKET_HUES.violet,
+  POCKET_HUES.blue,
+  POCKET_HUES.teal,
+  POCKET_HUES.gold,
+]
 
 /** Muted glitter: silver-lilac dust, violet/pink, teal and a little gold (the column dust). */
 const GLITTER = [

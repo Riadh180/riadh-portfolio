@@ -18,19 +18,22 @@
 //    the next by one vertebra, so the joints fuse with no seam; then bent along the column's
 //    own path (the swell, twist and S-curve of work/spineGeometry.ts deform()).
 // 5. Normals with a crease angle: smooth across the sculpt, crisp where it folds sharply.
-// 6. Quantized and meshopt-compressed.
+// 6. Where Work's glass beads cling to it (work/Pebbles.tsx, ColumnBeads): anchors on the full
+//    column's surface, in clouds centred on its hollows and processes, dense at their cores,
+//    with bare surface between them; written into both files as a points primitive.
+// 7. Quantized and meshopt-compressed.
 import fs from 'node:fs'
 import path from 'node:path'
-import { Document, Logger, NodeIO } from '@gltf-transform/core'
+import { Document, Logger, NodeIO, Primitive } from '@gltf-transform/core'
 import { EXTMeshoptCompression, KHRMeshQuantization } from '@gltf-transform/extensions'
 import { meshopt, quantize } from '@gltf-transform/functions'
 import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer'
 
 const RAW = process.argv[2] ?? 'public/models/spine-raw.glb'
-/** Each file and its triangle budget for the whole column. */
+/** Each file, its triangle budget for the whole column, and its share of the bead anchors. */
 const TIERS = [
-  { file: 'public/models/spine.glb', budget: 145000 },
-  { file: 'public/models/spine-lite.glb', budget: 58000 },
+  { file: 'public/models/spine.glb', budget: 145000, beads: 1 },
+  { file: 'public/models/spine-lite.glb', budget: 58000, beads: 1 / 3 },
 ]
 /**
  * The column's extent in Work space (sceneConfig.spine top and bottom: past them the material
@@ -43,6 +46,11 @@ const COLUMN = { top: 10.3, bottom: -12.5 }
  * vertebrae it holds (the copies overlap by one).
  */
 const PIECE = { height: 6.5, vertebrae: 8 }
+/**
+ * The bead clouds on the column: how many anchors, how many clouds, their radius along the
+ * surface (world units), and the part of the column they may sit on (the ends dissolve).
+ */
+const BEADS = { count: 16000, clouds: 36, radius: [0.22, 0.5], top: 9, bottom: -11.5 }
 /** Normals: faces meeting at more than this angle keep a crisp edge. */
 const CREASE = (70 * Math.PI) / 180
 
@@ -410,8 +418,109 @@ function creased({ pos, index, crevice, thin }) {
   return out
 }
 
-// --- 6. Write --------------------------------------------------------------------------------
-async function write(file, mesh) {
+// --- 6. The bead anchors --------------------------------------------------------------------
+/** A seeded random 0..1 (the anchors are the same on every build). */
+function seeded(seed) {
+  let a = seed >>> 0
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+/**
+ * Anchors in clouds on the column's surface. Cloud centres fall where the surface is hollow or
+ * a process (weighted by `crevice` and `thin` as well as area); each anchor lies on a
+ * triangle near its cloud's centre, more often near it (a dense core, a wispy rim). Per
+ * anchor: position, normal, and its cloud (which one, as a fraction 0..1 so it quantizes like
+ * the rest, and how far out in it it lies, 0..1).
+ */
+function anchors({ position: P, normal: N, crevice, thin, index: I }) {
+  const random = seeded(7)
+  const tris = I.length / 3
+  const centre = new Float64Array(tris * 3)
+  const weight = new Float64Array(tris)
+  for (let t = 0; t < tris; t++) {
+    const [a, b, c] = [I[t * 3], I[t * 3 + 1], I[t * 3 + 2]]
+    const e1 = [0, 1, 2].map((k) => P[b * 3 + k] - P[a * 3 + k])
+    const e2 = [0, 1, 2].map((k) => P[c * 3 + k] - P[a * 3 + k])
+    const area =
+      Math.hypot(
+        e1[1] * e2[2] - e1[2] * e2[1],
+        e1[2] * e2[0] - e1[0] * e2[2],
+        e1[0] * e2[1] - e1[1] * e2[0],
+      ) / 2
+    for (let k = 0; k < 3; k++) centre[t * 3 + k] = (P[a * 3 + k] + P[b * 3 + k] + P[c * 3 + k]) / 3
+    const y = centre[t * 3 + 1]
+    const feature =
+      (crevice[a] + crevice[b] + crevice[c]) / 3 + ((thin[a] + thin[b] + thin[c]) / 3) * 0.8
+    weight[t] = y < BEADS.top && y > BEADS.bottom ? area * (0.25 + feature) : 0
+  }
+  /** A pick from weights (their running sums). */
+  const picker = (items, weights) => {
+    const sums = new Float64Array(weights.length)
+    let total = 0
+    weights.forEach((w, k) => (sums[k] = total += w))
+    return () => {
+      const x = random() * total
+      let lo = 0
+      let hi = sums.length - 1
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1
+        if (sums[mid] < x) lo = mid + 1
+        else hi = mid
+      }
+      return items[lo]
+    }
+  }
+  const all = Array.from({ length: tris }, (_, t) => t)
+  const anyTriangle = picker(all, weight)
+  const clouds = Array.from({ length: BEADS.clouds }, () => {
+    const t = anyTriangle()
+    const at = [centre[t * 3], centre[t * 3 + 1], centre[t * 3 + 2]]
+    const radius = BEADS.radius[0] + random() * (BEADS.radius[1] - BEADS.radius[0])
+    // The triangles near it, nearer ones more often (the core).
+    const near = []
+    const nearWeight = []
+    for (let u = 0; u < tris; u++) {
+      const d = Math.hypot(
+        centre[u * 3] - at[0],
+        centre[u * 3 + 1] - at[1],
+        centre[u * 3 + 2] - at[2],
+      )
+      if (d < radius && weight[u] > 0) {
+        near.push(u)
+        nearWeight.push(weight[u] * (1 - d / radius) ** 1.5 + 1e-9)
+      }
+    }
+    return { at, radius, pick: picker(near, nearWeight) }
+  })
+  const out = { position: [], normal: [], cloud: [] }
+  for (let i = 0; i < BEADS.count; i++) {
+    const k = i % BEADS.clouds
+    const cloud = clouds[k]
+    const t = cloud.pick()
+    // A random point in the triangle, its normal interpolated.
+    let u = random()
+    let v = random()
+    if (u + v > 1) [u, v] = [1 - u, 1 - v]
+    const w = 1 - u - v
+    const [a, b, c] = [I[t * 3], I[t * 3 + 1], I[t * 3 + 2]]
+    const point = [0, 1, 2].map((m) => P[a * 3 + m] * w + P[b * 3 + m] * u + P[c * 3 + m] * v)
+    const normal = [0, 1, 2].map((m) => N[a * 3 + m] * w + N[b * 3 + m] * u + N[c * 3 + m] * v)
+    const l = Math.hypot(...normal) || 1
+    out.position.push(...point)
+    out.normal.push(...normal.map((n) => n / l))
+    const d = Math.hypot(point[0] - cloud.at[0], point[1] - cloud.at[1], point[2] - cloud.at[2])
+    out.cloud.push((k + 0.5) / BEADS.clouds, Math.min(1, d / cloud.radius))
+  }
+  return out
+}
+
+// --- 7. Write --------------------------------------------------------------------------------
+async function write(file, mesh, beads) {
   const doc = new Document()
   doc.setLogger(new Logger(Logger.Verbosity.WARN))
   const buffer = doc.createBuffer()
@@ -425,7 +534,14 @@ async function write(file, mesh) {
     .setAttribute('_THIN', accessor(new Float32Array(mesh.thin), 'SCALAR'))
     .setIndices(accessor(new Uint32Array(mesh.index), 'SCALAR'))
   const node = doc.createNode('column').setMesh(doc.createMesh('column').addPrimitive(primitive))
-  doc.createScene().addChild(node)
+  const points = doc
+    .createPrimitive()
+    .setMode(Primitive.Mode.POINTS)
+    .setAttribute('POSITION', accessor(new Float32Array(beads.position), 'VEC3'))
+    .setAttribute('NORMAL', accessor(new Float32Array(beads.normal), 'VEC3'))
+    .setAttribute('_CLOUD', accessor(new Float32Array(beads.cloud), 'VEC2'))
+  const anchorsNode = doc.createNode('beads').setMesh(doc.createMesh('beads').addPrimitive(points))
+  doc.createScene().addChild(node).addChild(anchorsNode)
   await doc.transform(quantize(), meshopt({ encoder: MeshoptEncoder, level: 'high' }))
   await io.write(file, doc)
   return {
@@ -444,9 +560,21 @@ const report = {
   subdivided: smooth.index.length / 3,
   copies: copies.map((copy) => [+copy.centre.toFixed(2), +copy.height.toFixed(2), copy.mirror]),
 }
-for (const tier of TIERS) {
+// The anchors come from the full column (the lite one is the same shape, a little coarser).
+const meshes = TIERS.map((tier) =>
+  creased(column(simplified(smooth, Math.floor(tier.budget / copies.length)))),
+)
+const beads = anchors(meshes[0])
+report.beads = { anchors: beads.position.length / 3, clouds: BEADS.clouds }
+for (const [k, tier] of TIERS.entries()) {
   fs.mkdirSync(path.dirname(tier.file), { recursive: true })
-  const piece = simplified(smooth, Math.floor(tier.budget / copies.length))
-  report[tier.file] = await write(tier.file, creased(column(piece)))
+  // The first share of the anchors still covers every cloud (they take turns, see anchors()).
+  const n = Math.round((beads.position.length / 3) * tier.beads)
+  const share = {
+    position: beads.position.slice(0, n * 3),
+    normal: beads.normal.slice(0, n * 3),
+    cloud: beads.cloud.slice(0, n * 2),
+  }
+  report[tier.file] = await write(tier.file, meshes[k], share)
 }
 console.log(JSON.stringify(report, null, 1))
