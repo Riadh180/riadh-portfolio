@@ -27,8 +27,9 @@ import type { SceneClock } from '../useSceneClock'
 const CENTRE: [number, number, number] = [0, 0.45, 0]
 
 /**
- * A sparse field of glass dust round and behind The Core: [x, y, z, spread]. Wide, loose
+ * A sparse field of glass beads round and behind The Core: [x, y, z, spread]. Wide, loose
  * clouds at different depths, thinning out towards the frame; never in front of its centre.
+ * Present enough that a swipe visibly stirs them (DUST_BEADS), calm at rest.
  */
 const DUST: [number, number, number, number][] = [
   [0, 0.45, -2.6, 1.8],
@@ -40,6 +41,8 @@ const DUST: [number, number, number, number][] = [
   [3.2, 1.8, -2.4, 1.1],
   [0.3, -2.8, -1.5, 1.0],
 ]
+
+const DUST_BEADS = 1400
 
 /** Sparks rising past The Core (behind it and at its sides), in a box this tall. */
 const SPARKS = { count: 14, height: 6, width: 5.2 }
@@ -181,7 +184,7 @@ export function HeroAura({ journey, clock }: { journey: JourneyState; clock: Sce
           />
         </mesh>
       ))}
-      <ChipCluster clusters={DUST} count={150} size={2.2} clock={clock} focusDistance={10} />
+      <ChipCluster clusters={DUST} count={DUST_BEADS} size={3.4} clock={clock} focusDistance={10} />
       <points
         ref={sparkPoints}
         geometry={sparks}

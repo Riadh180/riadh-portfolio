@@ -3390,6 +3390,44 @@ The fade is one small loop per bead; lite draws the same third it drew then.
 **Files:** `spine.glb` 912 KB (the column, 724 KB, and 16,000 anchors), `spine-lite.glb` 422 KB
 (358 KB, and 5,333 anchors); both well within 3 MB.
 
+## Stage 5 — a clearly visible mouse effect (tag `look-stage-5`)
+Files: `hero/HeroAura.tsx` (the hero's bead field), `shaders/grainMotion.glsl` (the stirred
+beads' shimmer), `scripts/record-swipe.mjs` (`SETTLE`).
+
+1. **The hero:**
+   - The glass dust round and behind The Core, 150 beads before, is now a sparse but present
+     layer of 1,400 beads at 3.4× the dust's size.
+   - It keeps the same eight loose clouds at different depths, behind it and at its sides, never
+     in front of its centre.
+   - At rest it stays calm (mostly dim, a slow twinkle). A swipe drags whole clouds along its
+     path.
+2. **Work:**
+   - Stage 4's clouds on the column and at the cards' edges give a swipe something to move. In
+     the recording a medium swipe drags a streak of beads along the cursor's path, which curls
+     round it, drifts on and settles within about two seconds (the loop 2 air, unchanged).
+   - Stirred beads flare a third brighter than in loop 2 (`grainStirred` × 1.3, capped), on top
+     of Stage 3's sparkle.
+3. **Kept from loop 2:** each place's strength, the boundaries (Stage 4's fade adds to them: no
+   cloud sits on a focused card's face or over the text) and reduced motion (no stirring).
+
+**Video:** `docs/screens/look-cursor.mp4`, 7.7 s at 1440×900, full tier:
+- a medium swipe through the hero's lower bead cloud, the clouds stretching along it and
+  settling;
+- at Work (2.2), a swipe up through a free pocket and the column's cloud into the Kühne+Nagel
+  card's edge cloud.
+
+**FPS** (production, Retina, 2 s windows, min of two runs, A/B against v3 with rests;
+"moving": the pointer in slow figure-eights the whole time, `fps-place.mjs MOVE=1`):
+| | hero idle | hero, cursor moving | Work 2.35, cursor moving |
+|---|---|---|---|
+| full · new | 59.9 | 59.9 | 59.9 |
+| full · v3 | 59.8 | 59.9 | 59.9 |
+| lite (HD 630) · new | 59.9 | 59.9 | 59.9 |
+| lite (HD 630) · v3 | 59.9 | 59.8 | 59.9 |
+
+The hero's 1,400 beads cost nothing measurable, the lite tier's idle hero included (60 on both
+builds today; loop 2's gate saw 52 on both when the machine was warmer).
+
 ## Decisions I made
 - **The raw model stays out of git.** `spine-raw.glb` is a source asset, possibly licensed for
   use, not for redistribution, and the repository is public. Only the processed,
@@ -3468,3 +3506,9 @@ The fade is one small loop per bead; lite draws the same third it drew then.
 - **Stage 4: beads fade inside the keep-clear areas** (a focused card, the text). Before, nothing
   kept a cloud off the work list; with the column's clouds turning past it, the list would have
   lost legibility.
+- **Stage 5: the hero's beads grow larger, not just more numerous.** At the dust's own size nine
+  in ten were under two pixels at the hero's distance. A swipe moved them by loop 2's 44 px,
+  but nothing could be seen moving. At 3.4× they are 3–12 px, still mostly dim, so the hero
+  stays calm at rest.
+- **Stage 5: the air itself is unchanged** (loop 2's strengths, drift and settle). What changed
+  is what it moves (the clinging clouds, the hero's beads) and the stirred beads' flare.

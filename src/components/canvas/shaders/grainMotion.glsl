@@ -155,10 +155,12 @@ vec3 grainCursor(vec3 view, float focus, out float stirred) {
 
 /**
  * A stirred grain tumbles as the air carries it: its glint flickers on its own phase while
- * the air moves, so a swipe leaves a short shimmering trail.
+ * the air moves, so a swipe leaves a short shimmering trail (a third brighter than loop 2's,
+ * so the trail shows in a recording).
  */
 float grainStirred(float stirred, vec4 seed, float time) {
-  return stirred * pow(0.5 + 0.5 * sin(time * (6.0 + seed.x * 7.0) + seed.w * 6.2831), 3.0);
+  float flicker = pow(0.5 + 0.5 * sin(time * (6.0 + seed.x * 7.0) + seed.w * 6.2831), 3.0);
+  return min(1.0, stirred * 1.3 * flicker);
 }
 
 /** 0..1: how much of a passing band of light (the column's sweep) reaches a grain. */

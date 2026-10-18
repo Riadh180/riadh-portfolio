@@ -4,7 +4,7 @@
 // are encoded to H.264 at 30 fps.
 //
 //   node scripts/record-swipe.mjs <out.mp4> <url> <progress:x0,y0,x1,y1:durationMs> …
-//   (FFMPEG=path to ffmpeg; TIER=lite)
+//   (FFMPEG=path to ffmpeg; TIER=lite; SETTLE=ms recorded after each swipe, default 2400)
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -62,7 +62,7 @@ for (const clip of clips) {
   await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 90, everyNthFrame: 1 })
   recording = true
   await playSwipe(page, [x0, y0], [x1, y1], Number(duration), false, 700)
-  await sleep(2400)
+  await sleep(Number(process.env.SETTLE ?? 2400))
   recording = false
   await cdp.send('Page.stopScreencast')
   // A clip boundary: hold the last frame a moment before the next clip.
